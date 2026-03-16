@@ -1,0 +1,21 @@
+version: v2
+managed:
+  enabled: true
+  override:
+    - file_option: go_package_prefix
+      value: github.com/dukernews/goapi/gen
+plugins:
+  - remote: buf.build/protocolbuffers/go
+    out: ../../apps/goapi/gen
+    opt:
+      - paths=source_relative
+  - remote: buf.build/connectrpc/go
+    out: ../../apps/goapi/gen
+    opt:
+      - paths=source_relative
+inputs:
+  - directory: proto
+    exclude_paths:
+      - proto/es.proto
+      - proto/duki_dao.proto
+      - proto/schema_transcript.proto

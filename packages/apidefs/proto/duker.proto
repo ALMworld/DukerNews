@@ -1,0 +1,119 @@
+syntax = "proto3";
+
+package duker;
+
+// ─── Enums ───────────────────────────────────────────────
+
+enum PostKind {
+  POST_KIND_UNSPECIFIED = 0;
+  WORKS = 1;
+  VOICE = 2;
+}
+
+enum ProductType {
+  PRODUCT_TYPE_UNSPECIFIED = 0;
+  DIGITAL  = 1;  // Apps, software, SaaS, tools, content
+  PHYSICAL = 2;  // Hardware, goods, merchandise
+  SERVICE  = 3;  // Consulting, professional services
+}
+
+// Donation type — each entry pairs with a percent in duki_percents
+enum DukiType {
+  DUKI_TYPE_UNSPECIFIED = 0;
+  REVENUE = 1;  // 营业额 — percentage of gross revenue
+  PROFIT  = 2;  // 净利润 — percentage of net profit
+}
+
+// ─── Domain Messages ─────────────────────────────────────
+
+message PbUser {
+  string address      = 1;  // EVM wallet address (PK)
+  string username     = 2;  // Display name (changeable)
+  int32  karma        = 3;  // Reputation score
+  string about        = 4;  // Bio
+  string email        = 5;  // Email (private)
+  int64  latest_evt_seq = 6;  // Last event sequence processed
+  int64  created_at   = 7;  // Unix ms
+  int64  updated_at   = 8;  // Unix ms
+}
+
+// ─── Post Data (oneof payload per post type) ────────────
+
+message WorksPostData {
+  DukiType            duki_type            = 1;  // Donation model (REVENUE or PROFIT)
+  repeated int32      duki_values          = 2;  // Donation values (basis pts: 250 = 2.50%)
+  string              duki_pledge_url      = 3;  // Pledge URL (DUKI-compliant DAO or project page)
+  repeated string     product_tags         = 4;  // Product tags (e.g. ["ai", "web3", "oss"])
+  string              dao_contract_address = 5;  // DAO contract address (on-chain)
+  ProductType         product_type         = 6;  // What kind of product
+}
+
+message VoicePostData {
+  // Future extensibility for Voice-specific fields
+}
+
+message PbPostData {
+  oneof payload {
+    WorksPostData works = 1;
+    VoicePostData voice = 2;
+    // JobsPostData jobs = 3;  // Future
+  }
+}
+
+message PbPost {
+  int64      id             = 1;   // Post ID (autoincrement)
+  string     address        = 2;   // Author wallet address
+  string     username       = 3;   // Author display name (denormalized)
+  string     title          = 4;
+  string     url            = 5;   // External link (for WORKS type)
+  string     domain         = 6;   // Extracted domain from URL
+  string     text           = 7;   // Body text (for VOICE type)
+  string     title_en       = 8;  // English translation of title
+  string     url_en         = 9;  // English version of URL
+  string     text_en        = 10;  // English translation of text
+  PostKind   kind           = 11;
+  string     locale        = 12;   // Original language
+  int32      points         = 13;  // Upvote count
+  int32      comment_count  = 14; // Denormalized comment count
+  int32      flags          = 15;  // Flag/report count
+  bool       dead           = 16;  // Killed by mod
+  int64      latest_evt_seq = 17;  // evt_seq of the last event touching this post
+  int64      created_at     = 18;  // Unix ms
+  int64      updated_at     = 19;  // Unix ms
+  PbPostData post_data      = 20;  // Typed post metadata
+  int64      boost_amount   = 21;  // Creator's initial boost (USDT micro-units)
+  int64      total_boost    = 22;  // Accumulated boost: creator + all upvote boosts
+}
+
+message PbComment {
+  int64  id              = 1;   // Comment ID (autoincrement)
+  int64  post_id         = 2;   // Parent post
+  string username        = 3;   // Author display name (denormalized)
+  string text            = 4;   // Comment body (Markdown)
+  string locale          = 5;   // Original language
+  int64  parent_id       = 6;   // Parent comment (0 = top-level)
+  string ancestor_path   = 7;   // Ancestors-only path, not including self (root="", reply="parentId")
+  int32  depth           = 8;   // Nesting depth (0 = top-level)
+  int32  points          = 9;  // Upvotes
+  bool   dead            = 10;  // Killed by mod
+  int64  created_at      = 11;  // Unix ms
+  string post_title      = 12;  // Denormalized post title (for recent comments)
+  int64  latest_evt_seq  = 13;  // evt_seq of the last event applied (idempotency guard)
+  int64  updated_at      = 14;  // Unix ms
+  int64  boost_amount    = 15;  // Boost paid on comment creation (USDT micro-units)
+  int64  total_boost     = 16;  // Accumulated boost: creator + all upvote boosts
+}
+
+message PbVote {
+  string address    = 1;  // Voter wallet address
+  string item_type  = 2;  // "post" or "comment"
+  int64  item_id    = 3;  // Post or comment ID
+  int64  created_at = 4;  // Unix ms
+}
+
+message PbLike {
+  string address    = 1;  // User wallet address
+  string item_type  = 2;  // "post" or "comment"
+  int64  item_id    = 3;  // Post or comment ID
+  int64  created_at = 4;  // Unix ms
+}

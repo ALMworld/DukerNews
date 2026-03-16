@@ -1,0 +1,247 @@
+syntax = "proto3";
+
+package duker;
+
+import "duker.proto";
+
+// ─── Event Type (unified — used for both commands and events) ──
+
+enum EventType {
+  EVENT_TYPE_UNSPECIFIED = 0;
+
+  // Post events
+  POST_CREATED  = 1;
+  POST_UPVOTED  = 2;
+  POST_FLAGGED  = 3;
+  POST_AMEND    = 4;
+  POST_DELETED  = 5;
+  POST_DEAD     = 6;
+  POST_LIKED    = 7;
+  POST_UNLIKED  = 8;
+
+  // Comment events
+  COMMENT_CREATED  = 10;
+  COMMENT_UPVOTED  = 11;
+  COMMENT_AMEND    = 12;
+  COMMENT_DELETED  = 13;
+  COMMENT_FLAGGED  = 14;
+  COMMENT_DEAD     = 15;
+  COMMENT_LIKED    = 16;
+  COMMENT_UNLIKED  = 17;
+
+  // User events
+  USER_MINTED   = 21;
+  USER_AMENDED  = 22;
+}
+
+// ─── Aggregate Type ─────────────────────────────────────
+
+enum AggType {
+  AGG_TYPE_UNSPECIFIED = 0;
+  AGG_TYPE_USER    = 1;
+  AGG_TYPE_POST   = 2;
+  AGG_TYPE_COMMENT = 3;
+}
+
+// ─── Event Payloads ──────────────────────────────────────
+
+message PostCreatedPayload {
+  // id is assigned by contract (aggId), not sent in command
+  string     title      = 1;
+  string     url        = 2;
+  string     text       = 3;
+  string     title_en   = 4;  // English translation of title
+  string     url_en     = 5;  // English version of URL (if different)
+  string     text_en    = 6;  // English translation of text
+  PostKind   kind       = 7;
+  string     locale     = 8;
+  string     domain     = 9;   // Extracted from URL
+  PbPostData post_data  = 10;   // Typed post metadata (Works only for now)
+  uint64     boost_amount = 11;  // Marketing boost USDT (6-decimal micro units)
+}
+
+message PostUpvotedPayload {
+  uint64     boost_amount = 1;  // Marketing boost USDT (6-decimal micro units)
+}
+
+message CommentUpvotedPayload {
+  uint64 boost_amount  = 1;  // Optional tip/boost USDT (6-decimal micro units)
+}
+
+message PostAmendPayload {
+  string title    = 1;
+  string url      = 2;
+  string text     = 3;
+  string title_en = 4;  // English translation of title
+  string url_en   = 5;  // English version of URL
+  string text_en  = 6;  // English translation of text
+}
+
+message PostItemPayload {
+  int64 post_id = 1;
+}
+
+message CommentCreatedPayload {
+  // id = evt.agg_id (contract-assigned via AGG_TYPE_COMMENT counter)
+  int64  post_id       = 1;
+  int64  parent_id     = 2;
+  string text          = 3;
+  string locale        = 4;
+  string ancestor_path = 5;   // Ancestors-only path, not including self (root="", reply="parentId")
+  uint64 boost_amount  = 6;   // Optional tip/boost USDT (6-decimal micro units)
+}
+
+
+
+message CommentAmendPayload {
+  string text       = 1;
+}
+
+message CommentItemPayload {
+  int64 comment_id = 1;
+}
+
+message LikeItemPayload {
+  string item_type = 1;  // "post" or "comment"
+  int64  item_id   = 2;
+}
+
+// ─── User Payloads ───────────────────────────────────────
+
+message UserMintedPayload {
+  string address     = 1;
+  string username    = 2;
+  uint64 mint_amount = 3;  // USDT amount in 6-decimal precision
+  uint32 duki_bps    = 4;  // Basis points (0–10000) platform share
+  uint64 token_id    = 5;  // NFT token ID
+}
+
+message UserAmendedPayload {
+  string address = 1;
+  string about   = 2;
+  string email   = 3;
+}
+
+// ─── Event Data (unified — used for both commands and events) ──
+
+message EventData {
+  oneof payload {
+    PostCreatedPayload    post_created     = 1;
+    PostUpvotedPayload    post_upvoted     = 2;
+    PostItemPayload       post_flagged     = 3;
+    PostAmendPayload      post_amended     = 4;
+    PostItemPayload       post_deleted     = 5;
+    PostItemPayload       post_dead        = 6;
+    LikeItemPayload       post_liked       = 7;
+    LikeItemPayload       post_unliked     = 8;
+
+    CommentCreatedPayload comment_created  = 10;
+    CommentUpvotedPayload comment_upvoted  = 11;
+    CommentAmendPayload   comment_amended  = 12;
+    CommentItemPayload    comment_deleted  = 13;
+    CommentItemPayload    comment_flagged  = 14;
+    CommentItemPayload    comment_dead     = 15;
+    LikeItemPayload       comment_liked    = 16;
+    LikeItemPayload       comment_unliked  = 17;
+
+    UserMintedPayload  user_minted  = 21;
+    UserAmendedPayload user_amended = 22;
+  }
+}
+
+// ─── Legacy: CmdType / CmdData / Cmd ─────────────────────
+// Kept for backward-compat with goapi CmdService pipeline.
+// New on-chain flow uses DukerCmd + EventData instead.
+
+enum CmdType {
+  CMD_TYPE_UNSPECIFIED = 0;
+
+  // Post commands
+  CREATE_POST    = 1;
+  UPVOTE_POST    = 2;
+  FLAG_POST      = 3;
+  AMEND_POST     = 4;
+  DELETE_POST    = 5;
+  LIKE_POST      = 6;
+  UNLIKE_POST    = 7;
+
+  // Comment commands
+  CREATE_COMMENT  = 10;
+  UPVOTE_COMMENT  = 11;
+  FLAG_COMMENT    = 12;
+  AMEND_COMMENT   = 13;
+  DELETE_COMMENT  = 14;
+  LIKE_COMMENT    = 15;
+  UNLIKE_COMMENT  = 16;
+
+  // User commands
+  CREATE_USER  = 20;  // reserved / deprecated
+  MINT_USER    = 21;
+  AMEND_USER   = 22;
+}
+
+message CmdData {
+  oneof payload {
+    PostCreatedPayload    create_post    = 1;
+    PostUpvotedPayload    upvote_post    = 2;
+    PostItemPayload       flag_post      = 3;
+    PostAmendPayload      amend_post     = 4;
+    PostItemPayload       delete_post    = 5;
+    LikeItemPayload       like_post      = 6;
+    LikeItemPayload       unlike_post    = 7;
+
+    CommentCreatedPayload create_comment  = 10;
+    CommentUpvotedPayload upvote_comment  = 11;
+    CommentItemPayload    flag_comment    = 12;
+    CommentAmendPayload   amend_comment   = 13;
+    CommentItemPayload    delete_comment  = 14;
+    LikeItemPayload       like_comment    = 15;
+    LikeItemPayload       unlike_comment  = 16;
+
+    UserMintedPayload  mint_user   = 21;
+    UserAmendedPayload amend_user  = 22;
+  }
+}
+
+message Cmd {
+  string   address       = 1;  // Actor wallet address
+  int64    user_evt_seq  = 2;  // Client's last known evt_seq
+  CmdType  cmd_type      = 3;
+  CmdData  data          = 4;
+}
+
+// ─── Unified Command Request (sent from frontend → server → contract) ────
+
+message DukerTxReq {
+  string    address      = 1;  // Actor address (from NFT)
+  AggType   agg_type      = 2;  // Aggregate type (USER, WORKS)
+  uint64    agg_id        = 3;  // Aggregate ID (0 = new/create, >0 = existing)
+  EventType evt_type      = 4;  // What happened (POST_CREATED, etc.)
+  EventData data          = 5;  // The payload — same type used in events
+  string    payment_chain = 6;  // Payment chain where x402 settles (e.g. "56" for BNB, "11155111" for Sepolia)
+  string    payment_stablecoin_address = 7;  // Stablecoin used for payment on the payment chain
+}
+
+// ─── Event Envelope (emitted from contract, indexed by backend) ──
+
+message PbEvent {
+  uint64    evt_seq      = 1;  // Global event sequence (from contract)
+  string    address      = 2;  // Actor wallet address (ego)
+  string    tx_hash      = 3;  // Transaction hash
+  string    username     = 4;  // Actor display name
+  AggType   agg_type     = 5;  // Aggregate type
+  uint64    agg_id       = 6;  // Aggregate ID
+  EventType evt_type     = 7;  // Event type enum
+  uint64    evt_time     = 8;  // Event timestamp (Unix seconds, from block.timestamp)
+  uint64    block_number = 9; // Block number the event was emitted in
+  EventData data         = 10;  // Protobuf-serialized EventData bytes (opaque from contract)
+  uint64    created_at   = 11; // Record indexing time (Unix ms)
+}
+
+// ─── Delta Events Response ──────────────────────────────
+
+message PbDeltaEventsResp {
+  repeated PbEvent events       = 1;
+  uint64           sync_cursor  = 2;  // Global evt_seq after applying
+  uint64           user_evt_seq = 3;  // Updated user_evt_seq
+}

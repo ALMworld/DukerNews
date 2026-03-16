@@ -1,0 +1,40 @@
+version: v2
+managed:
+  enabled: true
+  override:
+    - file_option: go_package_prefix
+      value: github.com/bufbuild/buf-examples/gen
+plugins:
+  # - remote: buf.build/protocolbuffers/go
+  #   out: gen
+  #   opt: paths=source_relative
+  # - remote: buf.build/connectrpc/go
+  #   out: gen
+  #   opt: paths=source_relative
+  # - remote: buf.build/protocolbuffers/dart:v22.3.0
+  #   out: lib/common/gen
+    # opt:
+      # Enable the "grpc" option if you need gRPC stubs.
+      # - grpc
+  # - remote: buf.build/connectrpc/dart:v0.4.1
+  #   out: lib/common/gen
+
+  - local: node_modules/.bin/protoc-gen-es
+    out: src/gen
+    opt: target=ts
+    include_imports: true 
+  # NOTE: protoc-gen-connect-es v1.x is NOT compatible with protoc-gen-es v2.x
+  # In Connect v2, use service descriptors from duker_pb.ts directly
+  # - local: node_modules/.bin/protoc-gen-connect-es
+  #   out: src/gen
+  #   opt:
+  #     - target=ts
+
+  # Python scraper gen — disabled (not currently used)
+  # - remote: buf.build/protocolbuffers/python:v33.5
+  #   out: ../../apps/scraper/gen
+  # - remote: buf.build/protocolbuffers/pyi:v33.5
+  #   out: ../../apps/scraper/gen
+    
+inputs:
+  - directory: proto

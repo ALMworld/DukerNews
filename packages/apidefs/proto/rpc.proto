@@ -1,0 +1,125 @@
+syntax = "proto3";
+
+package duker;
+
+import "duker.proto";
+import "duker_es.proto";
+
+option go_package = "github.com/dukernews/goapi/gen";
+
+// ─── RPC Request/Response ────────────────────────────────
+
+message PbGetPostsReq {
+  PostKind kind      = 1;  // LINK or PITCH filter
+  int32    page      = 2;  // Page number (1-based)
+  int32    per_page  = 3;  // Items per page
+  string   sort      = 4;  // "points" or "newest"
+  string   q         = 5;  // Search query
+  int32    cursor    = 6;  // Cursor-based: start after this post ID
+  string   address   = 7;  // Filter by author address
+}
+
+message PbGetPostsResp {
+  repeated PbPost posts       = 1;
+  int32           total       = 2;
+  int32           next_cursor = 3;  // 0 = no more pages
+}
+
+message PbGetPostReq {
+  int64 id = 1;
+}
+
+message PbGetCommentsReq {
+  int64 post_id    = 1;
+  int64 rank_cursor = 2;  // Cursor-based: start after this comment ID
+}
+
+message PbGetCommentsResp {
+  repeated PbComment comments = 1;
+}
+
+message PbGetRecentCommentsReq {
+  int32 limit = 1;
+}
+
+message PbGetRecentCommentsResp {
+  repeated PbComment comments = 1;
+}
+
+message PbGetPostAggReq {
+  int64 id             = 1;
+  int32 comment_limit  = 2;  // 0 = use server default
+  bool  is_bot         = 3;  // SEO: if true, return up to 10k comments
+}
+
+message PbGetPostAggResp {
+  PbPost             post              = 1;
+  repeated PbComment comments          = 2;
+  bool               has_more_comments = 3;
+  repeated int64     comment_ids       = 4;  // Full ranked DFS-ordered comment ID list (snapshot)
+  int64              snapshot_evt_seq  = 5;  // Global evt_seq at snapshot time (for delta fetch)
+}
+
+message PbGetUserReq {
+  string address = 1;
+}
+
+message PbGetUserInteractionsReq {
+  string username = 1;
+}
+
+message PbUserInteraction {
+  string item_type = 1;  // 'post' or 'comment'
+  int64  item_id   = 2;
+  int32  bits_flag = 3;
+}
+
+message PbGetUserInteractionsResp {
+  repeated PbUserInteraction interactions = 1;
+}
+
+message PbGetCommentsByIdsReq {
+  int64          post_id = 1;
+  repeated int64 ids     = 2;  // Ordered ID slice to fetch
+}
+
+message PbGetCommentsByIdsResp {
+  repeated PbComment comments = 1;  // Returned in same order as requested ids
+}
+
+message PbGetCommentDeltaReq {
+  int64 post_id       = 1;
+  int64 after_evt_seq = 2;  // Fetch events with global evt_seq > this value
+}
+
+message PbGetCommentDeltaResp {
+  repeated PbEvent events      = 1;  // Comment events since snapshot
+  int64            max_evt_seq = 2;  // New snapshot cursor after applying these events
+}
+
+message NotifyTxReq {
+  string tx_hash    = 1;  // Transaction hash to fetch events from
+  int32  duki_bps   = 2;  // Optional: for JWT re-issue on USER_MINTED
+}
+
+// ─── QueryService — read-only queries ────────────────────────
+
+service QueryService {
+  rpc GetPosts(PbGetPostsReq) returns (PbGetPostsResp);
+  rpc GetPost(PbGetPostReq) returns (PbPost);
+  rpc GetPostAgg(PbGetPostAggReq) returns (PbGetPostAggResp);
+  rpc GetComments(PbGetCommentsReq) returns (PbGetCommentsResp);
+  rpc GetRecentComments(PbGetRecentCommentsReq) returns (PbGetRecentCommentsResp);
+  rpc GetUser(PbGetUserReq) returns (PbUser);
+  rpc GetUserInteractions(PbGetUserInteractionsReq) returns (PbGetUserInteractionsResp);
+  rpc GetCommentsByIds(PbGetCommentsByIdsReq) returns (PbGetCommentsByIdsResp);
+  rpc GetCommentDelta(PbGetCommentDeltaReq) returns (PbGetCommentDeltaResp);
+}
+
+// ─── CmdService — DEPRECATED: all writes go on-chain via smart contracts ───
+service CmdService {
+  // rpc HandleCmd(Cmd) returns (PbDeltaEventsResp);
+  rpc X402Handle(DukerTxReq) returns (PbDeltaEventsResp);
+  rpc NotifyTx(NotifyTxReq) returns (PbDeltaEventsResp);
+}
+

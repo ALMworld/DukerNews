@@ -1,0 +1,89 @@
+syntax = "proto3";
+
+// A 128 bit unsigned integer encoded in protobuf.
+//
+// Protobuf does not support integers larger than 64 bits,
+// so this message encodes a u128 by splitting it into its
+// upper 64 and lower 64 bits, each encoded as a uint64.
+//
+// A native u128 x can then be constructed by casting both
+// integers to u128, left shifting hi by 64 positions and
+// adding lo:
+//
+// x = (hi as u128) << 64 + (lo as u128)
+message Uint128 {
+    uint64 lo = 1;
+    uint64 hi = 2;
+}
+
+
+// import "proto/rpc_types.proto";
+
+// EvolveParticipation represents a participant's data in the DAO
+message Participation {
+  uint64 participant_no = 1; // participantNo
+  Uint128 participant_amount = 2; // participantAmount
+  Uint128 alm_world_amount = 3; // almWorldAmount
+}
+
+// DaoFairDrop represents fair drop data for the DAO
+message DaoFairDrop {
+  Uint128 unitAmount = 1; // unitAmount - how much money
+  uint64 unitLeft = 2; // unitLeft
+  uint64 unitTotal = 3; // unitTotal - current evolution total
+}
+
+// ClaimData represents claim information
+message ClaimData {
+  uint64 latestClaimedRound = 1; // latestClaimedRound
+  Uint128 totalClaimedAmount = 2; // totalClaimedAmount
+}
+
+
+///////////////////////// LOCAL TYPES ///////////////////
+message YoulanguaDaoWorldAgg {
+  uint64 evolveNum = 1; // evolveNum
+  uint64 bornSeconds = 2; // bornSeconds
+  uint64 worldEvtSeq = 3; // daoMutationSeq
+
+  repeated uint64 luckYinyangNoPair = 6; // luckYinyangNoPair
+  Uint128 daoTotalClaimedAmount = 7; // daoTotalClaimedAmount
+  Uint128 daoStableCoinBalance = 8; // daoStableCoinBalance
+  repeated uint32 bpsArr = 9; // bpsArr
+  repeated uint64 bpsNumArr = 10; // bpsNumArr
+  repeated DaoFairDrop fairDrops = 11; // fairDrops
+  int64 lastCheckMsTime = 12;
+}
+
+message YoulanguaDaoEgoAgg {
+  uint64 egoEvtSeq = 1; // egoEvtSeq
+  uint64 worldEvtSeq = 2; // egoEvtSeq
+  uint64 wordCount = 3; // the number of the world evolve, it is a global number that incrementing by 1 each time when a wille is created.
+  uint64 videoCount = 4; // the number of the world worstellung, it is a global number that incrementing by 1 each time when a wille's manifest is added.
+  Participation participation = 5; // participation
+  repeated ClaimData fairnessClaimDataArr = 6; // fairnessClaimDataArr
+  string ego = 7; // ego
+  int64 lastCheckMsTime = 8;
+}
+
+
+enum BaguaRole {
+  //    Earth_Kun_0_Founders = 0; // 8 ☷ Kun 000 - Earth, born and come into existence
+  //    Mountain_Gen_1_Maintainers = 1; // 7 ☶ 001 Gen - Mountain,  survival and  thrive
+  //    Water_Kan_2_Investors = 2; // 6  ☵ Kan 010- Water, investors, empowerment
+  //    Wind_Xun_3_Contributors = 3; //5 ☴ Xun 011- Wind/Wood, Contributors,
+  //    Thunder_Zhen_4_Influencers = 4; //4 ☳ Zhen 100- Thunder, Wills Awakening and Mobilization for Duki in Action, mainly for DUKI influence. Could be KOL and so on
+  //    Fire_Li_5_Community = 5; //3 ☲ Li - Fire, 101 Community, Currently has Lottery, currently be like marketing
+  //    Lake_Dui_6_ALM_Nation = 6; // 2 ☱ Dui - 110 Lake/Marsh  suggest 2.5% . (no more than 5% total, need compete with others who do not give; maybe a fitness loss if kindness do not begets kindness)
+  //    Heaven_Qian_7_ALM_World = 7; // 1 ☰ Qian - 111 Heaven/Sky suggest 2.5%
+
+  Earth_Kun_0_ALM_World = 0; // 8 ☷ Kun 000 - Earth, born and come into existence
+  Mountain_Gen_1_ALM_Nation = 1; // 7 ☶ 001 Gen - Mountain,  Guardianship and Governer, Nation level
+  Water_Kan_2_Investors = 2; // 6  ☵ Kan 010- Water, investors, empowerment
+  Wind_Xun_3_Community = 3; //5 ☴ Xun 011- Wind/Wood, Community participation and growth, Community, Currently has Lottery, currently be like marketing
+  Thunder_Zhen_4_Marketers = 4; //4 ☳ Zhen 100- Thunder, Wills Awakening and Mobilization for Duki in Action, mainly for DUKI influence. Could be KOL and so on
+  Fire_Li_5_Partners = 5; //3 ☲ Li - Fire, 101 , outside partners
+  Lake_Dui_6_Builders = 6; // 2 ☱ Dui - 110 Lake/Marsh teams, suggest 2.5% . (no more than 5% total, need compete with others who do not give; maybe a fitness loss if kindness do not begets kindness)
+  Heaven_Qian_7_Founders = 7; // 1 ☰ Qian - 111 Heaven/Sky suggest 2.5%
+}
+

@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+
+message Transcript {
+    string vid = 1; // Video ID (unique)
+    string lang = 2; // Language code (e.g., "en", "es")
+    
+    // SoA (Structure of Arrays) optimization
+    repeated int32 start_ms = 3 [packed=true]; 
+    repeated int32 duration_ms = 4 [packed=true];
+    repeated string texts = 5;
+}
