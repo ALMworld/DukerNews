@@ -1,0 +1,48 @@
+@startuml migrate_wallet
+skinparam style strictuml
+skinparam sequence {
+    ArrowColor #c4b5fd
+    ActorBorderColor #7c3aed
+    LifeLineBorderColor #4c1d95
+    ParticipantBorderColor #7c3aed
+    ParticipantBackgroundColor #312e81
+    ParticipantFontColor #c4b5fd
+    NoteBackgroundColor #312e81
+    NoteBorderColor #7c3aed
+    NoteFontColor #c4b5fd
+}
+
+actor "User\n(旧钱包)" as Old
+participant "MockUSDT\n(ERC-20)" as USDT
+participant "DukerRegistry\n(ERC-721)" as REG
+participant "Treasury" as TREAS
+
+Old -> USDT : approve(registryAddr, 8 USDT)
+activate USDT
+USDT --> Old : ok
+deactivate USDT
+
+Old -> REG : migrate(newWalletAddr)
+activate REG
+
+REG -> REG : 检查:\n  newWallet != address(0)\n  newWallet != msg.sender\n  tokenOfOwner(msg.sender) != 0
+
+REG -> REG : 检查冷却期:\n  block.timestamp >= lastMigratedAt + 64 days
+
+REG -> USDT : transferFrom(old, treasury, 8 USDT)
+activate USDT
+USDT -> TREAS : transfer 8 USDT
+USDT --> REG : success
+deactivate USDT
+
+REG -> REG : lastMigratedAt[tokenId] = now\n_transfer(old, new, tokenId)
+
+note right of REG
+  用户名 + 声誉 + 历史
+  全部跟随 NFT 迁移到新钱包
+end note
+
+REG --> Old : UsernameMigrated event
+deactivate REG
+
+@enduml

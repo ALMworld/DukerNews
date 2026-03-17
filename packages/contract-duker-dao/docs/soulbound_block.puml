@@ -1,0 +1,45 @@
+@startuml soulbound_block
+skinparam style strictuml
+skinparam sequence {
+    ArrowColor #c4b5fd
+    ActorBorderColor #7c3aed
+    LifeLineBorderColor #4c1d95
+    ParticipantBorderColor #7c3aed
+    ParticipantBackgroundColor #312e81
+    ParticipantFontColor #c4b5fd
+    NoteBackgroundColor #312e81
+    NoteBorderColor #7c3aed
+    NoteFontColor #c4b5fd
+}
+
+actor "User /\nMarketplace" as User
+participant "DukerRegistry" as REG
+
+== 直接转移 — 被阻止 ==
+
+User -> REG : transferFrom(from, to, tokenId)
+activate REG
+REG -> REG : require(msg.sender == address(this))
+REG --> User : ❌ REVERT\n"soulbound - use migrate()"
+deactivate REG
+
+User -> REG : safeTransferFrom(from, to, tokenId)
+activate REG
+REG --> User : ❌ REVERT\n"soulbound - use migrate()"
+deactivate REG
+
+note right of REG
+  OpenSea 等 NFT 市场
+  无法二级交易这个 NFT
+end note
+
+== 唯一允许的转移 — migrate() ==
+
+User -> REG : migrate(newWallet)
+activate REG
+REG -> REG : 校验 + 收费 8 USDT + 冷却期
+REG -> REG : _transfer(old, new, tokenId)
+REG --> User : ✅ 迁移成功
+deactivate REG
+
+@enduml

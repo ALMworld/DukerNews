@@ -1,0 +1,62 @@
+@startuml mint_username
+skinparam style strictuml
+skinparam sequence {
+    ArrowColor #c4b5fd
+    ActorBorderColor #7c3aed
+    LifeLineBorderColor #4c1d95
+    ParticipantBorderColor #7c3aed
+    ParticipantBackgroundColor #312e81
+    ParticipantFontColor #c4b5fd
+    NoteBackgroundColor #312e81
+    NoteBorderColor #7c3aed
+    NoteFontColor #c4b5fd
+}
+
+actor "User\n(钱包)" as User
+participant "Frontend\n(welcome.tsx)" as FE
+participant "MockUSDT\n(ERC-20)" as USDT
+participant "DukerRegistry\n(ERC-721)" as REG
+participant "Treasury\n(收款地址)" as TREAS
+database "Backend\n(goapi)" as BE
+
+User -> FE : 输入用户名 + 选择金额
+activate FE
+
+FE -> FE : 校验: name.length >= 2\namount >= mintFee
+
+== Step 1: Approve USDT ==
+
+FE -> USDT : approve(registryAddr, amount)
+activate USDT
+USDT --> FE : tx hash
+deactivate USDT
+
+FE -> FE : waitForTransactionReceipt
+
+== Step 2: Mint Username ==
+
+FE -> REG : mintUsername(name, amount)
+activate REG
+
+REG -> REG : _isValidName(name)\nnameToId[name] == 0\namount >= mintFee
+
+REG -> USDT : transferFrom(user, treasury, amount)
+activate USDT
+USDT -> TREAS : transfer amount
+USDT --> REG : success
+deactivate USDT
+
+REG -> REG : _safeMint(user, tokenId)\nnameToId[name] = tokenId\nidToName[tokenId] = name
+
+REG --> FE : UsernameRegistered event
+deactivate REG
+
+== Step 3: Sync Backend ==
+
+FE -> BE : mintUser({ address, username })
+BE --> FE : ok
+
+FE --> User : 跳转首页 "/"
+deactivate FE
+
+@enduml

@@ -1,0 +1,25 @@
+{
+    "name": "@alm/duker-dao-contract",
+    "version": "0.0.1",
+    "type": "module",
+    "main": "generated/index.ts",
+    "exports": {
+        ".": "./generated/index.ts",
+        "./ui": "./ui/index.ts"
+    },
+    "scripts": {
+        "build:sol": "forge build",
+        "build:wagmi": "wagmi generate",
+        "build": "forge build && wagmi generate",
+        "test": "forge test",
+        "generate": "wagmi generate",
+        "fund": "bash script/fund.sh",
+        "fund:usdt": "bash script/fund.sh --usdt-only"
+    },
+    "peerDependencies": {
+        "react": ">=18"
+    },
+    "devDependencies": {
+        "@wagmi/cli": "^2.8.0"
+    }
+}
