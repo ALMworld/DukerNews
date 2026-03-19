@@ -1,0 +1,6 @@
+[submodule ".agent/skills/anthropic"]
+	path = .agent/skills/anthropic
+	url = https://github.com/anthropics/skills
+[submodule "packages/contract_duki_alm_world"]
+	path = packages/contract_duki_alm_world
+	url = git@github.com-kindkang:ALMworld/contract_duki_alm_world.git
