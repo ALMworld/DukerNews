@@ -1,0 +1,20 @@
+{
+    "name": "@alm/dao-bagua-diagram",
+    "version": "0.0.1",
+    "type": "module",
+    "main": "src/index.ts",
+    "exports": {
+        ".": "./src/index.ts"
+    },
+    "peerDependencies": {
+        "react": "^19.0.0"
+    },
+    "devDependencies": {
+        "@types/react": "^19.0.0",
+        "sass": "^1.80.0"
+    },
+    "dependencies": {
+        "animejs": "^4.3.6",
+        "@dagrejs/dagre": "^1.1.4"
+    }
+}

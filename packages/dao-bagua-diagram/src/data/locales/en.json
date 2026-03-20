@@ -1,0 +1,184 @@
+{
+    "love": {
+        "title": "Love · Ài",
+        "badge": "Ultimate Principle",
+        "motto": "Benefit Others to Fulfill Yourself",
+        "mottoAttr": "I Ching · Love through Exchange",
+        "description": "Love is the inner driving force of every exchange — a creative desire and sense of connection arising from the essence of life. The highest and most sustainable self-interest is inevitably achieved through the path of benefiting others. Your actions create value for others' well-being; what you ultimately achieve is the maximization of your own life's purpose.",
+        "stats": [
+            {
+                "label": "Philosophy",
+                "value": "兼爱 (Jiān Ài) — Universal Love"
+            },
+            {
+                "label": "Principle",
+                "value": "交利 (Jiāo Lì) — Mutual Benefit"
+            },
+            {
+                "label": "Mission",
+                "value": "Love is the spring, benefit is the river, exchange is the flow. Let love surge through altruism, and every exchange resonates with well-being."
+            }
+        ]
+    },
+    "yi": {
+        "title": "Yi · Exchange",
+        "badge": "Yi is Trade",
+        "motto": "Supreme good is like water — it benefits all things without contention",
+        "mottoAttr": "Laozi · Dao De Jing",
+        "description": "Understanding the I Ching begins with grasping its essence — \"Yi\" means \"exchange.\" This is not merely monetary trade, but the value exchange among all life's stakeholders for shared well-being.",
+        "stats": [
+            {
+                "label": "Simple (简易)",
+                "value": "Exchange is as natural as air and water. A smile, a yielding step — each is the most microscopic expression of the law of exchange."
+            },
+            {
+                "label": "Changing (变易)",
+                "value": "The world is dynamic. Trading strategies evolve constantly. Yielding small benefits can create great mutual gain."
+            },
+            {
+                "label": "Unchanging (不易)",
+                "value": "Beneath all change, one eternal law governs: win-win mutual benefit. Any exchange violating this cannot endure."
+            }
+        ]
+    },
+    "qian": {
+        "title": "Qián · The Creative",
+        "badge": "Seller · Active Side",
+        "motto": "Heaven moves vigorously; the superior person strengthens himself ceaselessly",
+        "guaci": "Qián: Sublime, Success, Benefiting, Persevering.",
+        "yongci": "Use of Nines: A host of dragons without a leader — auspicious.",
+        "description": "Qián is the active party, the initiator of exchange. Playing the role of Qián means being the executor of \"benefiting others\" — transforming inner conviction, passion, and talent (love) into excellent products and services (benefit) through tireless effort.",
+        "stages": [
+            {
+                "title": "Seed",
+                "desc": "The enterprise hides its strength, refining core value like a submerged dragon."
+            },
+            {
+                "title": "Awakening",
+                "desc": "Value emerges; connecting with key stakeholders and securing support."
+            },
+            {
+                "title": "Growth",
+                "desc": "Rapid growth with diligence and vigilance through opportunities and risks."
+            },
+            {
+                "title": "Leap",
+                "desc": "At the crossroads of strategy — precise judgment, flexible response."
+            },
+            {
+                "title": "Peak",
+                "desc": "Reputation reaches its zenith; taking on greater social responsibility."
+            },
+            {
+                "title": "Maturity",
+                "desc": "Guard against decline; proactively seek self-transformation and innovation."
+            }
+        ]
+    },
+    "kun": {
+        "title": "Kūn · The Receptive",
+        "badge": "Buyer · Choosing Side",
+        "motto": "The earth's condition is receptive devotion; the superior person supports all things with profound virtue",
+        "guaci": "Kūn: Sublime, Success, Benefiting through the mare's perseverance.",
+        "yongci": "Use of Sixes: Benefit in eternal perseverance.",
+        "description": "Kūn holds the power of choice — the acceptor and the enabler of exchange. Every purchase, every acceptance, every following is a sacred vote cast with profound virtue. It is Kūn's choice that determines which creation of Qián will be nourished and sustained.",
+        "stages": [
+            {
+                "title": "Entering",
+                "desc": "Stepping into the market, alert and serious about every choice."
+            },
+            {
+                "title": "First Screening",
+                "desc": "Drawn to options that are frank, well-specified, and of grand value."
+            },
+            {
+                "title": "Deep Evaluation",
+                "desc": "Activating inner standards, deep comparison, trusting authority and leaders."
+            },
+            {
+                "title": "Narrowing Down",
+                "desc": "Closing off new information, making a grounded personal decision."
+            },
+            {
+                "title": "Deal Complete",
+                "desc": "The choice fits perfectly — bringing heartfelt satisfaction and loyalty."
+            },
+            {
+                "title": "Broken Trust",
+                "desc": "When promises are betrayed, consumers redirect their hurt back to the seller."
+            }
+        ]
+    },
+    "trigrams": {
+        "111": {
+            "seq": 0,
+            "role": "ALM Foundation",
+            "description": "Core foundation driving the vision of universal kindness and All Lives Matter."
+        },
+        "110": {
+            "seq": 1,
+            "role": "Nation Partners",
+            "description": "National-level partnerships and governance allocation for ecological impact."
+        },
+        "101": {
+            "seq": 2,
+            "role": "Community",
+            "description": "Community engagement, marketing, and lottery-based fair distribution."
+        },
+        "100": {
+            "seq": 3,
+            "role": "Builders",
+            "description": "Creators and builders constructing tools and infrastructure for DUKI in Action."
+        },
+        "011": {
+            "seq": 4,
+            "role": "Contributors",
+            "description": "Open-source contributors, translators, and volunteers supporting the ecosystem."
+        },
+        "010": {
+            "seq": 5,
+            "role": "Investors",
+            "description": "Mission-aligned investors providing capital for sustainable growth."
+        },
+        "001": {
+            "seq": 6,
+            "role": "Maintainers",
+            "description": "Long-term maintainers ensuring the protocol's reliability and evolution."
+        },
+        "000": {
+            "seq": 7,
+            "role": "Creators",
+            "description": "Content creators, artists, and storytellers spreading the message of kindness."
+        }
+    },
+    "ui": {
+        "joinAction": "Join the Movement",
+        "exploreAction": "Explore the Dao of Yi",
+        "timeAxis": "Time",
+        "exchangeAxis": "Exchange Intensity"
+    },
+    "flow": {
+        "howTitle": "How DUKI works",
+        "step1Title": "Makers Marketing by sharing profits globally",
+        "step1Body": "Sellers and makers price their products to share profits beyond shareholders — with the world. This is the DUKI deal: open, borderless, aligned.",
+        "step2Title": "A deal the taker fulfills, minting DUKI + ALM",
+        "step2Body": "When a taker buys from a maker, stablecoin flows into the treasury. Two tokens are minted:",
+        "dukiDesc": "Stays locked in the treasury — backs real human income",
+        "almDesc": "50% to maker · 50% to taker — governance & rewards",
+        "step3Title": "DUKI flows to all as a reminder of 'Kindness First'",
+        "step3Body": "DUKI is distributed proportionally to verified humans on Ethereum, backed by World ID. No bots. No whales. People only.",
+        "step4Title": "Do whatever you want — the world's future depends on all",
+        "step4Body": "Spend or redeem DUKI. Use it directly as currency, or redeem for stablecoins from the treasury. Redemption must happen on the originating chain.",
+        "stablecoin": "Stablecoin",
+        "treasury": "Router",
+        "deal": "deal",
+        "governance": "Governance & Vote",
+        "distributed": "Distributed to Humans",
+        "goods": "Goods",
+        "buyer": "Consumer",
+        "producer": "Producer",
+        "everyone": "Everyone",
+        "title": "DUKI In Action",
+        "dealToTreasury": "Mints"
+    }
+}

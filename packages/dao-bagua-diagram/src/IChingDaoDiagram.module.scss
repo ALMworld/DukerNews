@@ -1,0 +1,30 @@
+// ── IChingDaoDiagram layout ──
+.container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    align-items: stretch;
+    width: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+    @media (max-width: 768px) {
+        grid-template-columns: 1fr;
+    }
+}
+
+.diagramWrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    position: relative;
+}
+
+.diagramInner {
+    width: 100%;
+    aspect-ratio: 1;
+}
+
+.cardWrap {
+    width: 100%;
+}

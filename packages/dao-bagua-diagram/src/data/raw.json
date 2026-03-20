@@ -1,0 +1,413 @@
+{
+  "0": {
+    "num": 0,
+    "binaryNumber": 0,
+    "symbol": "⚋",
+    "yinFlags": [
+      true
+    ],
+    "binaryString": "0",
+    "decimalNumberString": "0",
+    "geneticCode": "",
+    "name": "阴",
+    "gua_ci": "",
+    "yao_ci": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "yong_ci": "",
+    "tname": "阴",
+    "pinyin": "yīn",
+    "comboName": ""
+  },
+  "1": {
+    "num": 1,
+    "binaryNumber": 1,
+    "symbol": "⚊",
+    "yinFlags": [
+      false
+    ],
+    "binaryString": "1",
+    "decimalNumberString": "1",
+    "geneticCode": "",
+    "name": "阳",
+    "gua_ci": "",
+    "yao_ci": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "yong_ci": "",
+    "tname": "阳",
+    "pinyin": "yáng",
+    "comboName": ""
+  },
+  "10": {
+    "num": 2,
+    "binaryNumber": 2,
+    "symbol": "⚍",
+    "yinFlags": [
+      false,
+      true
+    ],
+    "binaryString": "10",
+    "decimalNumberString": "2",
+    "geneticCode": "G",
+    "name": "少阴",
+    "gua_ci": "",
+    "yao_ci": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "yong_ci": "",
+    "tname": "少阴",
+    "pinyin": "shǎo yīn",
+    "comboName": ""
+  },
+  "11": {
+    "num": 3,
+    "binaryNumber": 3,
+    "symbol": "⚌",
+    "yinFlags": [
+      false,
+      false
+    ],
+    "binaryString": "11",
+    "decimalNumberString": "3",
+    "geneticCode": "A",
+    "name": "太阳",
+    "gua_ci": "",
+    "yao_ci": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "yong_ci": "",
+    "tname": "太阳",
+    "pinyin": "tài yáng",
+    "comboName": ""
+  },
+  "100": {
+    "num": 4,
+    "binaryNumber": 4,
+    "symbol": "☳",
+    "yinFlags": [
+      false,
+      true,
+      true
+    ],
+    "binaryString": "100",
+    "decimalNumberString": "4",
+    "geneticCode": "",
+    "name": "震",
+    "gua_ci": "震为雷，为龙，为玄黄，为旉，为大涂，为长子，为决躁，为苍筤竹，为萑苇。其于马也，为善鸣，为馵足，为作足，为的颡。其于稼也，为反生。其究为健，为蕃鲜。",
+    "yao_ci": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "yong_ci": "",
+    "tname": "震",
+    "pinyin": "zhèn",
+    "comboName": ""
+  },
+  "101": {
+    "num": 3,
+    "binaryNumber": 5,
+    "symbol": "☲",
+    "yinFlags": [
+      false,
+      true,
+      false
+    ],
+    "binaryString": "101",
+    "decimalNumberString": "3",
+    "geneticCode": "",
+    "name": "离",
+    "gua_ci": "离为火，为日，为电，为中女，为甲胃，为戈兵。其于人也，为大腹。为乾卦，为鳖，为蟹，为蠃，为蚌，为龟。其于木也，为科上槁。",
+    "yao_ci": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "yong_ci": "",
+    "tname": "离",
+    "pinyin": "lí",
+    "comboName": ""
+  },
+  "110": {
+    "num": 2,
+    "binaryNumber": 6,
+    "symbol": "☱",
+    "yinFlags": [
+      false,
+      false,
+      true
+    ],
+    "binaryString": "110",
+    "decimalNumberString": "2",
+    "geneticCode": "",
+    "name": "兑",
+    "gua_ci": "兑为泽，为少女，为巫，为口舌，为毁折，为附决。其于地也，为刚卤。为妾，为羊。",
+    "yao_ci": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "yong_ci": "",
+    "tname": "兑",
+    "pinyin": "duì",
+    "comboName": ""
+  },
+  "111": {
+    "num": 1,
+    "binaryNumber": 7,
+    "symbol": "☰",
+    "yinFlags": [
+      false,
+      false,
+      false
+    ],
+    "binaryString": "111",
+    "decimalNumberString": "1",
+    "geneticCode": "",
+    "name": "乾",
+    "gua_ci": "乾为天，为圜，为君，为父，为玉，为金，为寒，为冰，为大赤，为良马，为老马，为瘠马，为驳马，为木果。",
+    "yao_ci": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "yong_ci": "",
+    "tname": "乾",
+    "pinyin": "qián",
+    "comboName": ""
+  },
+  "000": {
+    "num": 8,
+    "binaryNumber": 0,
+    "symbol": "☷",
+    "yinFlags": [
+      true,
+      true,
+      true
+    ],
+    "binaryString": "000",
+    "decimalNumberString": "8",
+    "geneticCode": "",
+    "name": "坤",
+    "gua_ci": "坤为地，为母，为布，为釜，为吝啬，为均，为子母牛，为大舆，为文，为众，为柄，其于地也为黑。",
+    "yao_ci": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "yong_ci": "",
+    "tname": "坤",
+    "pinyin": "kūn",
+    "comboName": ""
+  },
+  "001": {
+    "num": 7,
+    "binaryNumber": 1,
+    "symbol": "☶",
+    "yinFlags": [
+      true,
+      true,
+      false
+    ],
+    "binaryString": "001",
+    "decimalNumberString": "7",
+    "geneticCode": "",
+    "name": "艮",
+    "gua_ci": "艮为山，为径路，为小石，为门阙，为果蓏，为阍寺，为指，为狗，为鼠，为黔喙之属。其于木也，为坚多节。",
+    "yao_ci": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "yong_ci": "",
+    "tname": "艮",
+    "pinyin": "gèn",
+    "comboName": ""
+  },
+  "010": {
+    "num": 6,
+    "binaryNumber": 2,
+    "symbol": "☵",
+    "yinFlags": [
+      true,
+      false,
+      true
+    ],
+    "binaryString": "010",
+    "decimalNumberString": "6",
+    "geneticCode": "",
+    "name": "坎",
+    "gua_ci": "坎为水，为沟渎，为隐伏，为矫輮，为弓轮。其于人也，为加忧，为心病，为耳痛，为血卦，为赤。其于马也，为美脊，为亟心，为下首，为薄蹄，为曳。其于舆也，为多眚，为通，为月，为盗。其于木也，为坚多心。",
+    "yao_ci": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "yong_ci": "",
+    "tname": "坎",
+    "pinyin": "kǎn",
+    "comboName": ""
+  },
+  "011": {
+    "num": 5,
+    "binaryNumber": 3,
+    "symbol": "☴",
+    "yinFlags": [
+      true,
+      false,
+      false
+    ],
+    "binaryString": "011",
+    "decimalNumberString": "5",
+    "geneticCode": "",
+    "name": "巽",
+    "gua_ci": "巽为木，为风，为长女，为绳直，为工，为白，为长，为高，为进退，为不果，为臭。其于人也，为寡发，为广颡，为多白眼，为近利市三倍，其究为躁卦。",
+    "yao_ci": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "yong_ci": "",
+    "tname": "巽",
+    "pinyin": "xùn",
+    "comboName": ""
+  },
+  "000000": {
+    "num": 2,
+    "binaryNumber": 0,
+    "symbol": "䷁",
+    "yinFlags": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    "binaryString": "000000",
+    "decimalNumberString": "2",
+    "geneticCode": "UUU",
+    "name": "坤",
+    "gua_ci": "坤：元亨，利牝马之贞。君子有攸往，先迷后得主，利西南得朋，东北丧朋。安贞，吉。",
+    "yao_ci": [
+      "初六：履霜，坚冰至。",
+      "六二：直，方，大，不习无不利。",
+      "六三：含章可贞。或从王事，无成有终。",
+      "六四：括囊；无咎，无誉。",
+      "六五：黄裳，元吉。",
+      "上六：龙战于野，其血玄黄。"
+    ],
+    "yong_ci": "用六：利永贞。",
+    "tname": "坤",
+    "pinyin": "kūn",
+    "comboName": "坤为地"
+  },
+  "111111": {
+    "num": 1,
+    "binaryNumber": 63,
+    "symbol": "䷀",
+    "yinFlags": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "binaryString": "111111",
+    "decimalNumberString": "1",
+    "geneticCode": "AAA",
+    "name": "乾",
+    "gua_ci": "乾：元亨，利贞。",
+    "yao_ci": [
+      "初九：潜龙，勿用。",
+      "九二：见龙在田，利见大人。",
+      "九三：君子终日乾乾，夕惕若，厉，无咎。",
+      "九四：或跃在渊，无咎。",
+      "九五：飞龙在天，利见大人。",
+      "上九：亢龙有悔。"
+    ],
+    "yong_ci": "用九：见群龙无首，吉。",
+    "tname": "乾",
+    "pinyin": "qián",
+    "comboName": "乾为天"
+  },
+  "☯": {
+    "num": -1,
+    "binaryNumber": -1,
+    "symbol": "☯",
+    "yinFlags": [],
+    "binaryString": "",
+    "decimalNumberString": "-1",
+    "geneticCode": "",
+    "name": "以爱为道",
+    "gua_ci": "分则见万物，合则归于道",
+    "yao_ci": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "yong_ci": "",
+    "tname": "太极",
+    "pinyin": "tài jí",
+    "comboName": ""
+  }
+}
