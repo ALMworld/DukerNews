@@ -1,0 +1,15 @@
+
+> Duker News@ dev /Users/beswarm/Developer/web3/dukiernews
+> vite dev --port 3000
+
+Port 3000 is in use, trying another one...
+Port 3001 is in use, trying another one...
+
+  VITE v7.3.1  ready in 1485 ms
+
+  ➜  Local:   http://localhost:3002/
+  ➜  Network: use --host to expose
+[vite] connected.
+2:47:33 PM [vite] (ssr) page reload src/routes/__root.tsx
+[vite] program reload
+2:50:13 PM [vite] (ssr) page reload src/routes/__root.tsx

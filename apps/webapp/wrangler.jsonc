@@ -1,0 +1,20 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "duker-news",
+  "compatibility_date": "2025-09-02",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "main": "@tanstack/react-start/server-entry",
+  "routes": [
+    { "pattern": "dukernews.xyz", "custom_domain": true },
+    { "pattern": "news.alllivesmatter.world", "custom_domain": true }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "duker-news-db",
+      "database_id": "d514ea21-a571-42db-b971-101e95b59621"
+    }
+  ]
+}

@@ -1,0 +1,86 @@
+/* ═══════════════════════════════════════════════════════
+   紫衣圣人 · Purple Sage
+   Ink night with imperial purple / 宣纸 rice paper light
+   ═══════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Core UI tokens ── */
+  --background: oklch(0.13 0.025 305);
+  --page-bg: oklch(0.06 0.02 310);
+  --foreground: oklch(0.92 0.015 60);
+  --card: oklch(0.17 0.03 305);
+  --card-foreground: oklch(0.92 0.015 60);
+  --popover: oklch(0.17 0.03 305);
+  --popover-foreground: oklch(0.92 0.015 60);
+  --primary: oklch(0.65 0.20 305);
+  --primary-foreground: oklch(0.98 0.005 60);
+  --secondary: oklch(0.20 0.035 305);
+  --secondary-foreground: oklch(0.85 0.03 305);
+  --muted: oklch(0.18 0.025 305);
+  --muted-foreground: oklch(0.55 0.04 305);
+  --accent: oklch(0.60 0.22 310);
+  --accent-foreground: oklch(0.98 0.005 60);
+  --destructive: oklch(0.55 0.22 25);
+  --destructive-foreground: oklch(0.55 0.22 25);
+  --border: oklch(0.24 0.035 305);
+  --input: oklch(0.18 0.03 305);
+  --ring: oklch(0.65 0.20 305);
+  --radius: 0.5rem;
+
+  /* ── DUKI brand — imperial violet palette ── */
+  --duki-50: oklch(0.96 0.02 305);
+  --duki-100: oklch(0.90 0.04 305);
+  --duki-200: oklch(0.80 0.09 305);
+  --duki-300: oklch(0.70 0.15 305);
+  --duki-400: oklch(0.60 0.20 305);
+  --duki-500: oklch(0.52 0.22 305);
+  --duki-600: oklch(0.42 0.20 305);
+  --duki-700: oklch(0.32 0.15 305);
+  --duki-800: oklch(0.22 0.10 305);
+  --duki-900: oklch(0.14 0.05 305);
+  --duki-coin: #c5a236;
+
+  /* ── Upvote accents ── */
+  --upvote: oklch(0.68 0.20 305);
+  --upvote-hover: oklch(0.75 0.22 310);
+  --upvote-active: oklch(0.58 0.24 300);
+
+  /* ── Links & meta ── */
+  --link-color: oklch(0.72 0.14 305);
+  --link-hover: oklch(0.80 0.16 310);
+  --domain-color: oklch(0.50 0.05 305);
+  --meta-color: oklch(0.50 0.04 305);
+}
+
+/* ── Light variant — 宣纸 rice paper with purple ink ── */
+:root.light {
+  --background: oklch(0.97 0.008 60);
+  --page-bg: oklch(0.94 0.012 55);
+  --foreground: oklch(0.16 0.03 305);
+  --card: oklch(0.95 0.01 60);
+  --card-foreground: oklch(0.16 0.03 305);
+  --popover: oklch(0.97 0.008 60);
+  --popover-foreground: oklch(0.16 0.03 305);
+  --primary: oklch(0.50 0.22 305);
+  --primary-foreground: oklch(0.98 0.005 60);
+  --secondary: oklch(0.92 0.015 55);
+  --secondary-foreground: oklch(0.28 0.04 305);
+  --muted: oklch(0.92 0.012 55);
+  --muted-foreground: oklch(0.42 0.04 305);
+  --accent: oklch(0.52 0.22 310);
+  --accent-foreground: oklch(0.98 0.005 60);
+  --destructive: oklch(0.55 0.22 25);
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: oklch(0.86 0.018 55);
+  --input: oklch(0.95 0.01 55);
+  --ring: oklch(0.50 0.22 305);
+
+  --upvote: oklch(0.50 0.22 305);
+  --upvote-hover: oklch(0.45 0.24 310);
+  --upvote-active: oklch(0.40 0.26 300);
+
+  --link-color: oklch(0.45 0.16 305);
+  --link-hover: oklch(0.38 0.20 310);
+  --domain-color: oklch(0.48 0.06 305);
+  --meta-color: oklch(0.48 0.04 305);
+}

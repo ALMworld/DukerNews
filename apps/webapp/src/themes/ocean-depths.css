@@ -1,0 +1,86 @@
+/* ═══════════════════════════════════════════════════════
+   Ocean Depths
+   Deep ocean blues with teal accents / Sandy shore light
+   ═══════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Core UI tokens ── */
+  --background: oklch(0.14 0.025 230);
+  --page-bg: oklch(0.07 0.02 235);
+  --foreground: oklch(0.92 0.01 210);
+  --card: oklch(0.18 0.03 230);
+  --card-foreground: oklch(0.92 0.01 210);
+  --popover: oklch(0.18 0.03 230);
+  --popover-foreground: oklch(0.92 0.01 210);
+  --primary: oklch(0.65 0.15 210);
+  --primary-foreground: oklch(0.98 0.005 210);
+  --secondary: oklch(0.21 0.03 230);
+  --secondary-foreground: oklch(0.85 0.03 210);
+  --muted: oklch(0.19 0.02 230);
+  --muted-foreground: oklch(0.55 0.04 220);
+  --accent: oklch(0.62 0.16 185);
+  --accent-foreground: oklch(0.98 0.005 210);
+  --destructive: oklch(0.55 0.22 25);
+  --destructive-foreground: oklch(0.55 0.22 25);
+  --border: oklch(0.25 0.03 230);
+  --input: oklch(0.19 0.025 230);
+  --ring: oklch(0.65 0.15 210);
+  --radius: 0.5rem;
+
+  /* ── DUKI brand — ocean palette ── */
+  --duki-50: oklch(0.96 0.015 210);
+  --duki-100: oklch(0.90 0.03 210);
+  --duki-200: oklch(0.80 0.07 210);
+  --duki-300: oklch(0.70 0.12 210);
+  --duki-400: oklch(0.60 0.16 210);
+  --duki-500: oklch(0.52 0.18 215);
+  --duki-600: oklch(0.42 0.16 220);
+  --duki-700: oklch(0.32 0.12 225);
+  --duki-800: oklch(0.22 0.08 230);
+  --duki-900: oklch(0.14 0.04 230);
+  --duki-coin: #c5a236;
+
+  /* ── Upvote accents — teal ── */
+  --upvote: oklch(0.68 0.14 185);
+  --upvote-hover: oklch(0.75 0.16 180);
+  --upvote-active: oklch(0.58 0.18 190);
+
+  /* ── Links & meta ── */
+  --link-color: oklch(0.72 0.10 210);
+  --link-hover: oklch(0.80 0.12 200);
+  --domain-color: oklch(0.50 0.05 220);
+  --meta-color: oklch(0.50 0.04 220);
+}
+
+/* ── Light variant — Sandy shore ── */
+:root.light {
+  --background: oklch(0.97 0.006 70);
+  --page-bg: oklch(0.94 0.01 65);
+  --foreground: oklch(0.16 0.03 230);
+  --card: oklch(0.96 0.008 70);
+  --card-foreground: oklch(0.16 0.03 230);
+  --popover: oklch(0.97 0.006 70);
+  --popover-foreground: oklch(0.16 0.03 230);
+  --primary: oklch(0.48 0.18 210);
+  --primary-foreground: oklch(0.98 0.005 210);
+  --secondary: oklch(0.93 0.012 65);
+  --secondary-foreground: oklch(0.28 0.04 220);
+  --muted: oklch(0.92 0.01 65);
+  --muted-foreground: oklch(0.42 0.04 220);
+  --accent: oklch(0.50 0.18 185);
+  --accent-foreground: oklch(0.98 0.005 210);
+  --destructive: oklch(0.55 0.22 25);
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: oklch(0.87 0.015 65);
+  --input: oklch(0.95 0.008 65);
+  --ring: oklch(0.48 0.18 210);
+
+  --upvote: oklch(0.48 0.18 185);
+  --upvote-hover: oklch(0.43 0.20 180);
+  --upvote-active: oklch(0.38 0.22 190);
+
+  --link-color: oklch(0.42 0.14 210);
+  --link-hover: oklch(0.35 0.16 200);
+  --domain-color: oklch(0.48 0.05 220);
+  --meta-color: oklch(0.48 0.04 220);
+}

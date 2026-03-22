@@ -1,0 +1,87 @@
+/* ═══════════════════════════════════════════════════════
+   紫色 · Duker Purple
+   Built from the exact Duker News logo colors
+   #9333ea → #a855f7 → #7e22ce → #581c87 → #d8b4fe
+   ═══════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Core UI — deep purple night ── */
+  --background: #1a0a2e;
+  --page-bg: #0f0620;
+  --foreground: #f0e6ff;
+  --card: #221240;
+  --card-foreground: #f0e6ff;
+  --popover: #221240;
+  --popover-foreground: #f0e6ff;
+  --primary: #9333ea;
+  --primary-foreground: #faf5ff;
+  --secondary: #2d1654;
+  --secondary-foreground: #d8b4fe;
+  --muted: #261350;
+  --muted-foreground: #a78bfa;
+  --accent: #a855f7;
+  --accent-foreground: #faf5ff;
+  --destructive: #ef4444;
+  --destructive-foreground: #ef4444;
+  --border: #3b1d6e;
+  --input: #261350;
+  --ring: #9333ea;
+  --radius: 0.5rem;
+
+  /* ── DUKI brand — logo-matched palette ── */
+  --duki-50: #faf5ff;
+  --duki-100: #f3e8ff;
+  --duki-200: #e9d5ff;
+  --duki-300: #d8b4fe;
+  --duki-400: #c084fc;
+  --duki-500: #a855f7;
+  --duki-600: #9333ea;
+  --duki-700: #7e22ce;
+  --duki-800: #6b21a8;
+  --duki-900: #581c87;
+  --duki-coin: #c5a236;
+
+  /* ── Upvote — bright purple ── */
+  --upvote: #a855f7;
+  --upvote-hover: #c084fc;
+  --upvote-active: #7e22ce;
+
+  /* ── Links & meta ── */
+  --link-color: #c084fc;
+  --link-hover: #d8b4fe;
+  --domain-color: #7c6a9a;
+  --meta-color: #6d5d8a;
+}
+
+/* ── Light variant — lavender paper ── */
+:root.light {
+  --background: #faf5ff;
+  --page-bg: #f3e8ff;
+  --foreground: #1a0a2e;
+  --card: #f5eeff;
+  --card-foreground: #1a0a2e;
+  --popover: #faf5ff;
+  --popover-foreground: #1a0a2e;
+  --primary: #7e22ce;
+  --primary-foreground: #faf5ff;
+  --secondary: #f3e8ff;
+  --secondary-foreground: #581c87;
+  --muted: #f0e6ff;
+  --muted-foreground: #6b21a8;
+  --accent: #9333ea;
+  --accent-foreground: #faf5ff;
+  --destructive: #ef4444;
+  --destructive-foreground: #fef2f2;
+  --border: #e9d5ff;
+  --input: #f3e8ff;
+  --ring: #7e22ce;
+
+  --upvote: #7e22ce;
+  --upvote-hover: #6b21a8;
+  --upvote-active: #581c87;
+
+  --link-color: #7e22ce;
+  --link-hover: #6b21a8;
+  --domain-color: #7c6a9a;
+  --meta-color: #6d5d8a;
+}

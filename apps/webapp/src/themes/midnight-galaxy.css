@@ -1,0 +1,86 @@
+/* ═══════════════════════════════════════════════════════
+   Midnight Galaxy
+   Cosmic deep space with nebula accents / Starlight light
+   ═══════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Core UI tokens ── */
+  --background: oklch(0.12 0.03 280);
+  --page-bg: oklch(0.06 0.025 285);
+  --foreground: oklch(0.93 0.01 270);
+  --card: oklch(0.16 0.035 280);
+  --card-foreground: oklch(0.93 0.01 270);
+  --popover: oklch(0.16 0.035 280);
+  --popover-foreground: oklch(0.93 0.01 270);
+  --primary: oklch(0.68 0.18 280);
+  --primary-foreground: oklch(0.98 0.005 270);
+  --secondary: oklch(0.20 0.035 280);
+  --secondary-foreground: oklch(0.85 0.03 270);
+  --muted: oklch(0.18 0.025 280);
+  --muted-foreground: oklch(0.55 0.04 275);
+  --accent: oklch(0.65 0.20 330);
+  --accent-foreground: oklch(0.98 0.005 270);
+  --destructive: oklch(0.55 0.22 25);
+  --destructive-foreground: oklch(0.55 0.22 25);
+  --border: oklch(0.24 0.035 280);
+  --input: oklch(0.18 0.03 280);
+  --ring: oklch(0.68 0.18 280);
+  --radius: 0.5rem;
+
+  /* ── DUKI brand — nebula palette ── */
+  --duki-50: oklch(0.96 0.02 280);
+  --duki-100: oklch(0.90 0.04 278);
+  --duki-200: oklch(0.80 0.09 275);
+  --duki-300: oklch(0.70 0.15 275);
+  --duki-400: oklch(0.60 0.20 278);
+  --duki-500: oklch(0.52 0.22 280);
+  --duki-600: oklch(0.42 0.18 282);
+  --duki-700: oklch(0.32 0.14 284);
+  --duki-800: oklch(0.22 0.10 285);
+  --duki-900: oklch(0.14 0.05 285);
+  --duki-coin: #c5a236;
+
+  /* ── Upvote accents — nebula pink ── */
+  --upvote: oklch(0.68 0.18 330);
+  --upvote-hover: oklch(0.75 0.20 325);
+  --upvote-active: oklch(0.58 0.22 335);
+
+  /* ── Links & meta ── */
+  --link-color: oklch(0.72 0.12 275);
+  --link-hover: oklch(0.80 0.14 270);
+  --domain-color: oklch(0.50 0.05 280);
+  --meta-color: oklch(0.50 0.04 280);
+}
+
+/* ── Light variant — Starlight ── */
+:root.light {
+  --background: oklch(0.97 0.006 275);
+  --page-bg: oklch(0.95 0.01 270);
+  --foreground: oklch(0.16 0.03 280);
+  --card: oklch(0.96 0.008 275);
+  --card-foreground: oklch(0.16 0.03 280);
+  --popover: oklch(0.97 0.006 275);
+  --popover-foreground: oklch(0.16 0.03 280);
+  --primary: oklch(0.52 0.20 280);
+  --primary-foreground: oklch(0.98 0.005 270);
+  --secondary: oklch(0.93 0.012 270);
+  --secondary-foreground: oklch(0.28 0.04 280);
+  --muted: oklch(0.92 0.01 270);
+  --muted-foreground: oklch(0.42 0.04 280);
+  --accent: oklch(0.55 0.20 330);
+  --accent-foreground: oklch(0.98 0.005 270);
+  --destructive: oklch(0.55 0.22 25);
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: oklch(0.87 0.015 270);
+  --input: oklch(0.95 0.008 270);
+  --ring: oklch(0.52 0.20 280);
+
+  --upvote: oklch(0.52 0.20 330);
+  --upvote-hover: oklch(0.47 0.22 325);
+  --upvote-active: oklch(0.42 0.24 335);
+
+  --link-color: oklch(0.45 0.14 275);
+  --link-hover: oklch(0.38 0.18 270);
+  --domain-color: oklch(0.48 0.05 280);
+  --meta-color: oklch(0.48 0.04 280);
+}

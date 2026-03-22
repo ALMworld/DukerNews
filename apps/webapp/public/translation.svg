@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+    <defs>
+        <!-- The gap divides the globe mathematically with x+y bounds -->
+        <clipPath id="gray-clip">
+            <polygon points="-100,-100 616,-100 -100,616" />
+        </clipPath>
+        <clipPath id="blue-clip">
+            <polygon points="656,-100 656,656 -100,656" />
+        </clipPath>
+    </defs>
+
+    <!-- Gray Globe side -->
+    <g clip-path="url(#gray-clip)" stroke="#808285" stroke-width="20" stroke-linecap="butt" fill="none">
+        <circle cx="256" cy="256" r="115" />
+        <line x1="256" y1="141" x2="256" y2="371" />
+        <line x1="141" y1="256" x2="371" y2="256" />
+        <ellipse cx="256" cy="256" rx="53" ry="115" />
+        <ellipse cx="256" cy="256" rx="115" ry="53" />
+    </g>
+
+    <!-- Blue Globe side -->
+    <g clip-path="url(#blue-clip)" stroke="#0088CE" stroke-width="20" stroke-linecap="butt" fill="none">
+        <circle cx="256" cy="256" r="115" />
+        <line x1="256" y1="141" x2="256" y2="371" />
+        <line x1="141" y1="256" x2="371" y2="256" />
+        <ellipse cx="256" cy="256" rx="53" ry="115" />
+        <ellipse cx="256" cy="256" rx="115" ry="53" />
+    </g>
+
+    <!-- Gray Arrow -->
+    <path d="M 305.2 72.5 A 190 190 0 0 0 121.7 390.4" fill="none" stroke="#808285" stroke-width="20" stroke-linecap="butt" />
+    <polygon points="137.3,406.0 89.2,397.5 128.8,357.9" fill="#808285" />
+    <circle cx="121.7" cy="121.7" r="56" fill="#808285" />
+    <svg x="89.7" y="89.7" width="64" height="64" viewBox="0 0 16 16" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m5 8 6 6"/>
+        <path d="m4 14 6-6 2-3"/>
+        <path d="M2 5h12"/>
+        <path d="M7 2h1"/>
+    </svg>
+
+    <!-- Blue Arrow -->
+    <path d="M 206.8 439.5 A 190 190 0 0 0 390.4 121.7" fill="none" stroke="#0088CE" stroke-width="20" stroke-linecap="butt" />
+    <polygon points="374.8,106.1 422.9,114.6 383.3,154.2" fill="#0088CE" />
+    <circle cx="390.4" cy="390.4" r="56" fill="#0088CE" />
+    <svg x="358.4" y="358.4" width="64" height="64" viewBox="9 9 16 16" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m22 22-5-10-5 10"/>
+        <path d="M14 18h6"/>
+    </svg>
+</svg>

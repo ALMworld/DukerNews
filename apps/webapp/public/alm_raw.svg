@@ -1,0 +1,78 @@
+<svg width="300" height="300" version="1.1"
+  xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" xmlns="http://www.w3.org/2000/svg"
+  xmlns:xlink="http://www.w3.org/1999/xlink">
+  <rect width="100%" height="100%" fill="none" />
+
+  <!-- Large Circle -->
+  <circle cx="150" cy="150" r="140" fill="#d20033" stroke="none" stroke-width="0" />
+
+  <!-- Small Circle -->
+  <circle cx="150" cy="150" r="123" fill="#101143" />
+
+  <defs>
+    <linearGradient id="rainbowGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="20%" stop-color="#0081C8" /> 
+      <stop offset="40%" stop-color="#FCB131" /> 
+      <stop offset="60%" stop-color="#000000" /> <!-- Yellow -->
+      <stop offset="80%" stop-color="#00A651" /> <!-- Green -->
+      <stop offset="100%" stop-color="#EE334E" /> <!-- Blue -->
+    </linearGradient>
+
+  </defs>
+
+  <path id="arc1" d="M 150.0,10.0 A 140,140 0 0,1 283.1,106.7" fill="none" stroke="white"  stroke-width="2" />
+  <path id="arc2" d="M 283.1,106.7 A 140,140 0 0,1 232.3,263.3" fill="none" stroke="white"  stroke-width="2" />
+  <path id="arc3" d="M 232.3,263.3 A 140,140 0 0,1 67.7,263.3" fill="none" stroke="white"  stroke-width="2" />
+  <path id="arc4" d="M 67.7,263.3 A 140,140 0 0,1 16.9,106.7" fill="none" stroke="white"  stroke-width="2" />
+  <path id="arc5" d="M 16.9,106.7 A 140,140 0 0,1 150.0,10.0" fill="none" stroke="white"  stroke-width="2" />
+
+
+  <circle cx="150.0" cy="10.0" r="6" fill="white" stroke="#000000" stroke-width="3"  />
+  <circle cx="283.1" cy="106.7" r="6" fill="white" stroke="#00A651" stroke-width="3"  />
+  <circle cx="232.3" cy="263.3" r="6" fill="white" stroke="#EE334E" stroke-width="3"  />
+  <circle cx="67.7" cy="263.3" r="6" fill="white" stroke="#0081C8" stroke-width="3"  />
+  <circle cx="16.9" cy="106.7" r="6" fill="white" stroke="#FCB131" stroke-width="3"  />
+
+
+  <text font-size="12" font-family="serif" dy="13">
+    <textPath xlink:href="#arc1" href="#arc1" startOffset="50%" fill="white"  text-anchor="middle">
+      ALL &#160; LIVES &#160; MATTER</textPath>
+  </text>
+
+  <text font-size="12" font-family="serif" dy="13">
+    <textPath xlink:href="#arc2" href="#arc2" startOffset="50%" fill="white" text-anchor="middle">     
+       ALL &#160; LIVES &#160; MATTER</textPath>
+  </text>
+
+  <text font-size="12" font-family="serif" dy="13">
+    <textPath xlink:href="#arc1" href="#arc3" startOffset="50%" fill="white" text-anchor="middle">   
+          ALL&#160; LIVES&#160; MATTER</textPath>
+  </text>
+
+
+  <text font-size="12" font-family="serif" dy="13">
+    <textPath xlink:href="#arc4" href="#arc4" startOffset="50%" fill="white" text-anchor="middle">     
+       ALL &#160;LIVES &#160;MATTER</textPath>
+  </text>
+
+  <text font-size="12" font-family="serif" dy="13">
+    <textPath xlink:href="#arc5" href="#arc5" startOffset="50%" fill="white" text-anchor="middle">     
+       ALL&#160; LIVES&#160; MATTER</textPath>
+  </text>
+
+  <!-- Main ALM Text -->
+  <text x="150" y="150" font-size="98" text-anchor="middle" dominant-baseline="middle"
+    fill="#facc14"
+    font-family="serif">
+    ALM
+  </text>
+
+  <!-- Since. 2024 Text -->
+  <text x="150" y="196" font-size="16" text-anchor="middle"
+    fill="white"
+    dominant-baseline="middle">
+    SINCE 2024
+  </text>
+
+</svg>
+  

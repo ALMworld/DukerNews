@@ -1,0 +1,34 @@
+<svg width="300" height="300" viewBox="0 0 300 300"
+  xmlns="http://www.w3.org/2000/svg">
+  <style>textPath{text-anchor:middle}</style>
+  <rect width="100%" height="100%" fill="none"/>
+  <circle cx="150" cy="150" r="140" fill="#d20033"/>
+  <circle cx="150" cy="150" r="123" fill="#101143"/>
+
+  <g fill="none" stroke="white" stroke-width="2">
+    <path id="a1" d="M150,10 A140,140 0 0,1 283.1,106.7"/>
+    <path id="a2" d="M283.1,106.7 A140,140 0 0,1 232.3,263.3"/>
+    <path id="a3" d="M232.3,263.3 A140,140 0 0,1 67.7,263.3"/>
+    <path id="a4" d="M67.7,263.3 A140,140 0 0,1 16.9,106.7"/>
+    <path id="a5" d="M16.9,106.7 A140,140 0 0,1 150,10"/>
+  </g>
+
+  <g r="6" fill="white" stroke-width="3">
+    <circle cx="150" cy="10" r="6" fill="white" stroke="#000" stroke-width="3"/>
+    <circle cx="283.1" cy="106.7" r="6" fill="white" stroke="#00A651" stroke-width="3"/>
+    <circle cx="232.3" cy="263.3" r="6" fill="white" stroke="#EE334E" stroke-width="3"/>
+    <circle cx="67.7" cy="263.3" r="6" fill="white" stroke="#0081C8" stroke-width="3"/>
+    <circle cx="16.9" cy="106.7" r="6" fill="white" stroke="#FCB131" stroke-width="3"/>
+  </g>
+
+  <g font-size="12" font-family="serif" fill="white">
+    <text dy="13"><textPath href="#a1" startOffset="50%">ALL &#160; LIVES &#160; MATTER</textPath></text>
+    <text dy="13"><textPath href="#a2" startOffset="50%">ALL &#160; LIVES &#160; MATTER</textPath></text>
+    <text dy="13"><textPath href="#a3" startOffset="50%">ALL &#160; LIVES &#160; MATTER</textPath></text>
+    <text dy="13"><textPath href="#a4" startOffset="50%">ALL &#160; LIVES &#160; MATTER</textPath></text>
+    <text dy="13"><textPath href="#a5" startOffset="50%">ALL &#160; LIVES &#160; MATTER</textPath></text>
+  </g>
+
+  <text x="150" y="150" font-size="98" text-anchor="middle" dominant-baseline="middle" fill="#facc14" font-family="serif">ALM</text>
+  <text x="150" y="196" font-size="16" text-anchor="middle" fill="white" dominant-baseline="middle">SINCE 2024</text>
+</svg>
