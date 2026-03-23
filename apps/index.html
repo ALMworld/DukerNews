@@ -1,0 +1,106 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouLangua - Learn with Real Video</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        app: {
+                            bg: 'var(--app-bg)',
+                            surface: 'var(--app-surface)',
+                            border: 'var(--app-border)',
+                            'border-hover': 'var(--app-border-hover)',
+                            muted: 'var(--app-muted)',
+                            'text-main': 'var(--app-text-main)',
+                            'text-sub': 'var(--app-text-sub)',
+                            accent: 'var(--app-accent)',
+                        },
+                        indigo: {
+                            50: '#f5f7ff', 100: '#ebf0fe', 200: '#ced9fd', 300: '#b1c2fb',
+                            400: '#7694f8', 500: '#3b66f5', 600: '#355cdc', 700: '#2c4dafb',
+                            800: '#233e9c', 900: '#1d3280',
+                        },
+                    },
+                    keyframes: {
+                        shake: {
+                            '0%, 100%': { transform: 'translateX(0)' },
+                            '10%, 30%, 50%, 70%, 90%': { transform: 'translateX(-5px)' },
+                            '20%, 40%, 60%, 80%': { transform: 'translateX(5px)' },
+                        }
+                    },
+                    animation: {
+                        shake: 'shake 0.5s cubic-bezier(.36,.07,.19,.97) both',
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
+        
+        :root {
+            --app-bg: #f8fafc;
+            --app-surface: #ffffff;
+            --app-border: #e2e8f0;
+            --app-border-hover: #cbd5e1;
+            --app-muted: #f1f5f9;
+            --app-text-main: #0f172a;
+            --app-text-sub: #64748b;
+            --app-accent: #4f46e5;
+        }
+
+        .dark {
+            --app-bg: #020617;
+            --app-surface: #0f172a;
+            --app-border: #1e293b;
+            --app-border-hover: #334155;
+            --app-muted: #1e293b;
+            --app-text-main: #f8fafc;
+            --app-text-sub: #94a3b8;
+            --app-accent: #818cf8;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+            background-color: var(--app-bg);
+            color: var(--app-text-main);
+        }
+
+        * {
+            transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                        border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+                        color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+    <script type="importmap">
+    {
+      "imports": {
+        "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+        "react/": "https://esm.sh/react@^19.2.3/",
+        "react": "https://esm.sh/react@^19.2.3",
+        "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+        "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
+        "react-player": "https://esm.sh/react-player@^3.4.0"
+      }
+    }
+    </script>
+<link rel="stylesheet" href="/index.css">
+</head>
+<body class="bg-app-bg text-app-text-main">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+</body>
+</html>

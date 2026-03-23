@@ -1,0 +1,8 @@
+{
+  "name": "YouLangua - Learn with Real Video",
+  "description": "An immersive language learning platform that turns YouTube videos into interactive lessons with AI-powered transcripts, wordbooks, and educational games.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

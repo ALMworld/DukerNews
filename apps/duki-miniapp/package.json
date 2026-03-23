@@ -1,0 +1,27 @@
+{
+  "name": "duki-miniapp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite & ngrok http http://localhost:3050",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "gen:images": "bash scripts/gen-images.sh"
+  },
+  "dependencies": {
+    "@worldcoin/minikit-js": "^1.7.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "viem": "^2.23.5",
+    "@alm/dao-bagua-diagram": "workspace:*",
+    "contract-duki-alm-world": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^4.5.2",
+    "typescript": "^5",
+    "vite": "^6.3.5"
+  }
+}
