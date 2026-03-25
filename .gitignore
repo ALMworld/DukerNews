@@ -58,3 +58,7 @@ yarn-error.log*
 # Unfinished designs & whitepaper (keep locally, do not publish)
 designs/
 packages/contract_duki_alm_world/whitepaper/
+
+# Agent & Claude local configs
+.agent/
+.claude/
