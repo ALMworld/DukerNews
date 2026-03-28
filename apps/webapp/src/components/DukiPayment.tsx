@@ -13,7 +13,7 @@
  * Used in: welcome (mint), submit (post), and anywhere payments are needed.
  * Themed with DukerNews CSS variables (--duki-*, --border, --muted, etc.)
  */
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { Wallet, Zap, ExternalLink, Copy, Check, AlertTriangle } from 'lucide-react'
 import { useAccount, useReadContract, useBalance } from 'wagmi'
@@ -170,7 +170,7 @@ export function DukiPayment({
         amounts.includes(defaultAmount) ? defaultAmount : 'other'
     )
     const [custom, setCustom] = useState('')
-    // Non-home chains: force x402 (user can't pay gas on a chain they don't have gas for)
+    // Non-DukerNews chains: force x402 (user can't pay gas on a chain they don't have gas for)
     const [method, setMethod] = useState<SubmitMethod>(isHomeChain ? defaultMethod : 'x402')
 
     const currentAmount = preset === 'other' ? (parseFloat(custom) || 0) : preset
@@ -207,12 +207,17 @@ export function DukiPayment({
         onChange?.(computeValue(amt, dukiBps, m, cid ?? selectedChainId, coin, insuf))
     }, [onChange, dukiBps, selectedChainId, effectiveBalance, selectedStablecoin])
 
+    // Emit on mount + whenever balance/amount/method changes so parent always has correct state
+    useEffect(() => {
+        emitChange(currentAmount, method)
+    }, [effectiveBalance, currentAmount, method])
+
     // ── Chain switch handler ──
     const handleChainSwitch = (cid: number) => {
         if (disabled) return
         setSelectedChainId(cid)
         const meta = getChainMeta(cid)
-        // Non-home chains: force x402
+        // Non-DukerNews chains: force x402
         const m = (meta?.isHome ?? false) ? method : 'x402'
         if (!meta?.isHome && method !== 'x402') setMethod('x402')
         // Reset stablecoin selection to first for new chain

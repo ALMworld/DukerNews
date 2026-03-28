@@ -1,9 +1,9 @@
 /**
  * useChainHandle — On-chain command dispatcher hook.
  *
- * dispatch(txData, x402):
- *   - x402=true  → sign EIP-2612 permit (if payment needed) + ConnectRPC CmdService.X402Handle (gasless)
- *   - x402=false → directHandle (user pays gas) + CmdService.NotifyTx
+ * dispatch(txData, gasless):
+ *   - gasless=true  → sign payment (EIP-3009 or EIP-2612) + ConnectRPC TxService.TxHandle (gasless)
+ *   - gasless=false → directHandle (user pays gas) + TxService.NotifyTx
  *
  * Both paths return PbDeltaEventsResp.events for client-side applyEvents.
  */
@@ -13,20 +13,19 @@ import { useWriteContract, usePublicClient, useAccount, useWalletClient } from '
 import { createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
 import {
-    CmdService, EventType,
+    TxService, EventType,
     type DukerTxReq, type PbEvent,
-    PaymentPayloadSchema,
 } from '@repo/apidefs'
-import { create } from '@bufbuild/protobuf'
 import { refreshAuth } from './auth-api'
 import type { AuthRefreshResult } from './auth-api'
 import { directHandle } from './directHandle'
 import type { DirectHandleResult } from './directHandle'
 import { getDefaultStablecoin, ADDRESSES, DEFAULT_CHAIN_ID } from '../lib/contracts'
+import { signPayment } from './signPayment'
 
 // ConnectRPC client for x402 + notifyTx
 const cmdTransport = createConnectTransport({ baseUrl: '/rpc' })
-const cmdClient = createClient(CmdService, cmdTransport)
+const txClient = createClient(TxService, cmdTransport)
 
 // ─── Types ──────────────────────────────────────────────────
 
@@ -70,13 +69,13 @@ export function useChainHandle() {
         setError('')
     }, [])
 
-    const dispatch = useCallback(async (txData: DukerTxReq, x402: boolean): Promise<DispatchResult> => {
+    const dispatch = useCallback(async (txData: DukerTxReq, gasless: boolean): Promise<DispatchResult> => {
         setError('')
         setTxHash('')
 
         try {
-            // ─── x402 (gasless via ConnectRPC) ─────────────
-            if (x402) {
+            // ─── gasless (via ConnectRPC) ─────────────────
+            if (gasless) {
                 // Ensure address is set from connected wallet
                 if (!txData.address && address) {
                     txData.address = address.toLowerCase()
@@ -88,71 +87,20 @@ export function useChainHandle() {
                     setStep('signing')
 
                     const stablecoin = getDefaultStablecoin(DEFAULT_CHAIN_ID)
-                    const dukerNews = ADDRESSES[DEFAULT_CHAIN_ID].DukerNews
-                    const chainId = DEFAULT_CHAIN_ID
-
-                    // Read nonce from stablecoin contract
-                    const nonce = await publicClient!.readContract({
-                        address: stablecoin.address,
-                        abi: [{
-                            type: 'function', name: 'nonces',
-                            inputs: [{ name: 'owner', type: 'address' }],
-                            outputs: [{ name: '', type: 'uint256' }],
-                            stateMutability: 'view',
-                        }] as const,
-                        functionName: 'nonces',
-                        args: [address as `0x${string}`],
-                    })
-
-                    // Deadline: 1 hour from now
-                    const deadline = BigInt(Math.floor(Date.now() / 1000) + 3600)
-
-                    // Sign EIP-2612 permit typed data
-                    const signature = await walletClient.signTypedData({
-                        account: address as `0x${string}`,
-                        domain: {
-                            name: stablecoin.name, // must match ERC20Permit constructor
-                            version: '1',
-                            chainId: BigInt(chainId),
-                            verifyingContract: stablecoin.address,
-                        },
-                        types: {
-                            Permit: [
-                                { name: 'owner', type: 'address' },
-                                { name: 'spender', type: 'address' },
-                                { name: 'value', type: 'uint256' },
-                                { name: 'nonce', type: 'uint256' },
-                                { name: 'deadline', type: 'uint256' },
-                            ],
-                        },
-                        primaryType: 'Permit',
-                        message: {
-                            owner: address as `0x${string}`,
-                            spender: dukerNews,
-                            value: paymentAmount,
-                            nonce,
-                            deadline,
-                        },
-                    })
-
-                    // Parse signature into r, s, v and pack as 65-byte Uint8Array
-                    const sigHex = signature.slice(2) // remove 0x
-                    const sigBytes = new Uint8Array(65)
-                    for (let i = 0; i < 64; i++) {
-                        sigBytes[i] = parseInt(sigHex.slice(i * 2, i * 2 + 2), 16)
-                    }
-                    sigBytes[64] = parseInt(sigHex.slice(128, 130), 16)
-
-                    // Attach permit to txData
-                    txData.paymentPayload = create(PaymentPayloadSchema, {
-                        deadline,
-                        signature: sigBytes,
-                        value: paymentAmount.toString(),
+                    txData.paymentData = await signPayment({
+                        walletClient,
+                        publicClient: publicClient!,
+                        address: address as `0x${string}`,
+                        tokenName: stablecoin.name,
+                        tokenAddress: stablecoin.address,
+                        payTo: ADDRESSES[DEFAULT_CHAIN_ID].DukerNews,
+                        amount: paymentAmount,
+                        chainId: DEFAULT_CHAIN_ID,
                     })
                 }
 
                 setStep('executing')
-                const resp = await cmdClient.x402Handle(txData)
+                const resp = await txClient.txHandle(txData)
 
                 if (txData.evtType === EventType.USER_MINTED) {
                     setStep('confirming')
@@ -174,21 +122,33 @@ export function useChainHandle() {
             const result = await directHandle(txData, {
                 address: address as `0x${string}`,
                 writeContractAsync,
-                waitForReceipt: (hash) => publicClient!.waitForTransactionReceipt({ hash }).then(() => { }),
+                waitForReceipt: async (hash) => {
+                    const receipt = await publicClient!.waitForTransactionReceipt({ hash })
+                    if (receipt.status === 'reverted') throw new Error('Transaction reverted')
+                },
                 readContract: (args) => publicClient!.readContract(args),
                 onStep: setStep,
             })
 
             setTxHash(result.txHash)
 
-            // Notify backend via RPC — returns enriched events
-            setStep('indexing')
+            // Server confirms tx + applies events via ConnectRPC (returns PbEvent[])
+            setStep('confirming')
             let events: PbEvent[] = []
             try {
-                const resp = await cmdClient.notifyTx({ txHash: result.txHash })
+                await new Promise(r => setTimeout(r, 1000))
+                const resp = await txClient.notifyTx({ txHash: result.txHash })
                 events = resp.events
-            } catch {
-                // Best-effort — indexing may still happen via polling
+            } catch { /* best-effort — webhook will catch up */ }
+
+            // If USER_MINTED, also refresh auth to get JWT cookie
+            if (txData.evtType === EventType.USER_MINTED) {
+                const dukiBps = txData.data?.payload?.case === 'userMinted'
+                    ? txData.data.payload.value.dukiBps : 0
+                let authResult: AuthRefreshResult | undefined
+                try { authResult = await refreshAuth(dukiBps) } catch { /* best-effort */ }
+                setStep('done')
+                return { ...result, events, authResult }
             }
 
             setStep('done')

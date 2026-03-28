@@ -31,6 +31,26 @@ export interface Comments {
   username: string;
 }
 
+export interface DukerPayments {
+  action_params: string | null;
+  amount: number;
+  chain_id: number;
+  created_at: number;
+  error_msg: string | null;
+  evt_type: number;
+  exec_tx_hash: string | null;
+  id: string | null;
+  pay_to: string;
+  payer_address: string;
+  payment_data: Uint8Array | null;
+  payment_scheme: string;
+  retry_count: Generated<number | null>;
+  settle_tx_hash: string | null;
+  status: Generated<string>;
+  token_address: string;
+  updated_at: number;
+}
+
 export interface Events {
   address: string;
   agg_id: Generated<number>;
@@ -41,6 +61,7 @@ export interface Events {
   evt_time: number;
   evt_type: number;
   payload: Uint8Array | null;
+  tx_hash: Generated<string>;
   user_evt_seq: Generated<number>;
   username: string;
 }
@@ -78,7 +99,7 @@ export interface Translations {
 
 export interface UserInteractions {
   agg_id: bigint;
-  agg_type: number;  // AggType enum value: 2=post, 3=comment
+  agg_type: number;
   bits_flag: Generated<number>;
   created_at: number;
   updated_at: number;
@@ -97,26 +118,12 @@ export interface Users {
   username: string;
 }
 
-export interface X402TriggeredCmds {
-  amount: number;
-  created_at: number;
-  duki_bps: Generated<number | null>;
-  error_msg: string | null;
-  evt_type: number;
-  payer_address: string;
-  payment_tx_hash: string | null;
-  post_id: bigint | null;
-  status: Generated<string>;
-  updated_at: number;
-  username: string | null;
-}
-
 export interface DB {
   comments: Comments;
+  duker_payments: DukerPayments;
   events: Events;
   posts: Posts;
   translations: Translations;
   user_interactions: UserInteractions;
   users: Users;
-  x402_triggered_cmds: X402TriggeredCmds;
 }

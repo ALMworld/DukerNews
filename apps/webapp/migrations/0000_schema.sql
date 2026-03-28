@@ -100,6 +100,7 @@ CREATE TABLE IF NOT EXISTS events (
   agg_id INTEGER NOT NULL DEFAULT 0, -- aggregate ID from contract
   evt_time INTEGER NOT NULL, -- block.timestamp
   block_number INTEGER NOT NULL DEFAULT 0, -- block number the event was emitted in
+  tx_hash TEXT NOT NULL DEFAULT '', -- transaction hash
   user_evt_seq INTEGER NOT NULL DEFAULT 0, -- per-user event sequence
   payload BLOB, -- protobuf EventData bytes
   created_at INTEGER NOT NULL -- indexing timestamp
@@ -109,20 +110,37 @@ CREATE INDEX IF NOT EXISTS idx_events_address ON events (address, evt_seq);
 
 CREATE INDEX IF NOT EXISTS idx_events_agg ON events (agg_type, agg_id, evt_seq);
 
--- x402 payment tracking for exactly-once processing
-CREATE TABLE IF NOT EXISTS x402_triggered_cmds (
-  payment_tx_hash TEXT PRIMARY KEY,
-  payer_address TEXT NOT NULL,
-  evt_type INTEGER NOT NULL,
-  amount INTEGER NOT NULL,
-  status TEXT NOT NULL DEFAULT 'settled',
-  username TEXT,
-  post_id INTEGER,
-  duki_bps INTEGER DEFAULT 9900,
+CREATE INDEX IF NOT EXISTS idx_events_tx_hash ON events (tx_hash);
+
+-- x402 payment state machine — tracks every payment through verify → settled → executed
+CREATE TABLE IF NOT EXISTS duker_payments (
+  id TEXT PRIMARY KEY, -- idempotency key: keccak256(user:action:params)
+  payer_address TEXT NOT NULL COLLATE NOCASE, -- user wallet address
+  pay_to TEXT NOT NULL COLLATE NOCASE, -- recipient address (contract or operator)
+  amount INTEGER NOT NULL, -- payment amount (micro-units, e.g. 1000000 = 1 USDT)
+  token_address TEXT NOT NULL COLLATE NOCASE, -- stablecoin contract address
+  chain_id INTEGER NOT NULL, -- chain ID (196 = XLayer)
+  -- business context
+  evt_type INTEGER NOT NULL, -- EventType enum (USER_MINTED, POST_CREATED, etc.)
+  action_params TEXT, -- JSON: business-specific params (username, dukiBps, etc.)
+  -- payment signature
+  payment_scheme TEXT NOT NULL, -- 'eip3009' | 'eip2612' | 'mock'
+  payment_data BLOB, -- serialized PaymentData proto (for retry)
+  -- state machine: verified → settled → executed | failed
+  status TEXT NOT NULL DEFAULT 'verified',
+  -- on-chain evidence
+  settle_tx_hash TEXT, -- OKX settle / mock mint tx hash
+  exec_tx_hash TEXT, -- contract execution tx hash
+  -- error tracking
   error_msg TEXT,
+  retry_count INTEGER DEFAULT 0,
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL
 );
+
+CREATE INDEX IF NOT EXISTS idx_duker_payments_status ON duker_payments (status, updated_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_duker_payments_payer ON duker_payments (payer_address, created_at DESC);
 
 -- Translations (server-side cache)
 CREATE TABLE IF NOT EXISTS translations (

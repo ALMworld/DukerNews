@@ -22,6 +22,7 @@ export * from './gen/duki_dao_pb.js'
 export * from './gen/rpc_pb.js'
 export * from './gen/duker_pb.js'
 export * from './gen/duker_es_pb.js'
+export * from './gen/payment_pb.js'
 export * from './gen/schema_transcript_pb.js'
 export * from './gen/google/rpc/status_pb.js'
 
@@ -34,6 +35,7 @@ export * from './domain/nonce_utils.js'
 // Export database schema and types
 export * from './db/index.js'
 export * from './utils/text.js'
+export { deflateRaw, inflateRaw } from './utils/compression.js'
 
 // Export proto registry
 export { registry } from './registry.js'

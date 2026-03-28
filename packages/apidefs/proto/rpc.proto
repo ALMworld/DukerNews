@@ -115,11 +115,9 @@ service QueryService {
   rpc GetCommentsByIds(PbGetCommentsByIdsReq) returns (PbGetCommentsByIdsResp);
   rpc GetCommentDelta(PbGetCommentDeltaReq) returns (PbGetCommentDeltaResp);
 }
-
-// ─── CmdService — DEPRECATED: all writes go on-chain via smart contracts ───
-service CmdService {
-  // rpc HandleCmd(Cmd) returns (PbDeltaEventsResp);
-  rpc X402Handle(DukerTxReq) returns (PbDeltaEventsResp);
+// ─── TxService — on-chain transaction handling ──────────────────────────────
+service TxService {
+  rpc TxHandle(DukerTxReq) returns (PbDeltaEventsResp);
   rpc NotifyTx(NotifyTxReq) returns (PbDeltaEventsResp);
 }
 

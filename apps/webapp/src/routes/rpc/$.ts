@@ -33,8 +33,8 @@ for (const h of router.handlers) {
 
 // Paths that require authentication (write/mutation endpoints)
 const PROTECTED_PATHS = new Set<string>([
-    '/duker.CmdService/X402Handle',
-    '/duker.CmdService/NotifyTx',
+    '/duker.TxService/TxHandle',
+    '/duker.TxService/NotifyTx',
 ])
 
 export const Route = createFileRoute('/rpc/$')({
@@ -77,7 +77,7 @@ export const Route = createFileRoute('/rpc/$')({
 
                         // Username required for NotifyTx (posting);
                         // X402Handle allows mint (which creates the username)
-                        if (rpcPath !== '/duker.CmdService/X402Handle') {
+                        if (rpcPath !== '/duker.TxService/TxHandle') {
                             if (!payload.username || payload.username.toLowerCase() === payload.ego.toLowerCase()) {
                                 return Response.json(
                                     { code: 'username_required', message: 'Please set a username before posting', ego: payload.ego },

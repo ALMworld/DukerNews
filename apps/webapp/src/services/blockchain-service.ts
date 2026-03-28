@@ -13,17 +13,19 @@
 import { createPublicClient, http, parseEventLogs, decodeAbiParameters, hexToBytes, type GetEventArgs } from 'viem'
 import { create, fromBinary } from '@bufbuild/protobuf'
 import { dukerNewsAbi } from '../lib/contracts'
-import { getHomeChain } from '../lib/server-chain'
+import { getDukerChain } from '../lib/duker-chain'
 import {
     EventType,
     AggType,
     PbEventSchema,
     EventDataSchema,
+    UserMintedPayloadSchema,
     type PbEvent,
+    inflateRaw,
 } from '@repo/apidefs'
 
 function getPublicClient() {
-    const { viemChain, rpcUrl } = getHomeChain()
+    const { viemChain, rpcUrl } = getDukerChain()
     return createPublicClient({ chain: viemChain as any, transport: http(rpcUrl) })
 }
 
@@ -66,10 +68,10 @@ type DukerEventArgs = GetEventArgs<
 /**
  * Convert a parsed DukerEvent log to a proto PbEvent.
  * Decodes eventData differently based on event source:
- *   - USER_MINTED: ABI-encoded by contract → decodeAbiParameters
- *   - Others: protobuf-serialized by frontend → fromBinary
+ *   - USER_MINTED: ABI-encoded by contract → decodeAbiParameters → create()
+ *   - Others: deflate-raw compressed protobuf → inflateRaw → fromBinary
  */
-function convertLogToEvent(args: DukerEventArgs, blockNumber?: bigint): PbEvent {
+async function convertLogToEvent(args: DukerEventArgs, blockNumber?: bigint, txHash?: string): Promise<PbEvent> {
     const evtType = toEventType(Number(args.eventType))
 
     // Build proto EventData payload by decoding eventData bytes
@@ -86,31 +88,37 @@ function convertLogToEvent(args: DukerEventArgs, blockNumber?: bigint): PbEvent 
                     amount: bigint
                     dukiBps: number
                 }
-                data = {
+                // Build with create() so toBinary works later for DB storage
+                const eventData = create(EventDataSchema, {
                     payload: {
                         case: 'userMinted' as const,
-                        value: {
+                        value: create(UserMintedPayloadSchema, {
                             address: args.ego,
                             username: d.username,
-                            txHash: '',
                             mintAmount: BigInt(d.amount),
                             dukiBps: Number(d.dukiBps),
                             tokenId: BigInt(d.tokenId),
-                        },
+                        }),
                     },
-                } as any
+                })
+                data = eventData as PbEvent['data']
                 break
             }
 
             default: {
-                // Frontend-originated events: eventData is protobuf-serialized EventData
                 try {
                     const bytes = hexToBytes(args.eventData)
-                    const eventData = fromBinary(EventDataSchema, bytes)
+                    let decoded: Uint8Array
+                    try {
+                        decoded = await inflateRaw(bytes)
+                    } catch {
+                        decoded = bytes
+                    }
+                    const eventData = fromBinary(EventDataSchema, decoded)
                     data = eventData as PbEvent['data']
                 } catch (e) {
                     console.warn(
-                        `[blockchain-service] Failed to decode protobuf eventData for evtType=${evtType}:`,
+                        `[blockchain-service] Failed to decode data for evtType=${evtType}:`,
                         e
                     )
                 }
@@ -122,6 +130,7 @@ function convertLogToEvent(args: DukerEventArgs, blockNumber?: bigint): PbEvent 
     return create(PbEventSchema, {
         evtSeq: args.evtSeq,
         address: args.ego,
+        txHash: txHash ?? '',
         username: args.username,
         userSeq: args.userSeq,
         aggType: toAggType(Number(args.aggType)),
@@ -158,29 +167,31 @@ export async function getEventsFromTx(txHash: string): Promise<PbEvent[]> {
         eventName: 'DukerEvent',
     })
 
-    return dukerLogs.map(log => convertLogToEvent(log.args, log.blockNumber))
+    return Promise.all(dukerLogs.map(log => convertLogToEvent(log.args, log.blockNumber, txHash)))
 }
 
 /**
- * Pull ALL DukerEvent logs from the contract, starting from a given block.
- * Returns parsed PbEvent[] + the latest block number for cursor tracking.
- *
- * Automatically chunks requests into 9500-block windows to stay within
- * provider limits (e.g. 1rpc.io caps eth_getLogs at 10000 blocks).
+ * Convert pre-parsed DukerEvent logs (from QuickNode webhook) to PbEvent[].
+ * Reuses convertLogToEvent — no RPC calls needed since data comes from webhook.
  */
-export async function getAllEvents(fromBlock: bigint = 0n): Promise<{
+type DukerEventLog = ReturnType<typeof parseEventLogs<typeof dukerNewsAbi, true, 'DukerEvent'>>[number]
+
+export function getEventsFromWebhookLogs(parsedLogs: DukerEventLog[]): Promise<PbEvent[]> {
+    return Promise.all(parsedLogs.map(log => convertLogToEvent(log.args, log.blockNumber, log.transactionHash)))
+}
+
+
+/**
+ * Query DukerEvent logs for a specific block range (single RPC call).
+ * Used by POST /api/sync-events for precise admin-controlled syncing.
+ */
+export async function getEventsInRange(fromBlock: bigint, toBlock: bigint): Promise<{
     events: PbEvent[]
-    latestBlock: bigint
+    scannedToBlock: bigint
 }> {
     const publicClient = getPublicClient()
-    const { addrs } = getHomeChain()
-
-    const latestBlock = await publicClient.getBlockNumber()
-
-    // Guard: nothing to fetch if fromBlock is already at or past the tip
-    if (fromBlock > latestBlock) {
-        return { events: [], latestBlock }
-    }
+    const home = getDukerChain()
+    const { addrs } = home
 
     const eventDef = {
         type: 'event' as const,
@@ -190,34 +201,20 @@ export async function getAllEvents(fromBlock: bigint = 0n): Promise<{
         ) as any).inputs,
     }
 
-    // Chunk into 9500-block windows to stay within provider limits
-    const CHUNK = 9500n
-    const allLogs: any[] = []
-    let chunkFrom = fromBlock
+    const logs = await publicClient.getLogs({
+        address: addrs.DukerNews,
+        event: eventDef,
+        fromBlock,
+        toBlock,
+    })
 
-    while (chunkFrom <= latestBlock) {
-        const chunkTo = chunkFrom + CHUNK - 1n > latestBlock
-            ? latestBlock
-            : chunkFrom + CHUNK - 1n
-
-        const chunkLogs = await publicClient.getLogs({
-            address: addrs.DukerNews,
-            event: eventDef,
-            fromBlock: chunkFrom,
-            toBlock: chunkTo,
-        })
-        allLogs.push(...chunkLogs)
-        chunkFrom = chunkTo + 1n
-    }
-
-    // Parse the raw logs through the ABI to get typed args
     const dukerLogs = parseEventLogs({
         abi: dukerNewsAbi,
-        logs: allLogs,
+        logs,
         eventName: 'DukerEvent',
     })
 
-    const events = dukerLogs.map(log => convertLogToEvent(log.args, log.blockNumber))
+    const events = await Promise.all(dukerLogs.map(log => convertLogToEvent(log.args, log.blockNumber, log.transactionHash)))
 
-    return { events, latestBlock }
+    return { events, scannedToBlock: toBlock }
 }

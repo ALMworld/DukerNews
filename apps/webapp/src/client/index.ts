@@ -10,5 +10,5 @@ export { queryKeys } from './query-keys'
 export { translateText, getLocaleName } from './translate-api'
 export { useChainHandle } from './useChainHandle'
 export type { DispatchResult } from './useChainHandle'
-export { refreshAuth, x402MintUsername, notifyTx } from './auth-api'
+export { refreshAuth } from './auth-api'
 

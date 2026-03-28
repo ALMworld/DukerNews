@@ -5,11 +5,11 @@ export const LOCAL_CHAIN_ID = 31337
 export const SEPOLIA_CHAIN_ID = 11155111
 export const XLAYER_CHAIN_ID = 196
 
-// ── Active chain — driven by VITE_CHAIN env variable ─────────────────────────
-//   VITE_CHAIN=local    → Anvil localhost (default)
-//   VITE_CHAIN=sepolia  → Sepolia testnet
-//   VITE_CHAIN=xlayer   → XLayer mainnet
-const chainEnv = (import.meta as any).env?.VITE_CHAIN ?? 'local'
+// ── Active chain — driven by VITE_DUKER_NEWS_CHAIN env variable ──────────────
+//   VITE_DUKER_NEWS_CHAIN=local    → Anvil localhost (default)
+//   VITE_DUKER_NEWS_CHAIN=sepolia  → Sepolia testnet
+//   VITE_DUKER_NEWS_CHAIN=xlayer   → XLayer mainnet
+const chainEnv = (import.meta as any).env?.VITE_DUKER_NEWS_CHAIN ?? 'local'
 export const DEFAULT_CHAIN_ID: number =
     chainEnv === 'sepolia' ? SEPOLIA_CHAIN_ID
         : chainEnv === 'xlayer' ? XLAYER_CHAIN_ID

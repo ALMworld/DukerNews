@@ -1,10 +1,10 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useAuthStore } from '../lib/authStore'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import * as m from '../paraglide/messages.js'
 import { DukiIcon } from '../components/icons'
 import FlowDiagram from '../components/FlowDiagram'
-import { useChainId, useSwitchChain, useBalance, useAccount } from 'wagmi'
+import { useChainId, useSwitchChain, useAccount } from 'wagmi'
 import { useQueryClient } from '@tanstack/react-query'
 import { DEFAULT_CHAIN_ID } from '../lib/contracts'
 import { queryKeys } from '../client'
@@ -29,8 +29,7 @@ const META = 'var(--meta-color)'
 const BDR = 'var(--border)'
 const INP = 'var(--input)'
 
-// Minimum ETH needed for approve+mint (generous estimate)
-const MIN_GAS_WEI = BigInt(0.0001e18) // 0.0001 ETH
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  MintPanel
@@ -46,6 +45,13 @@ function MintPanel({ address }: { address: string }) {
     const [username, setUsername] = useState(me?.username || '')
     const [dukiBps, setDukiBps] = useState(9500)
 
+    // Sync username state when me loads asynchronously
+    useEffect(() => {
+        if (me?.username && !username) {
+            setUsername(me.username)
+        }
+    }, [me?.username])
+
     // Payment value from DukiPayment (amount + method)
     const [payment, setPayment] = useState<DukiPaymentValue>({
         amount: 1, dukiBps: 9500, method: 'direct', chainId: 0,
@@ -54,9 +60,37 @@ function MintPanel({ address }: { address: string }) {
         stablecoinAddress: '', stablecoinSymbol: 'USDT', stablecoinDecimals: 6,
     })
 
-    // Check native balance to determine path
-    const { data: ethBalance } = useBalance({ address: address as `0x${string}` })
-    const hasGas = ethBalance ? ethBalance.value >= MIN_GAS_WEI : false
+
+    // ── Debounced username availability check (3s after typing stops) ────
+    const [nameTaken, setNameTaken] = useState(false)
+    const [nameChecking, setNameChecking] = useState(false)
+    const checkTimer = useRef<ReturnType<typeof setTimeout>>(null)
+
+    useEffect(() => {
+        const name = username.trim()
+        setNameTaken(false)
+
+        if (!name || alreadyMinted || validateName(name)) {
+            setNameChecking(false)
+            return
+        }
+
+        setNameChecking(true)
+        if (checkTimer.current) clearTimeout(checkTimer.current)
+        checkTimer.current = setTimeout(async () => {
+            try {
+                const res = await fetch(`/api/users/check-name?name=${encodeURIComponent(name)}`)
+                const data = await res.json() as { available: boolean }
+                // Only update if name hasn't changed during the request
+                if (username.trim() === name) {
+                    setNameTaken(!data.available)
+                }
+            } catch { /* ignore */ }
+            setNameChecking(false)
+        }, 3000)
+
+        return () => { if (checkTimer.current) clearTimeout(checkTimer.current) }
+    }, [username, alreadyMinted])
 
     const fmt = (n: number) =>
         n === 0 ? '0' : n < 1 ? n.toFixed(2).replace(/\.?0+$/, '') : (+n.toFixed(3)).toString()
@@ -126,6 +160,16 @@ function MintPanel({ address }: { address: string }) {
 
     const done = alreadyMinted || step === 'done'
 
+    // Compute disabled reason for the mint button
+    const nameError = username.trim().length > 0 ? validateName(username.trim()) : ''
+    const disabledReason = saving ? null
+        : !username.trim() ? 'Enter a username'
+            : nameError ? nameError
+                : nameTaken ? `@${username.trim()} is already taken`
+                    : payment.amount <= 0.01 ? 'Amount must be > 0.01 USDT'
+                        : payment.insufficientBalance ? `Insufficient balance — need ${fmt(payment.amount)} USDT`
+                            : null
+
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
@@ -169,14 +213,20 @@ function MintPanel({ address }: { address: string }) {
                             background: alreadyMinted ? 'rgba(124,58,237,0.08)' : INP,
                             color: alreadyMinted ? P300 : FG,
                             fontFamily: 'inherit', fontWeight: alreadyMinted ? 700 : 400,
-                            border: `1.5px solid ${error ? '#ef4444' : alreadyMinted ? 'rgba(124,58,237,0.4)' : BDR}`,
+                            border: `1.5px solid ${(nameError || nameTaken) ? '#ef4444' : alreadyMinted ? 'rgba(124,58,237,0.4)' : BDR}`,
                             outline: 'none',
                             cursor: alreadyMinted ? 'default' : 'text',
                             transition: 'border-color 0.15s',
                         }}
                     />
-                    {error && (
-                        <p style={{ fontSize: 12, color: '#ef4444', marginTop: 6 }}>{error}</p>
+                    {nameError && (
+                        <p className="text-xs text-destructive mt-1.5">{nameError}</p>
+                    )}
+                    {!nameError && nameTaken && (
+                        <p className="text-xs text-destructive mt-1.5">@{username.trim()} is already taken</p>
+                    )}
+                    {!nameError && !nameTaken && nameChecking && (
+                        <p className="text-xs text-muted-foreground mt-1.5">Checking availability…</p>
                     )}
                 </div>
 
@@ -248,59 +298,47 @@ function MintPanel({ address }: { address: string }) {
                         walletAddress={address}
                     >
                         {/* Gas status */}
-                        <div style={{
-                            textAlign: 'center', fontSize: 11, color: META,
-                            display: 'flex', alignItems: 'center',
-                            justifyContent: 'center', gap: 6,
-                        }}>
-                            <span style={{
-                                display: 'inline-block', width: 8, height: 8,
-                                borderRadius: '50%', background: hasGas ? '#22c55e' : '#f59e0b',
-                            }} />
+                        <p className="text-[10px] text-center text-muted-foreground">
                             {payment.method === 'x402'
-                                ? '⚡ Gasless — server pays gas via x402 protocol'
-                                : '🔗 Direct — you sign & pay gas from your wallet'}
-                        </div>
+                                ? 'Gasless — server pays gas via x402 protocol'
+                                : 'Direct — you sign & pay gas from your wallet'}
+                        </p>
 
-                        <button type="button" onClick={handleMint}
-                            disabled={saving || username.trim().length < 2 || payment.amount <= 0 || payment.insufficientBalance}
-                            style={{
-                                width: '100%', padding: '13px 0', borderRadius: 10, fontSize: 15,
-                                fontWeight: 700, cursor: saving ? 'wait' : payment.insufficientBalance ? 'not-allowed' : 'pointer',
-                                transition: 'all 0.2s', letterSpacing: '0.02em',
-                                ...(payment.insufficientBalance ? {
-                                    background: 'rgba(239,68,68,0.08)',
-                                    border: '1px solid rgba(239,68,68,0.3)',
-                                    color: 'rgba(239,68,68,0.5)',
-                                    opacity: 0.7,
-                                } : {
-                                    border: 'none',
-                                    background: payment.amount > 0 && username.trim().length >= 2
-                                        ? payment.method === 'x402'
-                                            ? 'linear-gradient(135deg, #f59e0b, #d97706)'
-                                            : 'linear-gradient(135deg, #7c3aed, #4f46e5)'
-                                        : 'rgba(109,40,217,0.3)',
-                                    color: payment.amount > 0 && username.trim().length >= 2 ? '#fff' : META,
-                                }),
-                            }}>
-                            {saving
-                                ? (stepLabel ?? m.welcome_minting())
-                                : payment.insufficientBalance
-                                    ? `Insufficient balance — need ${fmt(payment.amount)} USDT`
+                        {/* ── Mint button + Skip (same row) ── */}
+                        <div className="flex gap-2 items-stretch">
+                            <button type="button" onClick={handleMint}
+                                disabled={saving || !!disabledReason}
+                                className={`flex-1 py-3 rounded-[10px] text-[15px] font-bold tracking-wide transition-all
+                                    ${disabledReason
+                                        ? 'bg-muted border border-border text-muted-foreground opacity-60 cursor-not-allowed'
+                                        : 'border-none text-white cursor-pointer'
+                                    } ${saving ? 'cursor-wait' : ''}`}
+                                style={!disabledReason ? {
+                                    background: payment.method === 'x402'
+                                        ? 'linear-gradient(135deg, #f59e0b, #d97706)'
+                                        : 'linear-gradient(135deg, #7c3aed, #4f46e5)',
+                                } : undefined}>
+                                {saving
+                                    ? (stepLabel ?? m.welcome_minting())
                                     : payment.method === 'x402'
                                         ? `⚡ Gasless Mint · ${fmt(payment.amount)} USDT`
                                         : `Mint · ${fmt(payment.amount)} USDT`}
-                        </button>
+                            </button>
 
-                        <div style={{ textAlign: 'center' }}>
                             <button type="button" onClick={() => navigate({ to: '/' })}
-                                style={{
-                                    background: 'none', border: 'none', cursor: 'pointer',
-                                    fontSize: 12, color: META
-                                }}>
-                                {m.welcome_skip()}
+                                className="px-3.5 rounded-[10px] text-[11px] font-medium whitespace-nowrap
+                                    bg-muted/50 border border-border text-muted-foreground
+                                    cursor-pointer transition-all hover:bg-muted hover:text-foreground">
+                                Mint later
                             </button>
                         </div>
+
+                        {/* ── Status/Error message area ── */}
+                        {(disabledReason || error) && (
+                            <p className={`text-xs text-center py-1 ${error ? 'text-destructive' : 'text-yellow-400'}`}>
+                                ⚠ {error || disabledReason}
+                            </p>
+                        )}
                     </DukiPayment>
                 </>
             )}
@@ -313,8 +351,16 @@ function MintPanel({ address }: { address: string }) {
 // ─────────────────────────────────────────────────────────────────────────────
 function WelcomePage() {
     const { me, setConnectModalOpen } = useAuthStore()
-    const { isConnected, status: accountStatus } = useAccount()
+    const { status: accountStatus } = useAccount()
+    const navigate = useNavigate()
     const address = me?.ego ?? ''
+
+    // Already has username → redirect to home
+    useEffect(() => {
+        if (me?.username) {
+            navigate({ to: '/' })
+        }
+    }, [me?.username, navigate])
 
     // Auto-open ConnectModal when authenticated but wallet truly disconnected
     // (wait for wagmi to finish reconnecting before deciding — avoids modal flash)

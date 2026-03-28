@@ -11,7 +11,7 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { createPublicClient, http } from 'viem'
 import { dukerNewsAbi } from '../../../lib/contracts'
-import { getHomeChain } from '../../../lib/server-chain'
+import { getDukerChain } from '../../../lib/duker-chain'
 import {
     verifyJwt,
     signJwt,
@@ -58,7 +58,7 @@ export const Route = createFileRoute('/api/auth/refresh')({
                 const address = payload.ego
 
                 // Step 1: Read on-chain username from DukerNews
-                const { addrs, viemChain, rpcUrl } = getHomeChain()
+                const { addrs, viemChain, rpcUrl } = getDukerChain()
                 const publicClient = createPublicClient({
                     chain: viemChain as any,
                     transport: http(rpcUrl),

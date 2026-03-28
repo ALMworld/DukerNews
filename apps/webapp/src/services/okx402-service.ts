@@ -161,9 +161,14 @@ export async function okxGetSupported() {
 export function buildPaymentRequirements(params: {
     payTo: string
     amountMicro: bigint
+    asset?: string
     description?: string
     resource?: string
 }): OkxPaymentRequirements {
+    // OKX Facilitator only supports X Layer USDT — reject others early
+    if (params.asset && params.asset.toLowerCase() !== XLAYER_USDT_ADDRESS.toLowerCase()) {
+        throw new Error(`Unsupported x402 asset: ${params.asset}. Only X Layer USDT (${XLAYER_USDT_ADDRESS}) is supported.`)
+    }
     return {
         scheme: 'exact',
         maxAmountRequired: params.amountMicro.toString(),
@@ -173,7 +178,7 @@ export function buildPaymentRequirements(params: {
         payTo: params.payTo,
         maxTimeoutSeconds: 300,
         asset: XLAYER_USDT_ADDRESS,
-        extra: { gasLimit: '500000' },
+        extra: {},
     }
 }
 

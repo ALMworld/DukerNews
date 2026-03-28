@@ -34,7 +34,6 @@ const config: Config = {
             'comments.post_id': bigintType,
             'comments.parent_id': bigintOrNull,
             'user_interactions.agg_id': bigintType,
-            'x402_triggered_cmds.post_id': bigintOrNull,
         },
     },
 };

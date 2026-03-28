@@ -1,19 +1,19 @@
 /**
  * ConnectRPC service registration for the webapp's SSR router.
  * QueryService: read stubs (handled by TanStack loaders) + getUserInteractions
- * CmdService: X402Handle — delegates to x402-service.ts
+ * TxService: TxHandle — delegates to payment-service.ts
  */
 
 import { ConnectRouter, createClient, type HandlerContext } from '@connectrpc/connect'
-import { QueryService, CmdService } from '@repo/apidefs'
+import { QueryService, TxService } from '@repo/apidefs'
 import * as InteractionService from '../services/interaction-service'
 import { create } from '@bufbuild/protobuf'
 import { PbGetUserInteractionsRespSchema, PbUserInteractionSchema, PbDeltaEventsRespSchema } from '@repo/apidefs'
 import type { NotifyTxReq, DukerTxReq } from '@repo/apidefs'
 import { getGoApiTransport, MIGRATED } from '../lib/grpc-goapi-transport'
-import { x402Handle } from './x402-service'
+import { handleTx } from './tx-service'
 import { getEventsFromTx } from './blockchain-service'
-import { applyEvents } from './events-service'
+import { applyEvents, getEventsByTxHash } from './events-service'
 
 export function registerServices(router: ConnectRouter) {
     // ─── QueryService ────────────────────────────────────────────────
@@ -44,9 +44,9 @@ export function registerServices(router: ConnectRouter) {
         async getCommentDelta() { throw new Error('Use SSR loader') },
     })
 
-    // ─── CmdService — delegates to x402-service + notifyTx ───────────────
-    router.service(CmdService, {
-        async x402Handle(req: DukerTxReq, context: HandlerContext) {
+    // ─── TxService — delegates to payment-service + notifyTx ─────────────
+    router.service(TxService, {
+        async txHandle(req: DukerTxReq, context: HandlerContext) {
             try {
                 // Server-side address enforcement: use JWT-verified address
                 const verifiedAddress = context?.requestHeader?.get?.('x-verified-address') || ''
@@ -57,9 +57,9 @@ export function registerServices(router: ConnectRouter) {
                     // Always use the JWT-verified address (override empty or matching)
                     req.address = verifiedAddress.toLowerCase()
                 }
-                return await x402Handle(req)
+                return await handleTx(req)
             } catch (err) {
-                console.error('[x402Handle] Error:', err)
+                console.error('[txHandle] Error:', err)
                 throw err
             }
         },
@@ -68,16 +68,22 @@ export function registerServices(router: ConnectRouter) {
             const { txHash } = req
             if (!txHash) throw new Error('tx_hash is required')
 
-            // 1. Pull + parse events from chain
+            // 1. Check DB first — webhook may have already indexed this tx
+            const dbEvents = await getEventsByTxHash(txHash)
+            if (dbEvents.length > 0) {
+                return create(PbDeltaEventsRespSchema, { events: dbEvents })
+            }
+
+            // 2. DB miss — pull + parse events from chain via RPC
             const events = await getEventsFromTx(txHash)
             if (events.length === 0) {
                 return create(PbDeltaEventsRespSchema, { events: [] })
             }
 
-            // 2. Apply events to DB
+            // 3. Apply events to DB
             await applyEvents(events)
 
-            // 3. Return original on-chain events as-is
+            // 4. Return on-chain events
             return create(PbDeltaEventsRespSchema, { events })
         },
     })

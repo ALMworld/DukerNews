@@ -92,6 +92,39 @@ deploy-local:
 		-vvv
 
 # ═══════════════════════════════════════════════════
+#  OWNERSHIP
+# ═══════════════════════════════════════════════════
+
+PROXY_ADDRESS ?= 0x348C88cC171bffDB9128bc9DEcDa49c0820FB29F
+NEW_OWNER     ?= 0xBB68A2363861d595cfF23abE0AC247fd36c0e7E7
+
+.PHONY: transfer-ownership-xlayer
+
+transfer-ownership-xlayer: check-key
+	@echo "=== Transferring ownership of $(PROXY_ADDRESS) to $(NEW_OWNER) ==="
+	@echo "→ Current owner: $(shell cast call $(PROXY_ADDRESS) 'owner()(address)' --rpc-url $(RPC_XLAYER))"
+	cast send $(PROXY_ADDRESS) "transferOwnership(address)" $(NEW_OWNER) \
+		--rpc-url $(RPC_XLAYER) \
+		--private-key $(PRIVATE_KEY)
+	@echo "✅ New owner: $(shell cast call $(PROXY_ADDRESS) 'owner()(address)' --rpc-url $(RPC_XLAYER))"
+
+# operator key (owner after transfer) — set via env or prompt
+OP_KEY ?=
+
+.PHONY: set-mint-fee-xlayer
+
+set-mint-fee-xlayer:
+ifndef OP_KEY
+	$(error OP_KEY not set. Usage: OP_KEY=0x... MINT_FEE=10000 make set-mint-fee-xlayer)
+endif
+	@echo "=== Setting mintFee on $(PROXY_ADDRESS) to $(MINT_FEE) ==="
+	@echo "→ Current mintFee: $(shell cast call $(PROXY_ADDRESS) 'mintFee()(uint256)' --rpc-url $(RPC_XLAYER))"
+	cast send $(PROXY_ADDRESS) "setMintFee(uint256)" $(MINT_FEE) \
+		--rpc-url $(RPC_XLAYER) \
+		--private-key $(OP_KEY)
+	@echo "✅ New mintFee: $(shell cast call $(PROXY_ADDRESS) 'mintFee()(uint256)' --rpc-url $(RPC_XLAYER))"
+
+# ═══════════════════════════════════════════════════
 #  BUILD & TEST
 # ═══════════════════════════════════════════════════
 

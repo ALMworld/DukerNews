@@ -3,6 +3,7 @@ syntax = "proto3";
 package duker;
 
 import "duker.proto";
+import "payment.proto";
 
 // ─── Event Type (unified — used for both commands and events) ──
 
@@ -169,18 +170,13 @@ message DukerTxReq {
   string    payment_chain = 6;  // Payment chain where x402 settles (e.g. "56" for BNB, "11155111" for Sepolia)
   string    payment_stablecoin_address = 7;  // Stablecoin used for payment on the payment chain
 
-  // EIP-2612 permit — user signs to approve stablecoin spending for x402 flows.
+  // x402 payment — extensible via oneof (EIP-3009, EIP-2612, etc).
   // Required when x402 involves USDT payment (mint, boost, post-with-boost).
-  // Free operations (comment, upvote, amend) skip permit — no signature needed.
-  PaymentPayload payment_payload = 10;
+  // Free operations (comment, upvote, amend) skip payment — no signature needed.
+  PaymentData payment_data = 10;
 }
 
-// EIP-2612 permit signature for gasless stablecoin approvals.
-message PaymentPayload {
-  uint64 deadline  = 1;  // Unix timestamp — permit expires after this
-  bytes  signature = 2;  // 65-byte signature: r (32) + s (32) + v (1)
-  string value     = 3;  // Amount approved (decimal string, micro units e.g. "1000000" = 1 USDT)
-}
+// PaymentData, EIP3009Payload, EIP2612Payload etc. are defined in payment.proto
 
 // ─── Event Envelope (emitted from contract, indexed by backend) ──
 

@@ -111,6 +111,7 @@ export function ConnectModal() {
     const [isSigning, setIsSigning] = useState(false)
     const [showMore, setShowMore] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [connectingId, setConnectingId] = useState<string | null>(null)
 
     // Separate WalletConnect from detected wallets
     const { wcConnector, detectedWallets } = useMemo(() => {
@@ -177,9 +178,10 @@ export function ConnectModal() {
     // Connect with a specific connector
     const handleConnectWallet = useCallback(async (connector: Connector) => {
         setError(null)
+        setConnectingId(connector.id)
         try {
             await connectHook.connectAsync({ connector })
-            // Auto-switch to home chain if wallet is on a different network
+            // Auto-switch to DukerNews chain if wallet is on a different network
             try {
                 await switchChainAsync({ chainId: DEFAULT_CHAIN_ID })
             } catch {
@@ -189,6 +191,8 @@ export function ConnectModal() {
             const msg = e?.message || 'Connection failed'
             if (msg.toLowerCase().includes('rejected') || msg.toLowerCase().includes('denied')) return
             setError(msg.length > 120 ? msg.slice(0, 120) + '…' : msg)
+        } finally {
+            setConnectingId(null)
         }
     }, [connectHook, switchChainAsync])
 
@@ -364,7 +368,7 @@ export function ConnectModal() {
                                         }}
                                         title="Connect via WalletConnect"
                                     >
-                                        {connectHook.isPending
+                                        {connectingId === (wcConnector?.id)
                                             ? <SpinnerIcon className="text-blue-400" />
                                             : <WalletConnectLogo />}
                                     </button>
@@ -430,7 +434,7 @@ export function ConnectModal() {
                                         <span style={{ fontSize: 14, color: 'var(--foreground)', fontWeight: 500, flex: 1 }}>
                                             {connector.name}
                                         </span>
-                                        {connectHook.isPending && <SpinnerIcon />}
+                                        {connectingId === connector.id && <SpinnerIcon />}
                                     </button>
                                 ))}
                             </div>

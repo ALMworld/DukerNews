@@ -29,9 +29,8 @@ import { Route as RpcSplatRouteImport } from './routes/rpc/$'
 import { Route as PostIdRouteImport } from './routes/post.$id'
 import { Route as ApiSyncEventsRouteImport } from './routes/api/sync-events'
 import { Route as ApiSeedRouteImport } from './routes/api/seed'
-import { Route as ApiNotifyTxRouteImport } from './routes/api/notify-tx'
-import { Route as ApiX402SubmitPostRouteImport } from './routes/api/x402/submit-post'
-import { Route as ApiX402MintUsernameRouteImport } from './routes/api/x402/mint-username'
+import { Route as ApiNotifyTxsRouteImport } from './routes/api/notify-txs'
+import { Route as ApiUsersCheckNameRouteImport } from './routes/api/users/check-name'
 import { Route as ApiDebugSyncEventsRouteImport } from './routes/api/debug/sync-events'
 import { Route as ApiAuthRefreshRouteImport } from './routes/api/auth/refresh'
 import { Route as ApiAuthNonceRouteImport } from './routes/api/auth/nonce'
@@ -140,19 +139,14 @@ const ApiSeedRoute = ApiSeedRouteImport.update({
   path: '/api/seed',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiNotifyTxRoute = ApiNotifyTxRouteImport.update({
-  id: '/api/notify-tx',
-  path: '/api/notify-tx',
+const ApiNotifyTxsRoute = ApiNotifyTxsRouteImport.update({
+  id: '/api/notify-txs',
+  path: '/api/notify-txs',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiX402SubmitPostRoute = ApiX402SubmitPostRouteImport.update({
-  id: '/api/x402/submit-post',
-  path: '/api/x402/submit-post',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ApiX402MintUsernameRoute = ApiX402MintUsernameRouteImport.update({
-  id: '/api/x402/mint-username',
-  path: '/api/x402/mint-username',
+const ApiUsersCheckNameRoute = ApiUsersCheckNameRouteImport.update({
+  id: '/api/users/check-name',
+  path: '/api/users/check-name',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiDebugSyncEventsRoute = ApiDebugSyncEventsRouteImport.update({
@@ -208,7 +202,7 @@ export interface FileRoutesByFullPath {
   '/user': typeof UserRoute
   '/voice': typeof VoiceRoute
   '/welcome': typeof WelcomeRoute
-  '/api/notify-tx': typeof ApiNotifyTxRoute
+  '/api/notify-txs': typeof ApiNotifyTxsRoute
   '/api/seed': typeof ApiSeedRoute
   '/api/sync-events': typeof ApiSyncEventsRoute
   '/post/$id': typeof PostIdRoute
@@ -219,8 +213,7 @@ export interface FileRoutesByFullPath {
   '/api/auth/nonce': typeof ApiAuthNonceRoute
   '/api/auth/refresh': typeof ApiAuthRefreshRoute
   '/api/debug/sync-events': typeof ApiDebugSyncEventsRoute
-  '/api/x402/mint-username': typeof ApiX402MintUsernameRoute
-  '/api/x402/submit-post': typeof ApiX402SubmitPostRoute
+  '/api/users/check-name': typeof ApiUsersCheckNameRoute
   '/api/auth/debug-login/$': typeof ApiAuthDebugLoginSplatRoute
 }
 export interface FileRoutesByTo {
@@ -240,7 +233,7 @@ export interface FileRoutesByTo {
   '/user': typeof UserRoute
   '/voice': typeof VoiceRoute
   '/welcome': typeof WelcomeRoute
-  '/api/notify-tx': typeof ApiNotifyTxRoute
+  '/api/notify-txs': typeof ApiNotifyTxsRoute
   '/api/seed': typeof ApiSeedRoute
   '/api/sync-events': typeof ApiSyncEventsRoute
   '/post/$id': typeof PostIdRoute
@@ -251,8 +244,7 @@ export interface FileRoutesByTo {
   '/api/auth/nonce': typeof ApiAuthNonceRoute
   '/api/auth/refresh': typeof ApiAuthRefreshRoute
   '/api/debug/sync-events': typeof ApiDebugSyncEventsRoute
-  '/api/x402/mint-username': typeof ApiX402MintUsernameRoute
-  '/api/x402/submit-post': typeof ApiX402SubmitPostRoute
+  '/api/users/check-name': typeof ApiUsersCheckNameRoute
   '/api/auth/debug-login/$': typeof ApiAuthDebugLoginSplatRoute
 }
 export interface FileRoutesById {
@@ -273,7 +265,7 @@ export interface FileRoutesById {
   '/user': typeof UserRoute
   '/voice': typeof VoiceRoute
   '/welcome': typeof WelcomeRoute
-  '/api/notify-tx': typeof ApiNotifyTxRoute
+  '/api/notify-txs': typeof ApiNotifyTxsRoute
   '/api/seed': typeof ApiSeedRoute
   '/api/sync-events': typeof ApiSyncEventsRoute
   '/post/$id': typeof PostIdRoute
@@ -284,8 +276,7 @@ export interface FileRoutesById {
   '/api/auth/nonce': typeof ApiAuthNonceRoute
   '/api/auth/refresh': typeof ApiAuthRefreshRoute
   '/api/debug/sync-events': typeof ApiDebugSyncEventsRoute
-  '/api/x402/mint-username': typeof ApiX402MintUsernameRoute
-  '/api/x402/submit-post': typeof ApiX402SubmitPostRoute
+  '/api/users/check-name': typeof ApiUsersCheckNameRoute
   '/api/auth/debug-login/$': typeof ApiAuthDebugLoginSplatRoute
 }
 export interface FileRouteTypes {
@@ -307,7 +298,7 @@ export interface FileRouteTypes {
     | '/user'
     | '/voice'
     | '/welcome'
-    | '/api/notify-tx'
+    | '/api/notify-txs'
     | '/api/seed'
     | '/api/sync-events'
     | '/post/$id'
@@ -318,8 +309,7 @@ export interface FileRouteTypes {
     | '/api/auth/nonce'
     | '/api/auth/refresh'
     | '/api/debug/sync-events'
-    | '/api/x402/mint-username'
-    | '/api/x402/submit-post'
+    | '/api/users/check-name'
     | '/api/auth/debug-login/$'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -339,7 +329,7 @@ export interface FileRouteTypes {
     | '/user'
     | '/voice'
     | '/welcome'
-    | '/api/notify-tx'
+    | '/api/notify-txs'
     | '/api/seed'
     | '/api/sync-events'
     | '/post/$id'
@@ -350,8 +340,7 @@ export interface FileRouteTypes {
     | '/api/auth/nonce'
     | '/api/auth/refresh'
     | '/api/debug/sync-events'
-    | '/api/x402/mint-username'
-    | '/api/x402/submit-post'
+    | '/api/users/check-name'
     | '/api/auth/debug-login/$'
   id:
     | '__root__'
@@ -371,7 +360,7 @@ export interface FileRouteTypes {
     | '/user'
     | '/voice'
     | '/welcome'
-    | '/api/notify-tx'
+    | '/api/notify-txs'
     | '/api/seed'
     | '/api/sync-events'
     | '/post/$id'
@@ -382,8 +371,7 @@ export interface FileRouteTypes {
     | '/api/auth/nonce'
     | '/api/auth/refresh'
     | '/api/debug/sync-events'
-    | '/api/x402/mint-username'
-    | '/api/x402/submit-post'
+    | '/api/users/check-name'
     | '/api/auth/debug-login/$'
   fileRoutesById: FileRoutesById
 }
@@ -404,7 +392,7 @@ export interface RootRouteChildren {
   UserRoute: typeof UserRoute
   VoiceRoute: typeof VoiceRoute
   WelcomeRoute: typeof WelcomeRoute
-  ApiNotifyTxRoute: typeof ApiNotifyTxRoute
+  ApiNotifyTxsRoute: typeof ApiNotifyTxsRoute
   ApiSeedRoute: typeof ApiSeedRoute
   ApiSyncEventsRoute: typeof ApiSyncEventsRoute
   PostIdRoute: typeof PostIdRoute
@@ -415,8 +403,7 @@ export interface RootRouteChildren {
   ApiAuthNonceRoute: typeof ApiAuthNonceRoute
   ApiAuthRefreshRoute: typeof ApiAuthRefreshRoute
   ApiDebugSyncEventsRoute: typeof ApiDebugSyncEventsRoute
-  ApiX402MintUsernameRoute: typeof ApiX402MintUsernameRoute
-  ApiX402SubmitPostRoute: typeof ApiX402SubmitPostRoute
+  ApiUsersCheckNameRoute: typeof ApiUsersCheckNameRoute
   ApiAuthDebugLoginSplatRoute: typeof ApiAuthDebugLoginSplatRoute
 }
 
@@ -562,25 +549,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSeedRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/notify-tx': {
-      id: '/api/notify-tx'
-      path: '/api/notify-tx'
-      fullPath: '/api/notify-tx'
-      preLoaderRoute: typeof ApiNotifyTxRouteImport
+    '/api/notify-txs': {
+      id: '/api/notify-txs'
+      path: '/api/notify-txs'
+      fullPath: '/api/notify-txs'
+      preLoaderRoute: typeof ApiNotifyTxsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/x402/submit-post': {
-      id: '/api/x402/submit-post'
-      path: '/api/x402/submit-post'
-      fullPath: '/api/x402/submit-post'
-      preLoaderRoute: typeof ApiX402SubmitPostRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/x402/mint-username': {
-      id: '/api/x402/mint-username'
-      path: '/api/x402/mint-username'
-      fullPath: '/api/x402/mint-username'
-      preLoaderRoute: typeof ApiX402MintUsernameRouteImport
+    '/api/users/check-name': {
+      id: '/api/users/check-name'
+      path: '/api/users/check-name'
+      fullPath: '/api/users/check-name'
+      preLoaderRoute: typeof ApiUsersCheckNameRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/debug/sync-events': {
@@ -652,7 +632,7 @@ const rootRouteChildren: RootRouteChildren = {
   UserRoute: UserRoute,
   VoiceRoute: VoiceRoute,
   WelcomeRoute: WelcomeRoute,
-  ApiNotifyTxRoute: ApiNotifyTxRoute,
+  ApiNotifyTxsRoute: ApiNotifyTxsRoute,
   ApiSeedRoute: ApiSeedRoute,
   ApiSyncEventsRoute: ApiSyncEventsRoute,
   PostIdRoute: PostIdRoute,
@@ -663,8 +643,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthNonceRoute: ApiAuthNonceRoute,
   ApiAuthRefreshRoute: ApiAuthRefreshRoute,
   ApiDebugSyncEventsRoute: ApiDebugSyncEventsRoute,
-  ApiX402MintUsernameRoute: ApiX402MintUsernameRoute,
-  ApiX402SubmitPostRoute: ApiX402SubmitPostRoute,
+  ApiUsersCheckNameRoute: ApiUsersCheckNameRoute,
   ApiAuthDebugLoginSplatRoute: ApiAuthDebugLoginSplatRoute,
 }
 export const routeTree = rootRouteImport

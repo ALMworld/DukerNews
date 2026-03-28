@@ -9,7 +9,7 @@
  *   ?apply=true    — also apply events to DB via events-service
  */
 import { createFileRoute } from '@tanstack/react-router'
-import { getAllEvents } from '../../../services/blockchain-service'
+import { getEventsInRange, getEventsFromTx } from '../../../services/blockchain-service'
 import { applyEvents } from '../../../services/events-service'
 import { toJson } from '@bufbuild/protobuf'
 import { PbEventSchema } from '@repo/apidefs'
@@ -20,11 +20,21 @@ export const Route = createFileRoute('/api/debug/sync-events')({
             GET: async ({ request }) => {
                 try {
                     const url = new URL(request.url)
-                    const fromBlock = BigInt(url.searchParams.get('fromBlock') || '0')
+                    const txHash = url.searchParams.get('txHash')
                     const shouldApply = url.searchParams.get('apply') === 'true'
 
-                    // Pull all DukerEvent logs from chain
-                    const { events, latestBlock } = await getAllEvents(fromBlock)
+                    let events: any[]
+                    let latestBlock = 0n
+
+                    if (txHash) {
+                        // Fast path: process a single known transaction
+                        events = await getEventsFromTx(txHash)
+                    } else {
+                        const fromBlock = BigInt(url.searchParams.get('fromBlock') || '0')
+                        const toBlock = BigInt(url.searchParams.get('toBlock') || String(fromBlock + 98n))
+                        const result = await getEventsInRange(fromBlock, toBlock)
+                        events = result.events
+                    }
 
                     // Optionally apply to DB
                     let applyResults = null
@@ -37,7 +47,7 @@ export const Route = createFileRoute('/api/debug/sync-events')({
 
                     return Response.json({
                         success: true,
-                        fromBlock: fromBlock.toString(),
+                        fromBlock: txHash ?? latestBlock.toString(),
                         latestBlock: latestBlock.toString(),
                         eventCount: events.length,
                         events: eventsJson,

@@ -1,120 +1,128 @@
-# Workers Monorepo Template
+# DukerNews
 
-This template provides a fully featured monorepo for managing multiple Cloudflare Workers.
+**On-chain Web3 community empowering DUKI /djuːki/ (Decentralized Universal Kindness Income)**
 
-## Why a Monorepo?
+> Every voluntary deal can generate universal income. No charity, no taxation — just voluntary commerce that benefits everyone.
 
-Managing multiple related services (like Cloudflare Workers) in separate repositories can become complex. A monorepo approach offers several advantages:
+🔗 **Live**: [dukernews.xyz](https://dukernews.xyz)  
+📄 **Whitepaper**: [DUKI Protocol](apps/webapp/draft/whitepaper/md/v3.md)  
+🐦 **Twitter**: [@dukernews](https://x.com/dukernews)
 
-- **Simplified dependency management** - `pnpm workspaces` allow you to manage dependencies across all your workers and shared packages from a single place. The tool `syncpack` (configured via `.syncpackrc.cjs`) help keep versions consistent.
-- **Code sharing and reuse** - Easily create and share common logic, types, and utilities between workers by placing them in the `packages/` directory. Changes to shared code are immediately available to all consumers.
-- **Atomic commits** - Changes affecting multiple workers or shared libraries can be committed together, making the history easier to understand and reducing the risk of inconsistencies.
-- **Consistent tooling** - Apply the same build, test, linting, and formatting configurations (e.g., via Turborepo in `turbo.json` and shared configs in `packages/`) across all projects, ensuring consistent tooling and code quality across Workers.
-- **Streamlined CI/CD** - A single pipeline (like the ones in `.github/workflows/`) can build, test, and deploy all Workers, simplifying the release process.
-- **Easier refactoring** - Refactoring code that spans multiple workers or shared packages is significantly easier within a single repository.
+---
 
-## Quick Start
+## What is DukerNews?
 
-You can bootstrap a new monorepo using this template by running:
+DukerNews is a HackerNews-style Web3 content platform deployed on **X Layer**. Every interaction — posting, commenting, upvoting, and boosting (tipping) — is recorded permanently on-chain.
 
-```bash
-npm create workers-monorepo@latest
+The core innovation: **every USDT boost (tip) mints DUKI** — a stablecoin distributed as universal income to all verified humans — plus **ALM governance tokens** for both the tipper and the content creator.
+
+## How It Works
+
+```
+┌─────────────┐     USDT Boost      ┌──────────────────┐
+│   Tipper     │ ──────────────────► │  DukerNews       │
+│   (Taker)    │                     │  Smart Contract  │
+└─────────────┘                     └────────┬─────────┘
+                                             │
+                              ┌──────────────┼──────────────┐
+                              ▼              ▼              ▼
+                        ┌──────────┐  ┌──────────┐  ┌──────────┐
+                        │  DUKI    │  │   ALM    │  │   ALM    │
+                        │ Treasury │  │  50%     │  │  50%     │
+                        │ (for all │  │  Tipper  │  │  Creator │
+                        │ humans)  │  │          │  │          │
+                        └──────────┘  └──────────┘  └──────────┘
 ```
 
-## Prerequisites
+1. **Post** your project — it goes on-chain, permanent and uncensorable
+2. **Boost** (tip) with USDT — funds flow to the DUKI Treasury
+3. **DUKI** is minted and distributed to all verified humans
+4. **ALM** governance tokens are minted — 50% to tipper, 50% to creator
+5. **Comment & Upvote** — all interactions are on-chain
 
-- node.js v22 or later
-- pnpm v10 or later
-- bun 1.2 or later
-- rg (ripgrep) - optional, but recommended for shell formatting
-- shfmt - optional, but recommended for shell formatting
-- mise - optional, but recommended for tool management
+## Key Features
 
-## Getting Started
+| Feature | Description |
+|---------|-------------|
+| 📝 **On-chain Content** | Posts, comments, and upvotes stored permanently on X Layer |
+| 💰 **USDT Boost** | Tip content creators with USDT, triggering DUKI/ALM minting |
+| ⚡ **Gasless via x402** | Zero-gas posting and username minting through x402 protocol |
+| 🔐 **Username NFT** | On-chain soul-bound NFT as your identity |
+| 🏛️ **ALM Governance** | Governance tokens earned through participation, not purchased |
+| 🤖 **AI Agent** | Autonomous content evaluation and boosting via OnchainOS Wallet |
 
-**Install Dependencies:**
+## Architecture
 
-```bash
-just install
-```
+![DUKI Protocol Architecture](docs/architecture.svg)
 
-**Run Development Server:**
+### Smart Contracts (X Layer Mainnet)
 
-```bash
-just dev
-```
+| Contract | Address |
+|----------|---------|
+| **DukerNews (Proxy)** | [`0x348C88cC171bffDB9128bc9DEcDa49c0820FB29F`](https://www.oklink.com/xlayer/address/0x348C88cC171bffDB9128bc9DEcDa49c0820FB29F) |
+| DukerNews (Impl) | [`0x565C8206D626dc9Ddee7f1958A96602cA5dAd32c`](https://www.oklink.com/xlayer/address/0x565C8206D626dc9Ddee7f1958A96602cA5dAd32c) |
 
-**Create a New Worker:**
 
-Use the built-in generator to scaffold a new Cloudflare Workers application:
+### Tech Stack
 
-```bash
-just new-worker
-```
-
-This will guide you throught he setup process of creating a new application within the `apps/` directory.
-
-**Deploy all Workers:**
-
-```bash
-just deploy
-```
-
-Note: This will also deploy the example application in `apps/youlangua-worker`. If you don't want to deploy that Worker, simply remove the deploy script from [apps/example/workers/echoback/package.json](apps/youlangua-worker/package.json).
+- **Blockchain**: Solidity, Foundry, X Layer (EVM)
+- **Frontend**: TanStack Start (SSR), React, Viem, Wagmi
+- **Backend**: Cloudflare Workers, D1 Database
+- **Protocol**: ConnectRPC, Protobuf
+- **Tokens**: ERC-20 (DUKI, ALM), ERC-721 (Username SBT), LayerZero OFT
+- **Payments**: USDT (USD₮0), x402 gasless protocol
+- **Wallet**: WalletConnect
 
 ## Repository Structure
 
-This monorepo is organized as follows:
+```
+├── apps/
+│   ├── webapp/             # Main web application (TanStack Start + Cloudflare Workers)
+│   └── duker-agent/        # AI agent terminal client (WIP, not finished yet)
+├── packages/
+│   ├── contract_duki_alm_world/   # DUKI & ALM token contracts (git submodule)
+│   ├── contract-duker-dao/        # DukerNews core contract + BaguaDao
+│   ├── apidefs/                   # Protobuf API definitions
+│   └── dao-bagua-diagram/         # Interactive Bagua diagram component
+└── onchainos-skills/              # OnchainOS skills (git submodule)
+```
 
-- `apps/` - Contains individual Cloudflare Worker applications. Each subdirectory is typically a deployable unit.
-  - `youlangua-worker` - An example worker demonstrating basic functionality.
-- `packages/` - Shared libraries, utilities, and configurations used across multiple applications.
-- `packages/tools/` - A package containing various scripts and a CLI for developing the monorepo.
-  - Each Workers application's package.json scripts point to scripts within `packages/tools/bin/`. This makes it easier to keep scripts consistent across Workers.
-- `turbo/` - Contains `turbo gen` templates
-  - `fetch-worker`: A basic Cloudflare Worker template.
-  - `fetch-worker-vite`: A Cloudflare Worker template using Vite for bundling and development.
-- `Justfile` - Defines convenient aliases for common development tasks.
-- `pnpm-workspace.yaml` - Defines the pnpm workspace structure.
-- `turbo.json` - Configures Turborepo build and task execution.
-- `.syncpackrc.cjs` - Configures `syncpack` for managing and synchronizing dependency versions across packages in the monorepo.
-  - The included configuration ensures that dependencies are all kept in sync and use a pinned version so that we can choose when to update dependencies.
+## OnchainOS Integration
 
-## Available Commands
+- **x402 Payments** — Gasless username minting and post submission
+- **Wallet API** — AI agent uses OnchainOS Agentic Wallet for autonomous payments
+- **DApp Wallet Connect** — Browser wallet connection via WalletConnect
 
-This repository uses a `Justfile` to provide easy access to common commands. You can explore all available commands by running `just --list`.
+## The DUKI Protocol
 
-Here are some key commands:
+DUKI (Decentralized Universal Kindness Income) is a protocol where ordinary commerce generates universal income:
 
-- `just` - Show a list of available commands.
-- `just install` - Install all dependencies.
-- `just dev` - Start development server (context-aware: runs `bun runx dev`).
-- `just build` - Build all workers (runs `bun turbo build`).
-- `just test` - Run tests (runs `bun vitest`).
-- `just check` - Check code quality: deps, lint, types, format (runs `bun runx check`).
-- `just fix` - Fix code issues: deps, lint, format, workers-types (runs `bun runx fix`).
-- `just preview` - Run Workers in preview mode.
-- `just deploy` - Deploy workers (runs `bun turbo deploy`).
-- `just cs` - Create a new changeset for versioning.
-- `just update deps` - Update dependencies across the monorepo with syncpack.
-- `just update pnpm` - Update pnpm version.
-- `just update turbo` - Update turbo version.
-- `just new-worker` (alias: `just gen`) - Generate a new Cloudflare Worker.
-- `just new-package` - Generate a new package for sharing code.
+- **Makers** market by voluntarily pledging a fraction of deal surplus on-chain
+- **Takers** evaluate trust through on-chain contribution history (ALM)
+- **Everyone** receives DUKI — a stablecoin backed 1:1 by reserve stablecoins
+- **No benefactor needed** — as long as deals occur, universal income is generated
 
-For a complete list of available commands, run `just` or see the [Justfile](./Justfile) for more details.
+> *"Universal income is not a gift from the powerful to the powerless — it is the natural yield of cooperative commerce."*
 
-## GitHub Actions
+## Getting Started
 
-This repository includes GitHub Actions workflows defined in the `.github/workflows` directory:
+### Prerequisites
 
-- **`branches.yml` (Branches Workflow):**
-  - Triggered on pushes to any branch _except_ `main`.
-  - Installs dependencies with pnpm.
-  - Runs checks/tests (`bun runx ci check`)
+- Node.js v22+
+- pnpm v10+
+- Foundry (for smart contracts)
 
-- **`release.yml` (Release Workflow):**
-  - Triggered on pushes to the `main` branch.
-  - Contains two jobs:
-    - `test-and-deploy`: Installs dependencies, runs checks/tests (`bun turbo check:ci`), and then deploys all workers (`bun turbo deploy`). This step requires the `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` secrets to be configured in your repository's GitHub secrets.
-    - `create-release-pr`: Uses [Changesets](https://github.com/changesets/changesets) to create a pull request that compiles changelogs and bumps package versions. This PR is primarily for documentation and versioning, as deployment happens directly on merge to `main`.
+### Install & Run
+
+```bash
+pnpm install
+pnpm dev
+```
+
+## License
+
+**DUKI License** — Free to use, modify, and distribute. Any commercial entity using this software must pledge at least 1% of profits to the DUKI protocol.
+
+---
+
+*Built on [X Layer](https://www.okx.com/xlayer) for the X Layer Onchain OS AI Hackathon*

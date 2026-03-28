@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package duker;
+
+// ─── Payment Protocol ───────────────────────────────────────────────────────
+//
+// Extensible payment payload using oneof:
+//   - x402: OKX x402 protocol (EIP-3009 transferWithAuthorization, gasless)
+//   - permit: EIP-2612 permit (operator-settled, operator pays gas)
+//
+// x402 spec: https://x402.org / https://web3.okx.com/onchainos/dev-docs/payments
+
+// ─── Top-level payment envelope ─────────────────────────────────────────────
+
+enum PaymentScheme {
+  PAYMENT_SCHEME_UNSPECIFIED = 0;
+  X402      = 1;   // x402 protocol (EIP-3009, OKX Facilitator)
+  PERMIT    = 2;   // EIP-2612 permit (operator-settled)
+}
+
+message PaymentData {
+  PaymentScheme scheme = 1;   // Quick discriminator — matches the oneof case
+
+  oneof payload {
+    X402Payment    x402   = 2;   // x402 protocol (OKX Facilitator settles)
+    EIP2612Payload permit = 3;   // EIP-2612 permit (operator settles)
+  }
+}
+
+// ─── x402 Protocol ─────────────────────────────────────────────────────────
+// Standard x402 payment: version + scheme + EIP-3009 signed transfer.
+// OKX Facilitator submits transferWithAuthorization on-chain; gas paid by OKX.
+
+message X402Payment {
+  int32  x402_version = 1;            // Protocol version (always 1)
+  string scheme       = 2;            // Settlement scheme (always "exact")
+  string signature    = 3;            // EIP-712 signature (hex, 0x-prefixed)
+  EIP3009Authorization authorization = 4;
+}
+
+message EIP3009Authorization {
+  string from         = 1;            // Payer wallet address
+  string to           = 2;            // Payee address (DukerNews contract)
+  string value        = 3;            // Amount in micro-units ("1000000" = 1 USDT)
+  string valid_after  = 4;            // Unix timestamp — valid after
+  string valid_before = 5;            // Unix timestamp — valid before (deadline)
+  string nonce        = 6;            // Random bytes32 nonce (replay protection)
+}
+
+// ─── EIP-2612: Permit ──────────────────────────────────────────────────────
+// User signs a gasless approve. Operator submits permit() on-chain to set
+// allowance, then calls transferFrom(). Gas paid by operator.
+
+message EIP2612Payload {
+  string signature = 1;               // 65-byte EIP-712 signature (hex, 0x-prefixed)
+  string owner     = 2;               // Token owner (payer)
+  string spender   = 3;               // Approved spender (DukerNews contract)
+  string value     = 4;               // Amount approved (micro-units)
+  string deadline  = 5;               // Unix timestamp — permit expires after
+  string nonce     = 6;               // Owner's current nonce (from token contract)
+}

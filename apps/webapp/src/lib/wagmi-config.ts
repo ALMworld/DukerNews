@@ -11,20 +11,24 @@ const anvil = defineChain({
     rpcUrls: { default: { http: ['http://127.0.0.1:8545'] } },
 })
 
-const chainEnv = (import.meta as any).env?.VITE_CHAIN ?? 'local'
+// Production build (vite build) → xlayer; dev server → local
+// Explicit VITE_DUKER_NEWS_CHAIN always wins if set
+const chainEnv =
+    (import.meta as any).env?.VITE_DUKER_NEWS_CHAIN ||
+    ((import.meta as any).env?.PROD ? 'xlayer' : 'local')
 
 const projectId =
     (import.meta as any).env?.VITE_REOWN_PROJECT_ID ||
-    'b56e18d47c72ab683b10814fe9495694'
+    '8da46244987cf7cdc239c7edb3c0a6a8'
 
 export { projectId }
 
-// Chain list driven by VITE_CHAIN env:
+// Chain list driven by VITE_DUKER_NEWS_CHAIN env:
 //   xlayer  → X Layer only (production)
 //   sepolia → Sepolia only (testnet)
 //   local   → Anvil + Sepolia (dev)
-// Only the home chain is registered in wagmi — cross-chain balance reads use
-// the DukiPayment UI fallback ('—') when a non-home chain is selected.
+// Only the DukerNews chain is registered in wagmi — cross-chain balance reads use
+// the DukiPayment UI fallback ('—') when a non-DukerNews chain is selected.
 const chains =
     chainEnv === 'xlayer' ? ([xLayer] as const)
         : chainEnv === 'sepolia' ? ([sepolia] as const)

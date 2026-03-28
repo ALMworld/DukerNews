@@ -8,7 +8,8 @@
 
 import { getKysely } from '../lib/db'
 import { sql } from 'kysely'
-import { EventType, AggType, type PbEvent } from '@repo/apidefs'
+import { toBinary, fromBinary, create } from '@bufbuild/protobuf'
+import { EventType, AggType, EventDataSchema, PbEventSchema, type PbEvent } from '@repo/apidefs'
 import * as PostService from './post-service'
 import * as CommentService from './comment-service'
 import * as InteractionService from './interaction-service'
@@ -19,6 +20,40 @@ export interface ApplyResult {
     evtSeq: number
     eventType: EventType
     username?: string
+}
+
+// ─── DB Lookup ───────────────────────────────────────────
+
+/**
+ * Retrieve events from DB by txHash. Returns PbEvent[] if webhook already indexed,
+ * empty array if not found — caller should fall back to RPC.
+ */
+export async function getEventsByTxHash(txHash: string): Promise<PbEvent[]> {
+    const db = getKysely()
+    if (!db) return []
+
+    const rows = await db
+        .selectFrom('events')
+        .selectAll()
+        .where('tx_hash', '=', txHash)
+        .orderBy('evt_seq', 'asc')
+        .execute()
+
+    if (rows.length === 0) return []
+
+    return rows.map(row => create(PbEventSchema, {
+        evtSeq: BigInt(row.evt_seq ?? 0),
+        address: row.address,
+        username: row.username,
+        evtType: row.evt_type,
+        aggType: row.agg_type,
+        aggId: BigInt(row.agg_id),
+        evtTime: BigInt(Math.floor(row.evt_time / 1000)),
+        blockNumber: BigInt(row.block_number ?? 0),
+        txHash: row.tx_hash,
+        userSeq: BigInt(row.user_evt_seq ?? 0),
+        data: row.payload ? fromBinary(EventDataSchema, new Uint8Array(row.payload as unknown as ArrayBuffer)) : undefined,
+    }))
 }
 
 // ─── Public API ──────────────────────────────────────────
@@ -62,10 +97,13 @@ export async function applyEvents(events: PbEvent[]): Promise<ApplyResult[]> {
                 address: evt.address,
                 username: evt.username,
                 evt_type: evt.evtType,
+                agg_type: evt.aggType,
+                agg_id: Number(evt.aggId),
                 evt_time: Number(evt.evtTime) * 1000,
                 block_number: Number(evt.blockNumber ?? 0),
-                user_evt_seq: 0,
-                payload: null,
+                tx_hash: evt.txHash ?? '',
+                user_evt_seq: Number(evt.userSeq ?? 0),
+                payload: evt.data ? toBinary(EventDataSchema, evt.data) : null,
                 created_at: Date.now(),
             })
             .onConflict(oc => oc.doNothing())
