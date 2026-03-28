@@ -14,8 +14,8 @@ import { privateKeyToAccount } from 'viem/accounts'
 import { EventType, EventDataSchema, PbDeltaEventsRespSchema } from '@repo/apidefs'
 import type { DukerTxReq } from '@repo/apidefs'
 import { getHomeChain } from '../lib/server-chain'
-import { getDefaultStablecoin, getStablecoins } from '../lib/contracts'
-import { dukerNewsAbi, mockUsdtAbi } from '@alm/duker-dao-contract'
+import { dukerNewsAbi } from '@alm/duker-dao-contract'
+import { settleX402Payment } from '../lib/x402-settlement'
 import { applyEvents } from './events-service'
 import { getEventsFromTx } from './blockchain-service'
 
@@ -38,24 +38,20 @@ const EVT_TYPE_POST_CREATED = 1
  * before calling the home chain contract.
  */
 export async function x402Handle(req: DukerTxReq) {
-    const { addrs, viemChain, rpcUrl, chainId } = getHomeChain()
-    const defaultStable = getDefaultStablecoin(chainId)
-    // Validate client-provided stablecoin address against known list; fallback to default
-    // TODO: in production, resolve stablecoin from payment chain, not home chain
-    const stablecoins = getStablecoins(chainId)
-    const clientAddr = req.paymentStablecoinAddress?.toLowerCase()
-    const matchedStable = clientAddr
-        ? stablecoins.find(s => s.address.toLowerCase() === clientAddr)
-        : undefined
-    const stablecoin = matchedStable ?? defaultStable
+    console.log(`[x402Handle] evtType=${req.evtType} address=${req.address} paymentChain=${req.paymentChain}`)
+    try {
+    const { addrs, viemChain, rpcUrl } = getHomeChain()
+    console.log(`[x402Handle] homeChain=${viemChain.id} rpcUrl=${rpcUrl?.slice(0, 60)}...`)
     const publicClient = createPublicClient({ chain: viemChain as any, transport: http(rpcUrl) })
 
     const operatorAccount = privateKeyToAccount(DEPLOYER_KEY)
+    console.log(`[x402Handle] operator=${operatorAccount.address}`)
     const walletClient = createWalletClient({
         account: operatorAccount,
         chain: viemChain as any,
         transport: http(rpcUrl),
     })
+    const chainParam = { chain: viemChain as any }
     const userAddress = req.address as `0x${string}`
     if (!userAddress) throw new Error('address is required')
 
@@ -64,6 +60,14 @@ export async function x402Handle(req: DukerTxReq) {
         ? toBinary(EventDataSchema, req.data)
         : new Uint8Array()
     const eventDataHex = toHex(eventDataBytes)
+
+    // Extract permit data from request (EIP-2612 gasless approval)
+    const pp = req.paymentPayload
+    const permitParams = pp?.signature?.length ? {
+        permitSignature: pp.signature,
+        permitDeadline: BigInt(pp.deadline),
+        permitValue: BigInt(pp.value || '0'),
+    } : {}
 
     let txHash: `0x${string}`
 
@@ -77,22 +81,21 @@ export async function x402Handle(req: DukerTxReq) {
             const amountMicro = BigInt(mintAmount)
             if (amountMicro <= 0n) throw new Error('Invalid amount')
 
-            // Simulate x402 settle: mint USDT to contract
-            const mintUsdtHash = await walletClient.writeContract({
-                address: stablecoin.address,
-                abi: mockUsdtAbi,
-                functionName: 'mint',
-                args: [addrs.DukerNews, amountMicro],
+            // Settle payment — mint settles to CONTRACT (mintUsernameViaX402 uses transfer())
+            const { paymentTxHash } = await settleX402Payment({
+                amountMicro,
+                userAddress,
+                settleTarget: 'contract',
+                ...permitParams,
+                description: `Mint username @${username}`,
             })
-            await publicClient.waitForTransactionReceipt({ hash: mintUsdtHash })
 
-            // Generate idempotency nonce
             const paymentNonce = keccak256(
-                toHex(`x402:${userAddress}:${username}:${Date.now()}`)
+                toHex(`x402:${userAddress}:${username}:${paymentTxHash}`)
             )
 
-            // Call mintUsernameViaX402
             txHash = await walletClient.writeContract({
+                ...chainParam,
                 address: addrs.DukerNews,
                 abi: dukerNewsAbi,
                 functionName: 'mintUsernameViaX402',
@@ -107,24 +110,21 @@ export async function x402Handle(req: DukerTxReq) {
             if (payload?.case !== 'postCreated') throw new Error('POST_CREATED: missing postCreated payload')
             const amountMicro = BigInt(payload.value.boostAmount)
 
-            // Simulate x402 settle for marketing boost
-            if (amountMicro > 0n) {
-                const mintUsdtHash = await walletClient.writeContract({
-                    address: stablecoin.address,
-                    abi: mockUsdtAbi,
-                    functionName: 'mint',
-                    args: [addrs.DukerNews, amountMicro],
-                })
-                await publicClient.waitForTransactionReceipt({ hash: mintUsdtHash })
-            }
+            // Settle to USER — submitPostViaX402 uses transferFrom(user, ...)
+            const { paymentTxHash } = await settleX402Payment({
+                amountMicro,
+                userAddress,
+                settleTarget: 'user',
+                ...permitParams,
+                description: 'DukerNews post boost',
+            })
 
-            // Generate idempotency nonce
             const paymentNonce = keccak256(
-                toHex(`x402-post:${userAddress}:${Date.now()}`)
+                toHex(`x402-post:${userAddress}:${paymentTxHash}`)
             )
 
-            // Call submitPostViaX402
             txHash = await walletClient.writeContract({
+                ...chainParam,
                 address: addrs.DukerNews,
                 abi: dukerNewsAbi,
                 functionName: 'submitPostViaX402',
@@ -144,27 +144,13 @@ export async function x402Handle(req: DukerTxReq) {
 
         case EventType.COMMENT_CREATED:
         case EventType.COMMENT_DELETED: {
-            // submitComment / delete — optional boostAmount (tip)
-            const boostMicro = req.data?.payload?.case === 'commentCreated'
-                ? BigInt(req.data.payload.value.boostAmount ?? 0)
-                : 0n
-
-            // Simulate x402 settle: mint USDT to contract if boost > 0
-            if (boostMicro > 0n) {
-                const mintUsdtHash = await walletClient.writeContract({
-                    address: stablecoin.address,
-                    abi: mockUsdtAbi,
-                    functionName: 'mint',
-                    args: [addrs.DukerNews, boostMicro],
-                })
-                await publicClient.waitForTransactionReceipt({ hash: mintUsdtHash })
-            }
-
+            // submitComment is always free — no boost, no USDT
             const paymentNonce = keccak256(
                 toHex(`x402-comment:${userAddress}:${Date.now()}`)
             )
 
             txHash = await walletClient.writeContract({
+                ...chainParam,
                 address: addrs.DukerNews,
                 abi: dukerNewsAbi,
                 functionName: 'submitCommentViaX402',
@@ -174,7 +160,7 @@ export async function x402Handle(req: DukerTxReq) {
                     BigInt(req.aggId),
                     req.evtType,
                     eventDataHex as `0x${string}`,
-                    boostMicro,
+                    0n,
                     paymentNonce as `0x${string}`,
                 ],
             })
@@ -189,6 +175,7 @@ export async function x402Handle(req: DukerTxReq) {
             )
 
             txHash = await walletClient.writeContract({
+                ...chainParam,
                 address: addrs.DukerNews,
                 abi: dukerNewsAbi,
                 functionName: 'amendCommentViaX402',
@@ -206,29 +193,55 @@ export async function x402Handle(req: DukerTxReq) {
         }
 
         case EventType.COMMENT_UPVOTED: {
-            // upvoteComment — optional boostAmount (tip)
-            const boostMicro = req.data?.payload?.case === 'commentUpvoted'
-                ? BigInt((req.data.payload.value as any).boostAmount ?? 0)
-                : 0n
-
-            if (boostMicro > 0n) {
-                const mintUsdtHash = await walletClient.writeContract({
-                    address: stablecoin.address,
-                    abi: mockUsdtAbi,
-                    functionName: 'mint',
-                    args: [addrs.DukerNews, boostMicro],
-                })
-                await publicClient.waitForTransactionReceipt({ hash: mintUsdtHash })
-            }
-
+            // upvoteComment — always free, pure social signal
             const paymentNonce = keccak256(
                 toHex(`x402-upvote:${userAddress}:${Date.now()}`)
             )
 
             txHash = await walletClient.writeContract({
+                ...chainParam,
                 address: addrs.DukerNews,
                 abi: dukerNewsAbi,
-                functionName: 'upvoteCommentViaX402',
+                functionName: 'upvoteAttentionViaX402',
+                args: [
+                    userAddress,
+                    req.aggType,
+                    BigInt(req.aggId),
+                    req.evtType,
+                    eventDataHex as `0x${string}`,
+                    paymentNonce as `0x${string}`,
+                ],
+            })
+            await publicClient.waitForTransactionReceipt({ hash: txHash })
+            break
+        }
+
+        case EventType.BOOST_ATTENTION: {
+            const p = req.data?.payload
+            const boostMicro = p?.case === 'boostAttention'
+                ? BigInt(p.value.boostAmount ?? 0)
+                : 0n
+
+            if (boostMicro <= 0n) throw new Error('Boost amount must be > 0')
+
+            // Settle to USER — boostAttentionViaX402 uses transferFrom(user, ...)
+            const { paymentTxHash } = await settleX402Payment({
+                amountMicro: boostMicro,
+                userAddress,
+                settleTarget: 'user',
+                ...permitParams,
+                description: 'DukerNews boost attention',
+            })
+
+            const paymentNonce = keccak256(
+                toHex(`x402-boost:${userAddress}:${paymentTxHash}`)
+            )
+
+            txHash = await walletClient.writeContract({
+                ...chainParam,
+                address: addrs.DukerNews,
+                abi: dukerNewsAbi,
+                functionName: 'boostAttentionViaX402',
                 args: [
                     userAddress,
                     req.aggType,
@@ -259,4 +272,8 @@ export async function x402Handle(req: DukerTxReq) {
     }
 
     return create(PbDeltaEventsRespSchema, { events })
+    } catch (err) {
+        console.error('[x402Handle] FATAL:', err)
+        throw err
+    }
 }

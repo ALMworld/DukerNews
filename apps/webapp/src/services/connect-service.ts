@@ -4,12 +4,12 @@
  * CmdService: X402Handle — delegates to x402-service.ts
  */
 
-import { ConnectRouter, createClient } from '@connectrpc/connect'
+import { ConnectRouter, createClient, type HandlerContext } from '@connectrpc/connect'
 import { QueryService, CmdService } from '@repo/apidefs'
 import * as InteractionService from '../services/interaction-service'
 import { create } from '@bufbuild/protobuf'
 import { PbGetUserInteractionsRespSchema, PbUserInteractionSchema, PbDeltaEventsRespSchema } from '@repo/apidefs'
-import type { NotifyTxReq } from '@repo/apidefs'
+import type { NotifyTxReq, DukerTxReq } from '@repo/apidefs'
 import { getGoApiTransport, MIGRATED } from '../lib/grpc-goapi-transport'
 import { x402Handle } from './x402-service'
 import { getEventsFromTx } from './blockchain-service'
@@ -33,8 +33,8 @@ export function registerServices(router: ConnectRouter) {
             const rows = await InteractionService.getAllInteractions(req.username)
             return create(PbGetUserInteractionsRespSchema, {
                 interactions: rows.map(r => create(PbUserInteractionSchema, {
-                    itemType: r.item_type,
-                    itemId: r.item_id,
+                    aggType: r.agg_type,
+                    aggId: BigInt(r.agg_id ?? 0),
                     bitsFlag: r.bits_flag,
                 })),
             })
@@ -46,8 +46,22 @@ export function registerServices(router: ConnectRouter) {
 
     // ─── CmdService — delegates to x402-service + notifyTx ───────────────
     router.service(CmdService, {
-        async x402Handle(req: any) {
-            return x402Handle(req)
+        async x402Handle(req: DukerTxReq, context: HandlerContext) {
+            try {
+                // Server-side address enforcement: use JWT-verified address
+                const verifiedAddress = context?.requestHeader?.get?.('x-verified-address') || ''
+                if (verifiedAddress) {
+                    if (req.address && req.address.toLowerCase() !== verifiedAddress.toLowerCase()) {
+                        throw new Error(`Address mismatch: req=${req.address} jwt=${verifiedAddress}`)
+                    }
+                    // Always use the JWT-verified address (override empty or matching)
+                    req.address = verifiedAddress.toLowerCase()
+                }
+                return await x402Handle(req)
+            } catch (err) {
+                console.error('[x402Handle] Error:', err)
+                throw err
+            }
         },
 
         async notifyTx(req: NotifyTxReq) {

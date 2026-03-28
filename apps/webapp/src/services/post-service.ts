@@ -27,6 +27,8 @@ export interface GetPostsInput {
 }
 
 export interface CreatePostInput {
+    /** On-chain aggId — used as the explicit DB id to keep them in sync */
+    aggId: bigint
     title: string
     url?: string
     text?: string
@@ -159,7 +161,7 @@ export async function getPost(id: bigint): Promise<PbPost | null> {
     const row = await db
         .selectFrom('posts')
         .selectAll()
-        .where('id', '=', id)
+        .where('id', '=', Number(id) as any)  // D1 needs Number not bigint
         .where('dead', '=', 0)
         .executeTakeFirst()
 
@@ -212,10 +214,12 @@ export async function createPost(input: CreatePostInput): Promise<PbPost> {
             postDataBlob = toBinary(PbPostDataSchema, pd)
         }
 
-        // Insert the post
+        // Insert the post with the on-chain aggId as the explicit id
+        // This keeps post.id in sync with the aggId referred to by comments and boosts
         await db
             .insertInto('posts')
             .values({
+                id: Number(input.aggId) as any,  // D1 INTEGER needs Number, not BigInt
                 username: input.username,
                 title: input.title,
                 url: input.url || '',
@@ -283,6 +287,9 @@ export async function upvotePost(input: UpvotePostInput): Promise<PbPost | null>
     const db = getKysely()
     if (!db) throw new Error('Database not available — cannot upvote without D1')
 
+    // D1 doesn't support bigint — convert at DB boundary
+    const postIdNum = Number(input.postId)
+
     // Look up username from address
     const user = await db
         .selectFrom('users')
@@ -292,11 +299,11 @@ export async function upvotePost(input: UpvotePostInput): Promise<PbPost | null>
     if (!user) return null
 
     // Check for existing upvote
-    const currentVote = await InteractionService.getVote(user.username, 'post', input.postId)
+    const currentVote = await InteractionService.getVote(user.username, InteractionService.AggType.POST, BigInt(postIdNum))
     if (currentVote === InteractionService.VOTE_UP) return null
 
     // Set upvote
-    await InteractionService.setVote(user.username, 'post', input.postId, InteractionService.VOTE_UP)
+    await InteractionService.setVote(user.username, InteractionService.AggType.POST, BigInt(postIdNum), InteractionService.VOTE_UP)
 
     // Increment points and accumulate boost
     await db
@@ -305,10 +312,10 @@ export async function upvotePost(input: UpvotePostInput): Promise<PbPost | null>
             points: sql`points + 1`,
             total_boost: sql`COALESCE(total_boost, 0) + ${Number(input.boostAmount ?? 0)}`,
         })
-        .where('id', '=', input.postId)
+        .where('id', '=', postIdNum as any)
         .execute()
 
-    return await getPost(input.postId)
+    return await getPost(BigInt(postIdNum))
 }
 
 // ─── Helpers ─────────────────────────────────────────────

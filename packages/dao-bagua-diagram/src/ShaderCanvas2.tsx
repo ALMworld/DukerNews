@@ -67,7 +67,7 @@ function hexToGL(hex: string): [number, number, number] {
     ];
 }
 
-export function ShaderCanvas2({ className, bgColor = '#140520' }: { className?: string; bgColor?: string }) {
+export function ShaderCanvas({ className, bgColor = '#140520' }: { className?: string; bgColor?: string }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const rafRef = useRef<number>(0);
     const glRef = useRef<{ gl: WebGLRenderingContext; uTime: WebGLUniformLocation; uRes: WebGLUniformLocation } | null>(null);
@@ -141,4 +141,4 @@ export function ShaderCanvas2({ className, bgColor = '#140520' }: { className?: 
     return <canvas ref={canvasRef} className={className} style={{ width: '100%', height: '100%', borderRadius: 16 }} />;
 }
 
-export default ShaderCanvas2;
+export default ShaderCanvas;

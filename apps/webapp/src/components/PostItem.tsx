@@ -11,16 +11,18 @@
  */
 import { Link } from '@tanstack/react-router'
 import { useState } from 'react'
-// import { useChainHandle } from '../client/useChainHandle'  // TODO: re-enable for UPVOTE_POST
 import { useInteractions, VOTE_MASK, VOTE_UP } from '../client/useInteractions'
-// import { CmdType } from '@repo/apidefs'  // TODO: re-enable for UPVOTE_POST
+import { useUpvoteMutation } from '../client/useUpvoteMutation'
 import { useLocale } from '../lib/locale-context'
 import { useRequireAuth } from '../lib/useRequireAuth'
 import { translateText, getLocaleName } from '../lib/translate-service'
 import { getDisplayText } from '../lib/bagua-text'
 import type { PbPost } from '@repo/apidefs'
+import { AggType } from '@repo/apidefs'
 import { Languages, Undo2 } from 'lucide-react'
 import { PostMeta } from './PostMeta'
+import { BoostArrow } from './BoostArrow'
+import type { ActiveAction } from './InteractionBar'
 
 interface PostItemProps {
     post: PbPost
@@ -36,6 +38,12 @@ interface PostItemProps {
      * The detail page uses this to also trigger body text translation.
      */
     onTranslateToggle?: (showing: boolean) => void
+    /** Interaction bar (detail only) */
+    activeAction: ActiveAction
+    onReply?: () => void
+    onBoost?: () => void
+    /** Called when a boost tx succeeds, with the delta in micro-units */
+    onBoostSuccess?: (deltaMicro: number) => void
 }
 
 export default function PostItem({
@@ -45,16 +53,19 @@ export default function PostItem({
     translateAllActive,
     onTranslateAll,
     onTranslateToggle,
+    activeAction,
+    onReply,
+    onBoost,
+    onBoostSuccess: _onBoostSuccess,
 }: PostItemProps) {
     const [points, setPoints] = useState(post.points)
-    const [animating, setAnimating] = useState(false)
     const { locale: userLocale } = useLocale()
     const { requireAuth, me } = useRequireAuth()
     const isOwnPost = !!(me?.ego && post.address === me.ego)
 
     // IDB-backed interaction state
-    const { getBits, updateBits } = useInteractions()
-    const currentBits = getBits('post', post.id)
+    const { getBits } = useInteractions()
+    const currentBits = getBits(AggType.POST, Number(post.id))
     const voted = (currentBits & VOTE_MASK) === VOTE_UP
 
     // Translation state (title only — body is handled by the parent in detail mode)
@@ -64,20 +75,21 @@ export default function PostItem({
 
     const needsTranslation = post.locale !== userLocale
 
-    // TODO: migrate to dispatch({ kind: DispatchKind.UPVOTE_POST, ... })
-    // const { dispatch } = useDispatchHandle()
+    // Upvote mutation via TanStack Query
+    const upvoteMutation = useUpvoteMutation({
+        aggType: AggType.POST,
+        aggId: Number(post.id),
+        address: me?.ego ?? '',
+    })
 
-    const handleUpvote = async (e: React.MouseEvent) => {
+    const handleUpvote = (e: React.MouseEvent) => {
         e.preventDefault()
         e.stopPropagation()
-        if (voted) return
-        if (!requireAuth()) return
-        setAnimating(true)
-        setPoints((p) => p + 1)
-        // Optimistic: update IDB + cache
-        await updateBits('post', post.id, (currentBits & ~VOTE_MASK) | VOTE_UP)
-        // TODO: dispatch UPVOTE_POST on-chain when DispatchKind.UPVOTE_POST is implemented
-        setTimeout(() => setAnimating(false), 300)
+        if (voted || upvoteMutation.isPending) return
+        if (!requireAuth() || !me?.ego) return
+        upvoteMutation.mutate(undefined, {
+            onSuccess: () => setPoints((p) => p + 1),
+        })
     }
 
     const handleTranslate = async (e: React.MouseEvent) => {
@@ -104,7 +116,7 @@ export default function PostItem({
     const baseTitle = getDisplayText(post.title, userLocale)
     const displayTitle = showTranslated && translatedTitle ? translatedTitle : baseTitle
 
-    // ── Shared title content ──────────────────────────────────────────
+    // ── Shared title content ──────────────────────────────────────────────────
     const titleContent = (
         <>
             {post.url ? (
@@ -168,38 +180,18 @@ export default function PostItem({
     )
 
     // ── Upvote button ─────────────────────────────────────────────────
-    const upvoteBtn = isOwnPost ? (
-        <span
-            className="shrink-0"
+    const upvoteBtn = (
+        <BoostArrow
+            totalBoost={post.totalBoost ?? 0}
+            voted={voted}
+            isOwn={isOwnPost}
+            loading={upvoteMutation.isPending}
+            onClick={() => handleUpvote({ preventDefault: () => {}, stopPropagation: () => {} } as React.MouseEvent)}
             style={{
-                color: 'var(--meta-color)',
-                padding: detailMode ? '0' : '3px 4px 0 2px',
-                lineHeight: 1,
-                fontSize: '10px',
+                padding: detailMode ? '0' : '2px 4px 0 2px',
                 marginTop: detailMode ? '2px' : undefined,
             }}
-        >
-            *
-        </span>
-    ) : (
-        <button
-            onClick={handleUpvote}
-            disabled={voted}
-            className={`shrink-0 transition-all ${animating ? 'upvote-animate' : ''}`}
-            style={{
-                color: voted ? 'var(--upvote-active)' : 'var(--meta-color)',
-                background: 'none',
-                border: 'none',
-                cursor: voted ? 'default' : 'pointer',
-                padding: detailMode ? '0' : '3px 4px 0 2px',
-                lineHeight: 1,
-                fontSize: '10px',
-                marginTop: detailMode ? '2px' : undefined,
-            }}
-            title={voted ? 'Already upvoted' : 'Upvote'}
-        >
-            ▲
-        </button>
+        />
     )
 
     // ── Detail mode layout ────────────────────────────────────────────
@@ -217,6 +209,9 @@ export default function PostItem({
                         titleRow
                         translateAllActive={translateAllActive}
                         onTranslateAll={onTranslateAll}
+                        activeAction={activeAction}
+                        onReply={onReply}
+                        onBoost={onBoost}
                     />
                 </div>
             </div>

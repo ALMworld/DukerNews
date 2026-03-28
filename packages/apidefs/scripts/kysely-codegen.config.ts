@@ -33,7 +33,7 @@ const config: Config = {
             'comments.id': generatedBigint,
             'comments.post_id': bigintType,
             'comments.parent_id': bigintOrNull,
-            'user_interactions.item_id': bigintType,
+            'user_interactions.agg_id': bigintType,
             'x402_triggered_cmds.post_id': bigintOrNull,
         },
     },

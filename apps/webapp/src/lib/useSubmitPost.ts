@@ -15,7 +15,13 @@ import {
     type PostKind,
 } from '@repo/apidefs'
 import type { PbPostData } from '@repo/apidefs'
-import { dukerNewsAbi, ERC20_ABI, ADDRESSES, DEFAULT_CHAIN_ID, getDefaultStablecoin } from './contracts'
+import { dukerNewsAbi, ERC20_ABI, ADDRESSES, DEFAULT_CHAIN_ID, XLAYER_CHAIN_ID, getDefaultStablecoin, MIN_APPROVE_MICRO } from './contracts'
+import { useOkxPaymentSigner } from './okx-payment-signer'
+
+// Use real OKX gasless when: on XLayer production OR VITE_OKX_SETTLE=true (Sepolia/local testing)
+const USE_OKX_SETTLE =
+    DEFAULT_CHAIN_ID === XLAYER_CHAIN_ID ||
+    (import.meta as any).env?.VITE_OKX_SETTLE === 'true'
 
 // AggType.POST = 2 (matches proto AggType enum)
 const AGG_TYPE_POST = 2
@@ -73,6 +79,7 @@ export function useSubmitPost() {
     const { address } = useAccount()
     const publicClient = usePublicClient()
     const { writeContractAsync } = useWriteContract()
+    const { signPayment } = useOkxPaymentSigner()
 
     const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
         hash: txHash,
@@ -119,7 +126,7 @@ export function useSubmitPost() {
                         address: stablecoinAddress,
                         abi: ERC20_ABI,
                         functionName: 'approve',
-                        args: [contractAddress, amountMicro],
+                        args: [contractAddress, amountMicro > MIN_APPROVE_MICRO ? amountMicro : MIN_APPROVE_MICRO],
                     })
                     // Wait for approve to be mined before submitting
                     await publicClient.waitForTransactionReceipt({ hash: approveTx })
@@ -151,13 +158,27 @@ export function useSubmitPost() {
         }
     }, [writeContractAsync, address, publicClient])
 
-    /** X402 path: backend calls contract, pays gas on behalf of user */
+    /** X402 path: backend settles payment via OKX, calls contract as operator. */
     const submitViaX402 = useCallback(async (input: SubmitPostInput) => {
         setError(null)
         setIsPending(true)
 
         try {
             const hexData = buildEventDataHex(input)
+            const contractAddress = ADDRESSES[DEFAULT_CHAIN_ID]?.DukerNews
+            if (!contractAddress) throw new Error('DukerNews address not configured')
+
+            const amountMicro = BigInt(Math.round((input.amount ?? 0) * 1_000_000))
+
+            // Sign EIP-3009 when: on XLayer, OR VITE_OKX_SETTLE=true (Sepolia testing).
+            // On plain dev (no env flag) the server falls back to mock mint.
+            let paymentPayload: any = undefined
+            if (USE_OKX_SETTLE && amountMicro > 0n) {
+                paymentPayload = await signPayment({
+                    amountMicro,
+                    payTo: contractAddress as `0x${string}`,
+                })
+            }
 
             const resp = await fetch('/api/x402/submit-post', {
                 method: 'POST',
@@ -165,6 +186,7 @@ export function useSubmitPost() {
                 body: JSON.stringify({
                     eventDataHex: hexData,
                     amount: input.amount ?? 0,
+                    paymentPayload,   // undefined on dev → server uses mock mint
                 }),
             })
 
@@ -184,7 +206,7 @@ export function useSubmitPost() {
         } finally {
             setIsPending(false)
         }
-    }, [])
+    }, [signPayment])
 
     return {
         submitDirect,

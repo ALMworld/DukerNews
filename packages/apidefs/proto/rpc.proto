@@ -69,9 +69,9 @@ message PbGetUserInteractionsReq {
 }
 
 message PbUserInteraction {
-  string item_type = 1;  // 'post' or 'comment'
-  int64  item_id   = 2;
-  int32  bits_flag = 3;
+  AggType agg_type  = 1;  // 2=post, 3=comment
+  int64   agg_id    = 2;
+  int32   bits_flag = 3;
 }
 
 message PbGetUserInteractionsResp {

@@ -6,6 +6,7 @@
  */
 
 import { openDB, type IDBPDatabase } from 'idb'
+import { AggType } from '@repo/apidefs'
 
 // ─── DB Schema ──────────────────────────────────────────
 
@@ -25,14 +26,14 @@ interface DukerClientDB {
         }
     }
     interactions: {
-        key: string  // "post:123" or "comment:456"
+        key: string  // "2:123" (AggType.POST) or "3:456" (AggType.COMMENT)
         value: {
             key: string
-            item_type: string
-            item_id: number
+            agg_type: number  // AggType integer: 2=post, 3=comment
+            agg_id: number
             bits_flag: number
         }
-        indexes: { by_type: string }
+        indexes: { by_type: number }
     }
 }
 
@@ -42,14 +43,20 @@ let dbPromise: Promise<IDBPDatabase<DukerClientDB>> | null = null
 
 function getDb(): Promise<IDBPDatabase<DukerClientDB>> {
     if (!dbPromise) {
-        dbPromise = openDB<DukerClientDB>('duker', 2, {
+        // Bump version to 3 to trigger upgrade for renamed fields
+        dbPromise = openDB<DukerClientDB>('duker', 3, {
             upgrade(db, oldVersion) {
                 if (oldVersion < 1) {
                     db.createObjectStore('users', { keyPath: 'address' })
                 }
                 if (oldVersion < 2) {
                     const store = db.createObjectStore('interactions', { keyPath: 'key' })
-                    store.createIndex('by_type', 'item_type')
+                    store.createIndex('by_type', 'agg_type')
+                } else if (oldVersion < 3) {
+                    // Re-create interactions store with renamed fields
+                    db.deleteObjectStore('interactions')
+                    const store = db.createObjectStore('interactions', { keyPath: 'key' })
+                    store.createIndex('by_type', 'agg_type')
                 }
             },
         })
@@ -129,14 +136,14 @@ export async function setInteractionSeq(address: string, seq: number): Promise<v
 
 // ─── Interaction Data ───────────────────────────────────
 
-function makeKey(itemType: string, itemId: number): string {
-    return `${itemType}:${itemId}`
+function makeKey(aggType: AggType, aggId: number): string {
+    return `${aggType}:${aggId}`
 }
 
 /** Get bits_flag for one item. Returns 0 if not in IDB. */
-export async function getLocalInteraction(itemType: string, itemId: number): Promise<number> {
+export async function getLocalInteraction(aggType: AggType, aggId: number): Promise<number> {
     const db = await getDb()
-    const row = await db.get('interactions', makeKey(itemType, itemId))
+    const row = await db.get('interactions', makeKey(aggType, aggId))
     return row?.bits_flag ?? 0
 }
 
@@ -153,22 +160,22 @@ export async function getAllLocalInteractions(): Promise<Map<string, number>> {
 
 /** Set bits_flag for one item in IDB (optimistic update). */
 export async function setLocalInteraction(
-    itemType: string,
-    itemId: number,
+    aggType: AggType,
+    aggId: number,
     bitsFlag: number,
 ): Promise<void> {
     const db = await getDb()
-    const key = makeKey(itemType, itemId)
+    const key = makeKey(aggType, aggId)
     if (bitsFlag === 0) {
         await db.delete('interactions', key)
     } else {
-        await db.put('interactions', { key, item_type: itemType, item_id: itemId, bits_flag: bitsFlag })
+        await db.put('interactions', { key, agg_type: aggType, agg_id: aggId, bits_flag: bitsFlag })
     }
 }
 
 /** Bulk replace all interactions in IDB (full sync from server). */
 export async function putInteractions(
-    items: Array<{ item_type: string; item_id: number; bits_flag: number }>,
+    items: Array<{ agg_type: number; agg_id: number; bits_flag: number }>,
 ): Promise<void> {
     const db = await getDb()
     const tx = db.transaction('interactions', 'readwrite')
@@ -176,12 +183,11 @@ export async function putInteractions(
     await tx.store.clear()
     for (const item of items) {
         await tx.store.put({
-            key: makeKey(item.item_type, item.item_id),
-            item_type: item.item_type,
-            item_id: item.item_id,
+            key: makeKey(item.agg_type, item.agg_id),
+            agg_type: item.agg_type,
+            agg_id: item.agg_id,
             bits_flag: item.bits_flag,
         })
     }
     await tx.done
 }
-

@@ -24,11 +24,11 @@ import {
 } from '../lib/client-db'
 import { rpcClient } from './rpc'
 import { create } from '@bufbuild/protobuf'
-import { PbGetUserInteractionsReqSchema } from '@repo/apidefs'
+import { PbGetUserInteractionsReqSchema, AggType } from '@repo/apidefs'
 import { useCallback, useRef } from 'react'
 
 // Re-export bit constants for convenience
-export { VOTE_MASK, VOTE_UP, VOTE_DOWN, VOTE_NONE, BIT_FLAG, BIT_HIDE, BIT_FAVORITE, BIT_VOUCH }
+export { VOTE_MASK, VOTE_UP, VOTE_DOWN, VOTE_NONE, BIT_FLAG, BIT_HIDE, BIT_FAVORITE, BIT_VOUCH, BIT_BOOST }
     from '../lib/interaction-bits'
 
 import { VOTE_MASK, VOTE_UP } from '../lib/interaction-bits'
@@ -77,26 +77,26 @@ export function useInteractions() {
 
     // ── Read helpers ──────────────────────────────────────
 
-    const getBits = useCallback((itemType: string, itemId: number): number => {
-        return interactionMap?.get(`${itemType}:${itemId}`) ?? 0
+    const getBits = useCallback((aggType: AggType, aggId: number): number => {
+        return interactionMap?.get(`${aggType}:${aggId}`) ?? 0
     }, [interactionMap])
 
-    const isUpvoted = useCallback((itemType: string, itemId: number): boolean => {
-        const bits = getBits(itemType, itemId)
+    const isUpvoted = useCallback((aggType: AggType, aggId: number): boolean => {
+        const bits = getBits(aggType, aggId)
         return (bits & VOTE_MASK) === VOTE_UP
     }, [getBits])
 
     // ── Write helpers (optimistic update IDB + query cache) ──
 
     const updateBits = useCallback(async (
-        itemType: string,
-        itemId: number,
+        aggType: AggType,
+        aggId: number,
         newBits: number,
     ) => {
-        const key = `${itemType}:${itemId}`
+        const key = `${aggType}:${aggId}`
 
         // 1. Update IDB
-        await setLocalInteraction(itemType, itemId, newBits)
+        await setLocalInteraction(aggType, aggId, newBits)
 
         // 2. Update query cache (optimistic, no refetch)
         queryClient.setQueryData(INTERACTIONS_KEY, (old: Map<string, number> | undefined) => {
@@ -133,8 +133,8 @@ async function syncFromServer(
 
         // Map proto response to plain objects for IDB
         const rows = resp.interactions.map(i => ({
-            item_type: i.itemType,
-            item_id: i.itemId,
+            agg_type: Number(i.aggType),
+            agg_id: Number(i.aggId),
             bits_flag: i.bitsFlag,
         }))
 
@@ -147,7 +147,7 @@ async function syncFromServer(
         // Build and return the map
         const map = new Map<string, number>()
         for (const row of rows) {
-            map.set(`${row.item_type}:${row.item_id}`, row.bits_flag)
+            map.set(`${row.agg_type}:${row.agg_id}`, row.bits_flag)
         }
         return map
     } catch {

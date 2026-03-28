@@ -123,6 +123,7 @@ function convertLogToEvent(args: DukerEventArgs, blockNumber?: bigint): PbEvent 
         evtSeq: args.evtSeq,
         address: args.ego,
         username: args.username,
+        userSeq: args.userSeq,
         aggType: toAggType(Number(args.aggType)),
         aggId: args.aggId,
         evtType,
@@ -163,6 +164,9 @@ export async function getEventsFromTx(txHash: string): Promise<PbEvent[]> {
 /**
  * Pull ALL DukerEvent logs from the contract, starting from a given block.
  * Returns parsed PbEvent[] + the latest block number for cursor tracking.
+ *
+ * Automatically chunks requests into 9500-block windows to stay within
+ * provider limits (e.g. 1rpc.io caps eth_getLogs at 10000 blocks).
  */
 export async function getAllEvents(fromBlock: bigint = 0n): Promise<{
     events: PbEvent[]
@@ -173,23 +177,43 @@ export async function getAllEvents(fromBlock: bigint = 0n): Promise<{
 
     const latestBlock = await publicClient.getBlockNumber()
 
-    const logs = await publicClient.getLogs({
-        address: addrs.DukerNews,
-        event: {
-            type: 'event' as const,
-            name: 'DukerEvent',
-            inputs: (dukerNewsAbi.find(
-                e => e.type === 'event' && e.name === 'DukerEvent'
-            ) as any).inputs,
-        },
-        fromBlock,
-        toBlock: 'latest',
-    })
+    // Guard: nothing to fetch if fromBlock is already at or past the tip
+    if (fromBlock > latestBlock) {
+        return { events: [], latestBlock }
+    }
+
+    const eventDef = {
+        type: 'event' as const,
+        name: 'DukerEvent',
+        inputs: (dukerNewsAbi.find(
+            e => e.type === 'event' && e.name === 'DukerEvent'
+        ) as any).inputs,
+    }
+
+    // Chunk into 9500-block windows to stay within provider limits
+    const CHUNK = 9500n
+    const allLogs: any[] = []
+    let chunkFrom = fromBlock
+
+    while (chunkFrom <= latestBlock) {
+        const chunkTo = chunkFrom + CHUNK - 1n > latestBlock
+            ? latestBlock
+            : chunkFrom + CHUNK - 1n
+
+        const chunkLogs = await publicClient.getLogs({
+            address: addrs.DukerNews,
+            event: eventDef,
+            fromBlock: chunkFrom,
+            toBlock: chunkTo,
+        })
+        allLogs.push(...chunkLogs)
+        chunkFrom = chunkTo + 1n
+    }
 
     // Parse the raw logs through the ABI to get typed args
     const dukerLogs = parseEventLogs({
         abi: dukerNewsAbi,
-        logs,
+        logs: allLogs,
         eventName: 'DukerEvent',
     })
 

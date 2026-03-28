@@ -207,10 +207,12 @@ export default function CommentThread({
                 )
             })}
 
-            {/* Infinite scroll sentinel */}
-            <div ref={sentinelRef} className="py-4 text-center text-xs" style={{ color: 'var(--meta-color)' }}>
-                {loadingMore ? 'Loading more comments...' : ''}
-            </div>
+            {/* Infinite scroll sentinel — only render when paginated */}
+            {onLoadMore && (
+                <div ref={sentinelRef} className="py-4 text-center text-xs" style={{ color: 'var(--meta-color)' }}>
+                    {loadingMore ? 'Loading more comments...' : ''}
+                </div>
+            )}
         </div>
     )
 }

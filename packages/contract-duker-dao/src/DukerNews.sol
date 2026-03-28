@@ -12,6 +12,7 @@ import "@openzeppelin/contracts/utils/Base64.sol";
 
 import { IDukerNewsEvents } from "./interfaces/IDukerNewsEvents.sol";
 import { IDukerNewsErrors } from "./interfaces/IDukerNewsErrors.sol";
+import { UserData, AggData } from "./interfaces/IDukerNewsTypes.sol";
 import { DukerNewsEventEncoder } from "./libraries/DukerNewsEventEncoder.sol";
 
 /// @title DukerNews (UUPS Upgradeable)
@@ -34,6 +35,9 @@ contract DukerNews is ERC721Upgradeable, OwnableUpgradeable, UUPSUpgradeable, ID
     uint256 public constant MAX_DUKI_BPS = 9900; // max 99% to Treasury (min 1% to DukerNews)
     uint256 public constant MIN_DUKI_BPS = 5000; // min 50% to Treasury (max 50% to DukerNews)
     uint256 public constant MAX_NAME_BYTES = 192; // ~64 CJK chars or 192 ASCII
+    uint256 public constant AMEND_WINDOW = 64 minutes;
+    uint256 public constant COMMENT_WINDOW = 64 days;
+    uint32 internal constant EVT_TYPE_USER_MINTED = 21;
 
     // ── State ───────────────────────────────────────────────────────────────
 
@@ -47,27 +51,29 @@ contract DukerNews is ERC721Upgradeable, OwnableUpgradeable, UUPSUpgradeable, ID
     /// @notice AlmWorldDukiMinter — converts USDT into DUKI + ALM on every payment.
     IAlmWorldDukiMinter public minter;
 
-    /// @notice Aggregate ID counters — auto-increment per aggregate type
-    /// aggType => next aggregate ID (1-indexed)
-    mapping(uint8 => uint64) public aggIdCounters;
+    /// @notice Aggregate ID counters — auto-increment per aggregate type (max 32 types)
+    uint64[32] public aggIdCounters;
 
-    /// @notice Aggregate creator — tracks who created each aggregate
-    /// aggType => aggId => creator address
-    mapping(uint8 => mapping(uint64 => address)) public aggCreator;
+    /// @notice Aggregate metadata — tracks creator + creation time
+    /// aggType => aggId => AggData
+    mapping(uint8 => mapping(uint128 => AggData)) public aggData;
 
     /// username → tokenId  (1-indexed; 0 means not registered)
     mapping(string => uint256) public nameToId;
-    /// tokenId  → username
-    mapping(uint256 => string) public idToName;
 
-    /// tokenId  → total USDT collected (informational)
-    mapping(uint256 => uint256) public totalPaid;
+    /// @notice  tokenId → UserData containing extended metadata
+    mapping(uint256 => UserData) public idToUserData;
+
+    // NOTE: totalPaid mapping removed in V3 — replaced by idToUserData[].amount
 
     /// x402 payment nonce → payer address (address(0) = unused)
     mapping(bytes32 => address) public paymentPayer;
 
     /// address → tokenId (O(1) reverse lookup; 0 means no token)
     mapping(address => uint256) public ownerToTokenId;
+
+    // ── Storage gap for upgradeable contracts ────────────────────────────────
+    uint256[64] private __gap;
 
     // ── Initializer (replaces constructor) ──────────────────────────────────
 
@@ -108,7 +114,7 @@ contract DukerNews is ERC721Upgradeable, OwnableUpgradeable, UUPSUpgradeable, ID
             usdt.transferFrom(msg.sender, treasury, dukerNewsAmount);
         }
 
-        _doMint(msg.sender, name, amount, dukiBps);
+        _doMint(msg.sender, name, uint128(amount), uint16(dukiBps));
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -143,7 +149,7 @@ contract DukerNews is ERC721Upgradeable, OwnableUpgradeable, UUPSUpgradeable, ID
             usdt.transfer(treasury, dukerNewsAmount);
         }
 
-        _doMint(user, name, amount, dukiBps);
+        _doMint(user, name, uint128(amount), uint16(dukiBps));
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -151,50 +157,49 @@ contract DukerNews is ERC721Upgradeable, OwnableUpgradeable, UUPSUpgradeable, ID
     // ══════════════════════════════════════════════════════════════════════════
 
     /// @notice Submit a post on-chain (user pays gas).
-    ///         Contract is a transparent event log: data bytes are opaque/passthrough.
-    ///         If amount > 0, transfers USDT from caller to contract (marketing boost).
+    ///         If boostAmount > 0, transfers USDT from caller to contract (initial marketing boost).
     ///         Username is derived on-chain from the caller's NFT.
-    /// @param aggType   Aggregate type (2=WORKS)
-    /// @param aggId     Aggregate ID (0 = create new, >0 = update existing)
-    /// @param evtType   Event type enum value (1=POST_CREATED)
-    /// @param data      Protobuf-serialized EventData bytes (opaque)
-    /// @param amount    USDT amount for marketing boost (6 decimals, 0 = free)
-    function submitPost(
-        uint8 aggType,
-        uint64 aggId,
-        uint8 evtType,
-        bytes calldata data,
-        uint128 amount
-    ) external {
-        // Verify caller owns a username NFT and derive username
+    /// @param aggType       Aggregate type (2=WORKS)
+    /// @param aggId         Aggregate ID (0 = create new, >0 = update existing)
+    /// @param evtType       Event type enum value (1=POST_CREATED)
+    /// @param data          Protobuf-serialized EventData bytes (opaque)
+    /// @param boostAmount   USDT amount for initial marketing boost (6 decimals, 0 = free)
+    function submitPost(uint8 aggType, uint64 aggId, uint8 evtType, bytes calldata data, uint128 boostAmount) external {
         uint256 tokenId = ownerToTokenId[msg.sender];
         if (tokenId == 0) revert NoUsername();
-        string memory username = idToName[tokenId];
+        string memory username = idToUserData[tokenId].userName;
 
-        // Transfer USDT if marketing boost > 0 → mint DUKI + ALM
-        if (amount > 0) {
-            bool ok = usdt.transferFrom(msg.sender, address(this), amount);
+        ++idToUserData[tokenId].userSeq;
+
+        // Transfer USDT if initial marketing boost > 0 → mint DUKI + ALM
+        if (boostAmount > 0) {
+            idToUserData[tokenId].amount += boostAmount;
+            bool ok = usdt.transferFrom(msg.sender, address(this), boostAmount);
             if (!ok) revert TransferFailed();
-            _mintDuki(msg.sender, amount);
+            _mintDuki(msg.sender, boostAmount);
         }
 
-        // Auto-assign aggId for new aggregates
         uint64 resolvedAggId = aggId == 0 ? _nextAggId(aggType) : aggId;
-        uint64 seq = ++_evtSeq;
 
+        if (aggId == 0) {
+            aggData[aggType][resolvedAggId] = AggData({ creator: msg.sender, createdAt: uint64(block.timestamp) });
+        }
+
+        uint64 seq = ++_evtSeq;
         emit DukerEvent(
-            msg.sender, seq, username, uint32(evtType), aggType, resolvedAggId, uint64(block.timestamp), data
+            msg.sender,
+            seq,
+            username,
+            idToUserData[tokenId].userSeq,
+            uint32(evtType),
+            aggType,
+            resolvedAggId,
+            uint64(block.timestamp),
+            data
         );
     }
 
     /// @notice Submit a post via x402 (backend pays gas on behalf of user).
-    ///         Username is derived on-chain from the user's NFT.
-    /// @param user           User's wallet address
-    /// @param aggType        Aggregate type (2=WORKS)
-    /// @param aggId          Aggregate ID (0 = create new, >0 = update existing)
-    /// @param evtType        Event type enum value (1=POST_CREATED)
-    /// @param data           Protobuf-serialized EventData bytes (opaque)
-    /// @param amount         USDT amount for marketing boost (6 decimals, 0 = free)
     /// @param paymentNonce   Idempotency key
     function submitPostViaX402(
         address user,
@@ -202,85 +207,92 @@ contract DukerNews is ERC721Upgradeable, OwnableUpgradeable, UUPSUpgradeable, ID
         uint64 aggId,
         uint8 evtType,
         bytes calldata data,
-        uint128 amount,
+        uint128 boostAmount,
         bytes32 paymentNonce
     ) external onlyOwner {
         _markPayment(paymentNonce, user);
         uint256 tokenId = ownerToTokenId[user];
         if (tokenId == 0) revert NoUsername();
-        string memory username = idToName[tokenId];
+        string memory username = idToUserData[tokenId].userName;
 
-        // Transfer USDT from user if marketing boost > 0 → mint DUKI + ALM
-        if (amount > 0) {
-            bool ok = usdt.transferFrom(user, address(this), amount);
+        ++idToUserData[tokenId].userSeq;
+
+        if (boostAmount > 0) {
+            idToUserData[tokenId].amount += boostAmount;
+            bool ok = usdt.transferFrom(user, address(this), boostAmount);
             if (!ok) revert TransferFailed();
-            _mintDuki(user, amount);
+            _mintDuki(user, boostAmount);
         }
 
         uint64 resolvedAggId = aggId == 0 ? _nextAggId(aggType) : aggId;
-        uint64 seq = ++_evtSeq;
 
-        emit DukerEvent(user, seq, username, uint32(evtType), aggType, resolvedAggId, uint64(block.timestamp), data);
+        if (aggId == 0) {
+            aggData[aggType][resolvedAggId] = AggData({ creator: user, createdAt: uint64(block.timestamp) });
+        }
+
+        uint64 seq = ++_evtSeq;
+        emit DukerEvent(
+            user,
+            seq,
+            username,
+            idToUserData[tokenId].userSeq,
+            uint32(evtType),
+            aggType,
+            resolvedAggId,
+            uint64(block.timestamp),
+            data
+        );
     }
 
     // ══════════════════════════════════════════════════════════════════════════
     //  COMMENT INTERNALS — shared logic for direct + x402 paths
     // ══════════════════════════════════════════════════════════════════════════
 
-    /// @dev Shared: create/delete a comment with optional boost.
-    ///      Transfers USDT if boostAmount > 0, auto-assigns aggId if 0.
+    /// @dev Shared: create/delete a comment (always free — boost is a separate call).
+    ///      Auto-assigns aggId if 0. Enforces 64-day comment window on parentAggId.
     function _submitComment(
         address actor,
         uint8 aggType,
         uint64 aggId,
         uint8 evtType,
         bytes calldata data,
-        uint128 boostAmount
+        uint64 parentAggId
     ) internal {
         uint256 tokenId = ownerToTokenId[actor];
         if (tokenId == 0) revert NoUsername();
-        string memory username = idToName[tokenId];
+        string memory username = idToUserData[tokenId].userName;
 
-        if (boostAmount > 0) {
-            bool ok = usdt.transferFrom(actor, address(this), boostAmount);
-            if (!ok) revert TransferFailed();
-            _mintDuki(actor, boostAmount);
+        if (parentAggId > 0) {
+            uint64 parentCreated = aggData[aggType][parentAggId].createdAt;
+            if (parentCreated > 0 && block.timestamp > parentCreated + COMMENT_WINDOW) {
+                revert CommentWindowClosed(parentAggId);
+            }
         }
+
+        ++idToUserData[tokenId].userSeq;
 
         uint64 resolvedAggId = aggId == 0 ? _nextAggId(aggType) : aggId;
 
-        // Record creator for new aggregates (aggId == 0 means new)
         if (aggId == 0) {
-            aggCreator[aggType][resolvedAggId] = actor;
+            aggData[aggType][resolvedAggId] = AggData({ creator: actor, createdAt: uint64(block.timestamp) });
         }
 
         uint64 seq = ++_evtSeq;
-
-        emit DukerEvent(actor, seq, username, uint32(evtType), aggType, resolvedAggId, uint64(block.timestamp), data);
+        emit DukerEvent(
+            actor,
+            seq,
+            username,
+            idToUserData[tokenId].userSeq,
+            uint32(evtType),
+            aggType,
+            resolvedAggId,
+            uint64(block.timestamp),
+            data
+        );
     }
 
-    /// @dev Shared: amend a comment (always free, no boost).
-    function _amendComment(
-        address actor,
-        uint8 aggType,
-        uint64 aggId,
-        uint8 evtType,
-        bytes calldata data
-    ) internal {
-        uint256 tokenId = ownerToTokenId[actor];
-        if (tokenId == 0) revert NoUsername();
-        string memory username = idToName[tokenId];
-
-        // Ownership check: only creator can amend
-        if (aggCreator[aggType][aggId] != actor) revert NotAggOwner(aggType, aggId);
-
-        uint64 seq = ++_evtSeq;
-
-        emit DukerEvent(actor, seq, username, uint32(evtType), aggType, aggId, uint64(block.timestamp), data);
-    }
-
-    /// @dev Shared: upvote a comment with optional boost (tip).
-    function _upvoteComment(
+    /// @dev Shared: boost a post or comment — pure USDT payment, no vote increment.
+    function _boostItem(
         address actor,
         uint8 aggType,
         uint64 aggId,
@@ -288,72 +300,169 @@ contract DukerNews is ERC721Upgradeable, OwnableUpgradeable, UUPSUpgradeable, ID
         bytes calldata data,
         uint128 boostAmount
     ) internal {
+        if (boostAmount == 0) revert AmountBelowMinFee(0, 1);
         uint256 tokenId = ownerToTokenId[actor];
         if (tokenId == 0) revert NoUsername();
-        string memory username = idToName[tokenId];
+        string memory username = idToUserData[tokenId].userName;
 
-        if (boostAmount > 0) {
-            bool ok = usdt.transferFrom(actor, address(this), boostAmount);
-            if (!ok) revert TransferFailed();
-            _mintDuki(actor, boostAmount);
-        }
+        ++idToUserData[tokenId].userSeq;
+        idToUserData[tokenId].amount += boostAmount;
+
+        bool ok = usdt.transferFrom(actor, address(this), boostAmount);
+        if (!ok) revert TransferFailed();
+        _mintDuki(actor, boostAmount);
+
+        uint64 seq = ++_evtSeq;
+        emit DukerEvent(
+            actor,
+            seq,
+            username,
+            idToUserData[tokenId].userSeq,
+            uint32(evtType),
+            aggType,
+            aggId,
+            uint64(block.timestamp),
+            data
+        );
+    }
+
+    /// @dev Shared: amend a comment (always free, no boost).
+    ///      Enforces 64-minute amend window.
+    function _amendComment(address actor, uint8 aggType, uint64 aggId, uint8 evtType, bytes calldata data) internal {
+        uint256 tokenId = ownerToTokenId[actor];
+        if (tokenId == 0) revert NoUsername();
+        string memory username = idToUserData[tokenId].userName;
+
+        // Track mutation (amend is free, no boost)
+        ++idToUserData[tokenId].userSeq;
+
+        // Ownership + time-lock check
+        AggData storage ad = aggData[aggType][aggId];
+        if (ad.creator != actor) revert NotAggOwner(aggType, aggId);
+        if (block.timestamp > ad.createdAt + AMEND_WINDOW) revert AmendWindowClosed(aggType, aggId);
 
         uint64 seq = ++_evtSeq;
 
-        emit DukerEvent(actor, seq, username, uint32(evtType), aggType, aggId, uint64(block.timestamp), data);
+        emit DukerEvent(
+            actor,
+            seq,
+            username,
+            idToUserData[tokenId].userSeq,
+            uint32(evtType),
+            aggType,
+            aggId,
+            uint64(block.timestamp),
+            data
+        );
+    }
+
+    /// @dev Shared: upvote a post or comment — pure social signal, always free.
+    ///      agg_type identifies the target: 2=post, 3=comment.
+    function _upvoteAttention(address actor, uint8 aggType, uint64 aggId, uint8 evtType, bytes calldata data) internal {
+        uint256 tokenId = ownerToTokenId[actor];
+        if (tokenId == 0) revert NoUsername();
+        string memory username = idToUserData[tokenId].userName;
+
+        ++idToUserData[tokenId].userSeq;
+
+        uint64 seq = ++_evtSeq;
+        emit DukerEvent(
+            actor,
+            seq,
+            username,
+            idToUserData[tokenId].userSeq,
+            uint32(evtType),
+            aggType,
+            aggId,
+            uint64(block.timestamp),
+            data
+        );
     }
 
     // ══════════════════════════════════════════════════════════════════════════
     //  COMMENT — external entry points (direct + x402)
     // ══════════════════════════════════════════════════════════════════════════
 
-    /// @notice Submit a comment on-chain (user pays gas).
-    function submitComment(
-        uint8 aggType, uint64 aggId, uint8 evtType, bytes calldata data, uint128 boostAmount
-    ) external {
-        _submitComment(msg.sender, aggType, aggId, evtType, data, boostAmount);
+    /// @notice Submit a comment on-chain (user pays gas). Always free.
+    function submitComment(uint8 aggType, uint64 aggId, uint8 evtType, bytes calldata data, uint64 parentAggId)
+        external
+    {
+        _submitComment(msg.sender, aggType, aggId, evtType, data, parentAggId);
     }
 
     /// @notice Submit a comment via x402 (backend pays gas on behalf of user).
     function submitCommentViaX402(
-        address user, uint8 aggType, uint64 aggId, uint8 evtType, bytes calldata data,
-        uint128 boostAmount, bytes32 paymentNonce
+        address user,
+        uint8 aggType,
+        uint64 aggId,
+        uint8 evtType,
+        bytes calldata data,
+        uint64 parentAggId,
+        bytes32 paymentNonce
     ) external onlyOwner {
         _markPayment(paymentNonce, user);
-        _submitComment(user, aggType, aggId, evtType, data, boostAmount);
+        _submitComment(user, aggType, aggId, evtType, data, parentAggId);
     }
 
     /// @notice Amend (edit) a comment on-chain (user pays gas). Always free.
-    function amendComment(
-        uint8 aggType, uint64 aggId, uint8 evtType, bytes calldata data
-    ) external {
+    function amendComment(uint8 aggType, uint64 aggId, uint8 evtType, bytes calldata data) external {
         _amendComment(msg.sender, aggType, aggId, evtType, data);
     }
 
     /// @notice Amend a comment via x402 (backend pays gas). Always free.
     function amendCommentViaX402(
-        address user, uint8 aggType, uint64 aggId, uint8 evtType, bytes calldata data, bytes32 paymentNonce
+        address user,
+        uint8 aggType,
+        uint64 aggId,
+        uint8 evtType,
+        bytes calldata data,
+        bytes32 paymentNonce
     ) external onlyOwner {
         _markPayment(paymentNonce, user);
         _amendComment(user, aggType, aggId, evtType, data);
     }
 
-    /// @notice Upvote a comment on-chain (user pays gas), with optional USDT tip.
-    function upvoteComment(
-        uint8 aggType, uint64 aggId, uint8 evtType, bytes calldata data, uint128 boostAmount
-    ) external {
-        _upvoteComment(msg.sender, aggType, aggId, evtType, data, boostAmount);
+    /// @notice Upvote a post or comment on-chain (user pays gas). Always free — pure social signal.
+    ///         agg_type identifies the target: 2=post, 3=comment.
+    function upvoteAttention(uint8 aggType, uint64 aggId, uint8 evtType, bytes calldata data) external {
+        _upvoteAttention(msg.sender, aggType, aggId, evtType, data);
     }
 
-    /// @notice Upvote a comment via x402 (backend pays gas), with optional USDT tip.
-    function upvoteCommentViaX402(
-        address user, uint8 aggType, uint64 aggId, uint8 evtType, bytes calldata data,
-        uint128 boostAmount, bytes32 paymentNonce
+    /// @notice Upvote a post or comment via x402 (backend pays gas). Always free.
+    function upvoteAttentionViaX402(
+        address user,
+        uint8 aggType,
+        uint64 aggId,
+        uint8 evtType,
+        bytes calldata data,
+        bytes32 paymentNonce
     ) external onlyOwner {
         _markPayment(paymentNonce, user);
-        _upvoteComment(user, aggType, aggId, evtType, data, boostAmount);
+        _upvoteAttention(user, aggType, aggId, evtType, data);
     }
 
+    /// @notice Boost attention on a post or comment with USDT (user pays gas).
+    ///         agg_type identifies the target: 2=post, 3=comment.
+    ///         Pure economic signal — does not increment vote count.
+    function boostAttention(uint8 aggType, uint64 aggId, uint8 evtType, bytes calldata data, uint128 boostAmount)
+        external
+    {
+        _boostItem(msg.sender, aggType, aggId, evtType, data, boostAmount);
+    }
+
+    /// @notice Boost attention via x402 (backend pays gas on behalf of user).
+    function boostAttentionViaX402(
+        address user,
+        uint8 aggType,
+        uint64 aggId,
+        uint8 evtType,
+        bytes calldata data,
+        uint128 boostAmount,
+        bytes32 paymentNonce
+    ) external onlyOwner {
+        _markPayment(paymentNonce, user);
+        _boostItem(user, aggType, aggId, evtType, data, boostAmount);
+    }
 
     // ══════════════════════════════════════════════════════════════════════════
     //  PUBLIC VIEW
@@ -363,7 +472,7 @@ contract DukerNews is ERC721Upgradeable, OwnableUpgradeable, UUPSUpgradeable, ID
     function usernameOf(address owner) external view returns (string memory) {
         uint256 tokenId = tokenOfOwner(owner);
         if (tokenId == 0) return "";
-        return idToName[tokenId];
+        return idToUserData[tokenId].userName;
     }
 
     /// @notice Returns the tokenId owned by `owner`, or 0 if none.
@@ -375,8 +484,12 @@ contract DukerNews is ERC721Upgradeable, OwnableUpgradeable, UUPSUpgradeable, ID
 
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
         if (_ownerOf(tokenId) == address(0)) revert NonexistentToken(tokenId);
-        string memory name = idToName[tokenId];
-        string memory svg = _buildSVG(name, tokenId);
+        UserData storage ud = idToUserData[tokenId];
+        string memory name = ud.userName;
+        uint256 bps = ud.dukiBps;
+        if (bps == 0) bps = 9500; // fallback for pre-V3 tokens
+
+        string memory svg = _buildSVG(name, tokenId, bps);
         string memory json = string.concat(
             '{"name":"@',
             name,
@@ -387,6 +500,8 @@ contract DukerNews is ERC721Upgradeable, OwnableUpgradeable, UUPSUpgradeable, ID
             '"},',
             '{"trait_type":"Token ID","value":"',
             tokenId.toString(),
+            '"},{"trait_type":"DUKI Allocation (%)","value":"',
+            (bps / 100).toString(),
             '"}]}'
         );
         return string.concat("data:application/json;base64,", Base64.encode(bytes(json)));
@@ -419,19 +534,6 @@ contract DukerNews is ERC721Upgradeable, OwnableUpgradeable, UUPSUpgradeable, ID
     /// @notice Emergency withdraw any ERC-20 accidentally sent to this contract.
     function rescueERC20(address token, uint256 amount) external onlyOwner {
         IERC20(token).transfer(treasury, amount);
-    }
-
-    // ── Migration: backfill ownerToTokenId for existing holders ────────────
-
-    /// @notice One-time migration: populate ownerToTokenId for all existing tokens.
-    ///         Safe to call multiple times (idempotent). Owner-only.
-    function migrateOwnerToTokenId() external onlyOwner {
-        for (uint256 i = 1; i < _nextId; i++) {
-            address holder = _ownerOf(i);
-            if (holder != address(0)) {
-                ownerToTokenId[holder] = i;
-            }
-        }
     }
 
     // ── UUPS upgrade authorization ──────────────────────────────────────────
@@ -474,14 +576,15 @@ contract DukerNews is ERC721Upgradeable, OwnableUpgradeable, UUPSUpgradeable, ID
 
     /// @dev Shared mint logic — used by both direct and x402 paths.
     ///      Emits the SAME DukerEvent so the event indexer is path-agnostic.
-    function _doMint(address user, string calldata name, uint256 amount, uint256 dukiBps) internal {
+    function _doMint(address user, string calldata name, uint128 amount, uint16 dukiBps) internal {
         uint256 tokenId = _nextId++;
         _safeMint(user, tokenId);
 
         nameToId[name] = tokenId;
-        idToName[tokenId] = name;
         ownerToTokenId[user] = tokenId;
-        totalPaid[tokenId] += amount;
+
+        // Single struct-literal write — compiler packs dukiBps+userSeq+amount into 1 SSTORE
+        idToUserData[tokenId] = UserData({ dukiBps: dukiBps, userSeq: 1, amount: amount, userName: name });
 
         // Same DukerEvent — indexer is path-agnostic
         uint64 seq = ++_evtSeq;
@@ -489,11 +592,12 @@ contract DukerNews is ERC721Upgradeable, OwnableUpgradeable, UUPSUpgradeable, ID
             user,
             seq,
             name,
-            21, // USER_MINTED (proto EventType value)
+            1, // userSeq = 1 for freshly minted
+            EVT_TYPE_USER_MINTED,
             1, // aggType = USER
             uint64(tokenId),
             uint64(block.timestamp),
-            DukerNewsEventEncoder.encodeUsernameMinted(tokenId, name, uint128(amount), uint16(dukiBps))
+            DukerNewsEventEncoder.encodeUsernameMinted(tokenId, name, amount, dukiBps)
         );
     }
 
@@ -632,8 +736,14 @@ contract DukerNews is ERC721Upgradeable, OwnableUpgradeable, UUPSUpgradeable, ID
     }
 
     // solhint-disable max-line-length
-    function _buildSVG(string memory name, uint256 tokenId) internal pure returns (string memory) {
+    function _buildSVG(string memory name, uint256 tokenId, uint256 dukiBps) internal pure returns (string memory) {
         string memory fontSize = _fontSize(_utf8CharCount(bytes(name)));
+
+        string memory pctStr = "";
+        if (dukiBps > 0) {
+            pctStr = string.concat(unicode" · ", (dukiBps / 100).toString(), "%");
+        }
+
         return string.concat(
             '<svg xmlns="http://www.w3.org/2000/svg" width="500" height="500" viewBox="0 0 500 500">' "<defs>"
             '<linearGradient id="bg" x1="0" y1="0" x2="500" y2="500" gradientUnits="userSpaceOnUse">'
@@ -659,11 +769,10 @@ contract DukerNews is ERC721Upgradeable, OwnableUpgradeable, UUPSUpgradeable, ID
             "</text>"
             '<text x="250" y="380" font-family="monospace" font-size="16" fill="#d8b4fe" text-anchor="middle">#',
             tokenId.toString(),
-            unicode" · X Layer</text></svg>"
+            unicode" · X Layer",
+            pctStr,
+            "</text></svg>"
         );
     }
     // solhint-enable max-line-length
-
-    // ── Storage gap for upgradeable contracts ────────────────────────────────
-    uint256[50] private __gap;
 }

@@ -12,8 +12,14 @@ export const XLAYER_CHAIN_ID = 196
 const chainEnv = (import.meta as any).env?.VITE_CHAIN ?? 'local'
 export const DEFAULT_CHAIN_ID: number =
     chainEnv === 'sepolia' ? SEPOLIA_CHAIN_ID
-    : chainEnv === 'xlayer' ? XLAYER_CHAIN_ID
-    : LOCAL_CHAIN_ID
+        : chainEnv === 'xlayer' ? XLAYER_CHAIN_ID
+            : LOCAL_CHAIN_ID
+
+// ── Global approve floor (in micro-units, 6 decimals) ────────────────────────
+// Always approve at least this much to avoid re-approving on small transactions.
+// 64 USDT = 64_000_000 micro-units.
+// export const MIN_APPROVE_MICRO = BigInt(64_000_000)
+export const MIN_APPROVE_MICRO = BigInt(8_000_000)
 
 // ── Contract addresses (non-stablecoin) ──────────────────────────────────────
 export const ADDRESSES: Record<number, { DukerNews: Address; Treasury: Address }> = {
@@ -22,11 +28,11 @@ export const ADDRESSES: Record<number, { DukerNews: Address; Treasury: Address }
         Treasury: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
     },
     [SEPOLIA_CHAIN_ID]: {
-        DukerNews: '0x127600D0833296D0722f265fd90C19DfD51EAd79',
-        Treasury: '0xF4A630F0A939DB59dD35408ecfd6Ea3429C87F5c',
+        DukerNews: '0xEEfb66A4656fB695D6f718676A1D57aF023d1F6f',
+        Treasury: '0xBB68A2363861d595cfF23abE0AC247fd36c0e7E7',
     },
     [XLAYER_CHAIN_ID]: {
-        DukerNews: '0x4E622724cd88AB0CEC2E8304AE4EDAf6c00ac22f',
+        DukerNews: '0x348C88cC171bffDB9128bc9DEcDa49c0820FB29F',
         Treasury: '0xfe0a6760458A1E75c284B9903ecc64D2B87c00a6',
     },
 }
@@ -46,26 +52,52 @@ export type ChainMeta = {
     stablecoins: StablecoinMeta[]
     explorerUrl: string
     isHome: boolean  // true = main deployment chain, both methods; false = x402 only
+    /** Native gas token symbol — OKB on XLayer, ETH on Ethereum/Sepolia */
+    nativeCurrency: { symbol: string; decimals: number }
 }
+
+// ── Demo display override ────────────────────────────────────────────────────
+// Toggle DEMO_MODE to false to restore real chain names (Sepolia, USDT Test, etc.)
+const DEMO_MODE = false
+
+export const DEMO_DISPLAY = DEMO_MODE
+    ? {
+        chainName: 'X Layer',
+        stablecoinSymbol: 'USDT',
+        stablecoinName: 'USD₮0',
+        explorerUrl: 'https://www.okx.com/web3/explorer/xlayer',
+        gasSymbol: 'OKB',
+        gasDecimals: 18,
+    }
+    : {
+        chainName: 'Sepolia',
+        stablecoinSymbol: 'USDT (Test)',
+        stablecoinName: 'Mock USDT',
+        explorerUrl: 'https://sepolia.etherscan.io',
+        gasSymbol: 'ETH',
+        gasDecimals: 18,
+    }
 
 export const SUPPORTED_CHAINS: ChainMeta[] = [
     {
         id: XLAYER_CHAIN_ID,
         name: 'XLayer',
         stablecoins: [
-            { symbol: 'USDT0', name: 'USD₮0', address: '0x779Ded0c9e1022225f8E0630b35a9b54bE713736' as Address, decimals: 6 },
+            { symbol: 'USDT', name: 'USD₮0', address: '0x779Ded0c9e1022225f8E0630b35a9b54bE713736' as Address, decimals: 6 },
         ],
         explorerUrl: 'https://www.okx.com/web3/explorer/xlayer',
         isHome: DEFAULT_CHAIN_ID === XLAYER_CHAIN_ID,
+        nativeCurrency: { symbol: 'OKB', decimals: 18 },
     },
     {
         id: SEPOLIA_CHAIN_ID,
-        name: 'Sepolia',
+        name: DEMO_DISPLAY.chainName,
         stablecoins: [
-            { symbol: 'USDT (Test)', name: 'Test USDT', address: '0xdFc84469Bf8c7A2ba98090bde94f5F9fc3Ec2066' as Address, decimals: 6 },
+            { symbol: DEMO_DISPLAY.stablecoinSymbol, name: DEMO_DISPLAY.stablecoinName, address: '0x60Aad2540Cc4CE0FA6188a796fD9B8e48917004c' as Address, decimals: 6 },
         ],
-        explorerUrl: 'https://sepolia.etherscan.io',
+        explorerUrl: DEMO_DISPLAY.explorerUrl,
         isHome: DEFAULT_CHAIN_ID === SEPOLIA_CHAIN_ID,
+        nativeCurrency: { symbol: DEMO_DISPLAY.gasSymbol, decimals: DEMO_DISPLAY.gasDecimals },
     },
     {
         id: LOCAL_CHAIN_ID,
@@ -76,11 +108,15 @@ export const SUPPORTED_CHAINS: ChainMeta[] = [
         ],
         explorerUrl: '',
         isHome: DEFAULT_CHAIN_ID === LOCAL_CHAIN_ID,
+        nativeCurrency: { symbol: 'ETH', decimals: 18 },
     },
 ].filter(c => {
     // Only include chains with non-zero contract addresses
     const addrs = ADDRESSES[c.id]
-    return addrs && addrs.DukerNews !== '0x0000000000000000000000000000000000000000'
+    if (!addrs || addrs.DukerNews === '0x0000000000000000000000000000000000000000') return false
+    // DEMO_MODE: only show the active chain
+    if (DEMO_MODE || true) return c.id === DEFAULT_CHAIN_ID
+    return true
 })
 
 // ── Helpers ──────────────────────────────────────────────────────────────────

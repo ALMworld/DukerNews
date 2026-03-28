@@ -11,13 +11,11 @@ import { getLocaleData, type FlowStrings } from './data'
 
 const BREAKPOINT = 500
 
-// ── colours ──────────────────────────────────────────────────────────────────
-const P  = '#7c3aed'
-const PL = '#a78bfa'
-const PD = '#1e1b4b'
-const PM = '#6d28d9'
-const TX = '#ddd6fe'
-const TK = 'rgba(109,40,217,0.6)'
+// ── colours — CSS vars so the chart adapts to light/dark theme ──────────────
+const P  = 'var(--duki-600,#7c3aed)'   // edge solid
+const PL = 'var(--duki-400,#a78bfa)'   // edge dashed / subtle
+const TX = 'var(--foreground)'          // node text
+const TK = 'var(--muted)'              // node background
 
 // ── types ─────────────────────────────────────────────────────────────────────
 type NodeV = 'brand' | 'pill' | 'circle' | 'token' | 'combined'
@@ -224,7 +222,7 @@ function computeLayout(f: FlowStrings, vert: boolean, topPad = 0, botPad = 0) {
 // ── node style ────────────────────────────────────────────────────────────────
 const BASE: React.CSSProperties = {
     position: 'absolute', fontSize: 11, lineHeight: 1.2,
-    border: `1px solid ${PM}`, background: PD, color: TX,
+    border: '1px solid var(--border)', background: 'var(--muted)', color: TX,
     whiteSpace: 'nowrap', userSelect: 'none',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
 }
@@ -233,16 +231,16 @@ function nstyle(n: LNode): React.CSSProperties {
     switch (n.v) {
         case 'brand': return { ...BASE, left, top, width: n.w, height: n.h, borderRadius: 8,
             flexDirection: 'column', gap: 3, fontWeight: 700, fontSize: 11, textAlign: 'center',
-            border: `1.5px solid ${PL}`, color: '#e9d5ff',
-            background: 'linear-gradient(135deg,rgba(109,40,217,.65),rgba(76,29,149,.45))',
-            boxShadow: '0 0 14px rgba(167,139,250,.3)', padding: '6px 10px' }
+            border: '1.5px solid var(--duki-500,#8b5cf6)', color: 'var(--foreground)',
+            background: 'var(--muted)',
+            boxShadow: '0 0 14px var(--duki-500-alpha,rgba(139,92,246,.15))', padding: '6px 10px' }
         case 'circle': return { ...BASE, left, top, width: n.w, height: n.h, borderRadius: '50%',
-            flexDirection: 'column', gap: 1, border: `1.5px solid ${PL}` }
+            flexDirection: 'column', gap: 1, border: '1.5px solid var(--duki-500,#8b5cf6)' }
         case 'combined': return { ...BASE, left, top, width: n.w, height: n.h, borderRadius: 6,
             flexDirection: 'column', gap: 1, textAlign: 'center',
-            border: `1px solid ${PL}`, background: TK, lineHeight: 1.3 }
+            border: '1px solid var(--duki-500,#8b5cf6)', background: TK, lineHeight: 1.3 }
         case 'token': return { ...BASE, left, top, width: n.w, height: n.h, borderRadius: 6,
-            fontWeight: 700, border: `1px solid ${PL}`, background: TK }
+            fontWeight: 700, border: '1px solid var(--duki-500,#8b5cf6)', background: TK }
         default: return { ...BASE, left, top, width: n.w, height: n.h, borderRadius: 6, padding: '4px 8px' }
     }
 }
@@ -283,8 +281,8 @@ export default function DealFlowChart({ locale = 'en' }: DealFlowChartProps) {
     return (
         <div ref={containerRef} style={{
             borderRadius: 8, marginTop: 20,
-            border: '1px solid #6d28d9',
-            background: 'rgba(30,27,75,0.5)',
+            border: '1px solid var(--border)',
+            background: 'var(--muted)',
             overflow: 'hidden',
             height: scaledH,
         }}>
@@ -299,8 +297,8 @@ export default function DealFlowChart({ locale = 'en' }: DealFlowChartProps) {
                     position: 'absolute',
                     left: layout.groupBox.left, top: layout.groupBox.top,
                     width: layout.groupBox.width, height: layout.groupBox.height,
-                    border: `1px dashed ${PL}`, borderRadius: 10,
-                    background: 'rgba(109,40,217,0.08)', pointerEvents: 'none',
+                    border: '1px dashed var(--duki-400,#a78bfa)', borderRadius: 10,
+                    background: 'var(--background)', opacity: 0.5, pointerEvents: 'none',
                 }} />
 
                 {/* SVG — all edges */}
@@ -340,7 +338,7 @@ export default function DealFlowChart({ locale = 'en' }: DealFlowChartProps) {
                         {n.v === 'circle' && <span style={{ fontSize: 18 }}>☯</span>}
                         <span style={{ fontWeight: n.v === 'combined' ? 700 : undefined }}>{n.label}</span>
                         {n.label2 && (
-                            <span style={{ fontSize: 9, color: PL, opacity: 0.85, letterSpacing: '0.02em' }}>
+                            <span style={{ fontSize: 9, color: 'var(--duki-400,#a78bfa)', opacity: 0.85, letterSpacing: '0.02em' }}>
                                 {n.label2}
                             </span>
                         )}

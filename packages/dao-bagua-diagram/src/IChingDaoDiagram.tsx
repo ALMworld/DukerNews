@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { IChingDiagram } from './IChingDiagram';
-import ShaderCanvas2 from './ShaderCanvas2';
+import ShaderCanvas from './ShaderCanvas2';
 import { BaguaSectionCard } from './BaguaSectionCard';
 import styles from './IChingDaoDiagram.module.scss';
 
@@ -35,7 +35,7 @@ export const IChingDaoDiagram: React.FC<IChingDaoDiagramProps> = ({
                 <div className={styles.diagramInner} style={{ position: 'relative' }}>
                     {/* ShaderCanvas2 background — theme aware */}
                     <div style={{ position: 'absolute', inset: 0, borderRadius: 16, overflow: 'hidden' }}>
-                        <ShaderCanvas2 bgColor={isDark ? '#1e1b4b' : '#ede9fe'} />
+                        <ShaderCanvas bgColor={isDark ? '#1e1b4b' : '#ede9fe'} />
                     </div>
                     {/* Taiji SVG overlay */}
                     <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

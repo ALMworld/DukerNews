@@ -28,13 +28,14 @@ ifeq ($(ENV),prod)
   MINTER_XLAYER  = 0x22c672f9382c86A4BBDc151cFa8EA8ebc1076D87
 else
   RPC_XLAYER     = https://testrpc.xlayer.tech
-  RPC_SEPOLIA    = https://1rpc.io/sepolia
+  RPC_SEPOLIA    = https://blockchain.googleapis.com/v1/projects/gen-lang-client-0353869734/locations/asia-east1/endpoints/ethereum-sepolia/rpc?key=AIzaSyCygRUVltm8-BXV9UwAjKLAS6lwk8LjRFg
   RPC_WORLDCHAIN = https://worldchain-sepolia.gateway.tenderly.co
   CHAIN_ID_XLAYER = 195
   ENV_FILE       = .env.test
   KEYCHAIN_SVC   = duki-alm-deployer-test
   USDT_XLAYER    = 0xeb90e6d5386345550400201BA94a9473975CADAC
   MINTER_XLAYER  =
+  MINTER_SEPOLIA = 0x7cd29f64fB3198D3c78dbbfBcd38bD3AE59734ec
 endif
 
 # ── Load PRIVATE_KEY from macOS Keychain ──
@@ -72,6 +73,14 @@ deploy-sepolia: check-key
 	@echo "=== Deploying DukerNews to Sepolia ($(ENV)) ==="
 	forge script script/DeployDukerNews.s.sol:DeployDukerNews \
 		--rpc-url $(RPC_SEPOLIA) \
+		--broadcast \
+		-vvv
+
+upgrade-xlayer: check-key
+	@echo "=== Upgrading DukerNews on X Layer ($(ENV)) ==="
+	PROXY_ADDRESS=0x348C88cC171bffDB9128bc9DEcDa49c0820FB29F \
+	forge script script/UpgradeDukerNews.s.sol:UpgradeDukerNews \
+		--rpc-url $(RPC_XLAYER) \
 		--broadcast \
 		-vvv
 

@@ -25,7 +25,7 @@ export async function getComments(
     const rows = await db
         .selectFrom('comments')
         .selectAll()
-        .where('post_id', '=', postId)
+        .where('post_id', '=', Number(postId) as any)  // D1 needs Number not bigint
         .where('dead', '=', 0)
         .orderBy('ancestor_path')
         .limit(limit + 1)  // fetch one extra to check hasMore

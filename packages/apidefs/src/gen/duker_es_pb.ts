@@ -4,7 +4,7 @@
 
 import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
-import type { PbPostData, PostKind } from "./duker_pb";
+import type { AggType, PbPostData, PostKind } from "./duker_pb";
 import { file_duker } from "./duker_pb";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file duker_es.proto.
  */
 export const file_duker_es: GenFile = /*@__PURE__*/
-  fileDesc("Cg5kdWtlcl9lcy5wcm90bxIFZHVrZXIi7AEKElBvc3RDcmVhdGVkUGF5bG9hZBINCgV0aXRsZRgBIAEoCRILCgN1cmwYAiABKAkSDAoEdGV4dBgDIAEoCRIQCgh0aXRsZV9lbhgEIAEoCRIOCgZ1cmxfZW4YBSABKAkSDwoHdGV4dF9lbhgGIAEoCRIdCgRraW5kGAcgASgOMg8uZHVrZXIuUG9zdEtpbmQSDgoGbG9jYWxlGAggASgJEg4KBmRvbWFpbhgJIAEoCRIkCglwb3N0X2RhdGEYCiABKAsyES5kdWtlci5QYlBvc3REYXRhEhQKDGJvb3N0X2Ftb3VudBgLIAEoBCIqChJQb3N0VXB2b3RlZFBheWxvYWQSFAoMYm9vc3RfYW1vdW50GAEgASgEIi0KFUNvbW1lbnRVcHZvdGVkUGF5bG9hZBIUCgxib29zdF9hbW91bnQYASABKAQibwoQUG9zdEFtZW5kUGF5bG9hZBINCgV0aXRsZRgBIAEoCRILCgN1cmwYAiABKAkSDAoEdGV4dBgDIAEoCRIQCgh0aXRsZV9lbhgEIAEoCRIOCgZ1cmxfZW4YBSABKAkSDwoHdGV4dF9lbhgGIAEoCSIiCg9Qb3N0SXRlbVBheWxvYWQSDwoHcG9zdF9pZBgBIAEoAyKGAQoVQ29tbWVudENyZWF0ZWRQYXlsb2FkEg8KB3Bvc3RfaWQYASABKAMSEQoJcGFyZW50X2lkGAIgASgDEgwKBHRleHQYAyABKAkSDgoGbG9jYWxlGAQgASgJEhUKDWFuY2VzdG9yX3BhdGgYBSABKAkSFAoMYm9vc3RfYW1vdW50GAYgASgEIiMKE0NvbW1lbnRBbWVuZFBheWxvYWQSDAoEdGV4dBgBIAEoCSIoChJDb21tZW50SXRlbVBheWxvYWQSEgoKY29tbWVudF9pZBgBIAEoAyI1Cg9MaWtlSXRlbVBheWxvYWQSEQoJaXRlbV90eXBlGAEgASgJEg8KB2l0ZW1faWQYAiABKAMibwoRVXNlck1pbnRlZFBheWxvYWQSDwoHYWRkcmVzcxgBIAEoCRIQCgh1c2VybmFtZRgCIAEoCRITCgttaW50X2Ftb3VudBgDIAEoBBIQCghkdWtpX2JwcxgEIAEoDRIQCgh0b2tlbl9pZBgFIAEoBCJDChJVc2VyQW1lbmRlZFBheWxvYWQSDwoHYWRkcmVzcxgBIAEoCRINCgVhYm91dBgCIAEoCRINCgVlbWFpbBgDIAEoCSKoBwoJRXZlbnREYXRhEjEKDHBvc3RfY3JlYXRlZBgBIAEoCzIZLmR1a2VyLlBvc3RDcmVhdGVkUGF5bG9hZEgAEjEKDHBvc3RfdXB2b3RlZBgCIAEoCzIZLmR1a2VyLlBvc3RVcHZvdGVkUGF5bG9hZEgAEi4KDHBvc3RfZmxhZ2dlZBgDIAEoCzIWLmR1a2VyLlBvc3RJdGVtUGF5bG9hZEgAEi8KDHBvc3RfYW1lbmRlZBgEIAEoCzIXLmR1a2VyLlBvc3RBbWVuZFBheWxvYWRIABIuCgxwb3N0X2RlbGV0ZWQYBSABKAsyFi5kdWtlci5Qb3N0SXRlbVBheWxvYWRIABIrCglwb3N0X2RlYWQYBiABKAsyFi5kdWtlci5Qb3N0SXRlbVBheWxvYWRIABIsCgpwb3N0X2xpa2VkGAcgASgLMhYuZHVrZXIuTGlrZUl0ZW1QYXlsb2FkSAASLgoMcG9zdF91bmxpa2VkGAggASgLMhYuZHVrZXIuTGlrZUl0ZW1QYXlsb2FkSAASNwoPY29tbWVudF9jcmVhdGVkGAogASgLMhwuZHVrZXIuQ29tbWVudENyZWF0ZWRQYXlsb2FkSAASNwoPY29tbWVudF91cHZvdGVkGAsgASgLMhwuZHVrZXIuQ29tbWVudFVwdm90ZWRQYXlsb2FkSAASNQoPY29tbWVudF9hbWVuZGVkGAwgASgLMhouZHVrZXIuQ29tbWVudEFtZW5kUGF5bG9hZEgAEjQKD2NvbW1lbnRfZGVsZXRlZBgNIAEoCzIZLmR1a2VyLkNvbW1lbnRJdGVtUGF5bG9hZEgAEjQKD2NvbW1lbnRfZmxhZ2dlZBgOIAEoCzIZLmR1a2VyLkNvbW1lbnRJdGVtUGF5bG9hZEgAEjEKDGNvbW1lbnRfZGVhZBgPIAEoCzIZLmR1a2VyLkNvbW1lbnRJdGVtUGF5bG9hZEgAEi8KDWNvbW1lbnRfbGlrZWQYECABKAsyFi5kdWtlci5MaWtlSXRlbVBheWxvYWRIABIxCg9jb21tZW50X3VubGlrZWQYESABKAsyFi5kdWtlci5MaWtlSXRlbVBheWxvYWRIABIvCgt1c2VyX21pbnRlZBgVIAEoCzIYLmR1a2VyLlVzZXJNaW50ZWRQYXlsb2FkSAASMQoMdXNlcl9hbWVuZGVkGBYgASgLMhkuZHVrZXIuVXNlckFtZW5kZWRQYXlsb2FkSABCCQoHcGF5bG9hZCKuBgoHQ21kRGF0YRIwCgtjcmVhdGVfcG9zdBgBIAEoCzIZLmR1a2VyLlBvc3RDcmVhdGVkUGF5bG9hZEgAEjAKC3Vwdm90ZV9wb3N0GAIgASgLMhkuZHVrZXIuUG9zdFVwdm90ZWRQYXlsb2FkSAASKwoJZmxhZ19wb3N0GAMgASgLMhYuZHVrZXIuUG9zdEl0ZW1QYXlsb2FkSAASLQoKYW1lbmRfcG9zdBgEIAEoCzIXLmR1a2VyLlBvc3RBbWVuZFBheWxvYWRIABItCgtkZWxldGVfcG9zdBgFIAEoCzIWLmR1a2VyLlBvc3RJdGVtUGF5bG9hZEgAEisKCWxpa2VfcG9zdBgGIAEoCzIWLmR1a2VyLkxpa2VJdGVtUGF5bG9hZEgAEi0KC3VubGlrZV9wb3N0GAcgASgLMhYuZHVrZXIuTGlrZUl0ZW1QYXlsb2FkSAASNgoOY3JlYXRlX2NvbW1lbnQYCiABKAsyHC5kdWtlci5Db21tZW50Q3JlYXRlZFBheWxvYWRIABI2Cg51cHZvdGVfY29tbWVudBgLIAEoCzIcLmR1a2VyLkNvbW1lbnRVcHZvdGVkUGF5bG9hZEgAEjEKDGZsYWdfY29tbWVudBgMIAEoCzIZLmR1a2VyLkNvbW1lbnRJdGVtUGF5bG9hZEgAEjMKDWFtZW5kX2NvbW1lbnQYDSABKAsyGi5kdWtlci5Db21tZW50QW1lbmRQYXlsb2FkSAASMwoOZGVsZXRlX2NvbW1lbnQYDiABKAsyGS5kdWtlci5Db21tZW50SXRlbVBheWxvYWRIABIuCgxsaWtlX2NvbW1lbnQYDyABKAsyFi5kdWtlci5MaWtlSXRlbVBheWxvYWRIABIwCg51bmxpa2VfY29tbWVudBgQIAEoCzIWLmR1a2VyLkxpa2VJdGVtUGF5bG9hZEgAEi0KCW1pbnRfdXNlchgVIAEoCzIYLmR1a2VyLlVzZXJNaW50ZWRQYXlsb2FkSAASLwoKYW1lbmRfdXNlchgWIAEoCzIZLmR1a2VyLlVzZXJBbWVuZGVkUGF5bG9hZEgAQgkKB3BheWxvYWQibAoDQ21kEg8KB2FkZHJlc3MYASABKAkSFAoMdXNlcl9ldnRfc2VxGAIgASgDEiAKCGNtZF90eXBlGAMgASgOMg4uZHVrZXIuQ21kVHlwZRIcCgRkYXRhGAQgASgLMg4uZHVrZXIuQ21kRGF0YSLOAQoKRHVrZXJUeFJlcRIPCgdhZGRyZXNzGAEgASgJEiAKCGFnZ190eXBlGAIgASgOMg4uZHVrZXIuQWdnVHlwZRIOCgZhZ2dfaWQYAyABKAQSIgoIZXZ0X3R5cGUYBCABKA4yEC5kdWtlci5FdmVudFR5cGUSHgoEZGF0YRgFIAEoCzIQLmR1a2VyLkV2ZW50RGF0YRIVCg1wYXltZW50X2NoYWluGAYgASgJEiIKGnBheW1lbnRfc3RhYmxlY29pbl9hZGRyZXNzGAcgASgJIoACCgdQYkV2ZW50Eg8KB2V2dF9zZXEYASABKAQSDwoHYWRkcmVzcxgCIAEoCRIPCgd0eF9oYXNoGAMgASgJEhAKCHVzZXJuYW1lGAQgASgJEiAKCGFnZ190eXBlGAUgASgOMg4uZHVrZXIuQWdnVHlwZRIOCgZhZ2dfaWQYBiABKAQSIgoIZXZ0X3R5cGUYByABKA4yEC5kdWtlci5FdmVudFR5cGUSEAoIZXZ0X3RpbWUYCCABKAQSFAoMYmxvY2tfbnVtYmVyGAkgASgEEh4KBGRhdGEYCiABKAsyEC5kdWtlci5FdmVudERhdGESEgoKY3JlYXRlZF9hdBgLIAEoBCJeChFQYkRlbHRhRXZlbnRzUmVzcBIeCgZldmVudHMYASADKAsyDi5kdWtlci5QYkV2ZW50EhMKC3N5bmNfY3Vyc29yGAIgASgEEhQKDHVzZXJfZXZ0X3NlcRgDIAEoBCr0AgoJRXZlbnRUeXBlEhoKFkVWRU5UX1RZUEVfVU5TUEVDSUZJRUQQABIQCgxQT1NUX0NSRUFURUQQARIQCgxQT1NUX1VQVk9URUQQAhIQCgxQT1NUX0ZMQUdHRUQQAxIOCgpQT1NUX0FNRU5EEAQSEAoMUE9TVF9ERUxFVEVEEAUSDQoJUE9TVF9ERUFEEAYSDgoKUE9TVF9MSUtFRBAHEhAKDFBPU1RfVU5MSUtFRBAIEhMKD0NPTU1FTlRfQ1JFQVRFRBAKEhMKD0NPTU1FTlRfVVBWT1RFRBALEhEKDUNPTU1FTlRfQU1FTkQQDBITCg9DT01NRU5UX0RFTEVURUQQDRITCg9DT01NRU5UX0ZMQUdHRUQQDhIQCgxDT01NRU5UX0RFQUQQDxIRCg1DT01NRU5UX0xJS0VEEBASEwoPQ09NTUVOVF9VTkxJS0VEEBESDwoLVVNFUl9NSU5URUQQFRIQCgxVU0VSX0FNRU5ERUQQFipfCgdBZ2dUeXBlEhgKFEFHR19UWVBFX1VOU1BFQ0lGSUVEEAASEQoNQUdHX1RZUEVfVVNFUhABEhEKDUFHR19UWVBFX1BPU1QQAhIUChBBR0dfVFlQRV9DT01NRU5UEAMqzAIKB0NtZFR5cGUSGAoUQ01EX1RZUEVfVU5TUEVDSUZJRUQQABIPCgtDUkVBVEVfUE9TVBABEg8KC1VQVk9URV9QT1NUEAISDQoJRkxBR19QT1NUEAMSDgoKQU1FTkRfUE9TVBAEEg8KC0RFTEVURV9QT1NUEAUSDQoJTElLRV9QT1NUEAYSDwoLVU5MSUtFX1BPU1QQBxISCg5DUkVBVEVfQ09NTUVOVBAKEhIKDlVQVk9URV9DT01NRU5UEAsSEAoMRkxBR19DT01NRU5UEAwSEQoNQU1FTkRfQ09NTUVOVBANEhIKDkRFTEVURV9DT01NRU5UEA4SEAoMTElLRV9DT01NRU5UEA8SEgoOVU5MSUtFX0NPTU1FTlQQEBIPCgtDUkVBVEVfVVNFUhAUEg0KCU1JTlRfVVNFUhAVEg4KCkFNRU5EX1VTRVIQFkJzCgljb20uZHVrZXJCDER1a2VyRXNQcm90b1ABWiRnaXRodWIuY29tL2J1ZmJ1aWxkL2J1Zi1leGFtcGxlcy9nZW6iAgNEWFiqAgVEdWtlcsoCBUR1a2Vy4gIRRHVrZXJcR1BCTWV0YWRhdGHqAgVEdWtlcmIGcHJvdG8z", [file_duker]);
+  fileDesc("Cg5kdWtlcl9lcy5wcm90bxIFZHVrZXIi7AEKElBvc3RDcmVhdGVkUGF5bG9hZBINCgV0aXRsZRgBIAEoCRILCgN1cmwYAiABKAkSDAoEdGV4dBgDIAEoCRIQCgh0aXRsZV9lbhgEIAEoCRIOCgZ1cmxfZW4YBSABKAkSDwoHdGV4dF9lbhgGIAEoCRIdCgRraW5kGAcgASgOMg8uZHVrZXIuUG9zdEtpbmQSDgoGbG9jYWxlGAggASgJEg4KBmRvbWFpbhgJIAEoCRIkCglwb3N0X2RhdGEYCiABKAsyES5kdWtlci5QYlBvc3REYXRhEhQKDGJvb3N0X2Ftb3VudBgLIAEoBCIUChJQb3N0VXB2b3RlZFBheWxvYWQiLQoVQm9vc3RBdHRlbnRpb25QYXlsb2FkEhQKDGJvb3N0X2Ftb3VudBgBIAEoBCIYChZVcHZvdGVBdHRlbnRpb25QYXlsb2FkIhcKFUNvbW1lbnRVcHZvdGVkUGF5bG9hZCJvChBQb3N0QW1lbmRQYXlsb2FkEg0KBXRpdGxlGAEgASgJEgsKA3VybBgCIAEoCRIMCgR0ZXh0GAMgASgJEhAKCHRpdGxlX2VuGAQgASgJEg4KBnVybF9lbhgFIAEoCRIPCgd0ZXh0X2VuGAYgASgJIiIKD1Bvc3RJdGVtUGF5bG9hZBIPCgdwb3N0X2lkGAEgASgDIoYBChVDb21tZW50Q3JlYXRlZFBheWxvYWQSDwoHcG9zdF9pZBgBIAEoAxIRCglwYXJlbnRfaWQYAiABKAMSDAoEdGV4dBgDIAEoCRIOCgZsb2NhbGUYBCABKAkSFQoNYW5jZXN0b3JfcGF0aBgFIAEoCRIUCgxib29zdF9hbW91bnQYBiABKAQiIwoTQ29tbWVudEFtZW5kUGF5bG9hZBIMCgR0ZXh0GAEgASgJIigKEkNvbW1lbnRJdGVtUGF5bG9hZBISCgpjb21tZW50X2lkGAEgASgDIkMKD0xpa2VJdGVtUGF5bG9hZBIgCghhZ2dfdHlwZRgBIAEoDjIOLmR1a2VyLkFnZ1R5cGUSDgoGYWdnX2lkGAIgASgDIm8KEVVzZXJNaW50ZWRQYXlsb2FkEg8KB2FkZHJlc3MYASABKAkSEAoIdXNlcm5hbWUYAiABKAkSEwoLbWludF9hbW91bnQYAyABKAQSEAoIZHVraV9icHMYBCABKA0SEAoIdG9rZW5faWQYBSABKAQiQwoSVXNlckFtZW5kZWRQYXlsb2FkEg8KB2FkZHJlc3MYASABKAkSDQoFYWJvdXQYAiABKAkSDQoFZW1haWwYAyABKAkinAgKCUV2ZW50RGF0YRIxCgxwb3N0X2NyZWF0ZWQYASABKAsyGS5kdWtlci5Qb3N0Q3JlYXRlZFBheWxvYWRIABIxCgxwb3N0X3Vwdm90ZWQYAiABKAsyGS5kdWtlci5Qb3N0VXB2b3RlZFBheWxvYWRIABIuCgxwb3N0X2ZsYWdnZWQYAyABKAsyFi5kdWtlci5Qb3N0SXRlbVBheWxvYWRIABIvCgxwb3N0X2FtZW5kZWQYBCABKAsyFy5kdWtlci5Qb3N0QW1lbmRQYXlsb2FkSAASLgoMcG9zdF9kZWxldGVkGAUgASgLMhYuZHVrZXIuUG9zdEl0ZW1QYXlsb2FkSAASKwoJcG9zdF9kZWFkGAYgASgLMhYuZHVrZXIuUG9zdEl0ZW1QYXlsb2FkSAASLAoKcG9zdF9saWtlZBgHIAEoCzIWLmR1a2VyLkxpa2VJdGVtUGF5bG9hZEgAEi4KDHBvc3RfdW5saWtlZBgIIAEoCzIWLmR1a2VyLkxpa2VJdGVtUGF5bG9hZEgAEjcKD2NvbW1lbnRfY3JlYXRlZBgKIAEoCzIcLmR1a2VyLkNvbW1lbnRDcmVhdGVkUGF5bG9hZEgAEjcKD2NvbW1lbnRfdXB2b3RlZBgLIAEoCzIcLmR1a2VyLkNvbW1lbnRVcHZvdGVkUGF5bG9hZEgAEjUKD2NvbW1lbnRfYW1lbmRlZBgMIAEoCzIaLmR1a2VyLkNvbW1lbnRBbWVuZFBheWxvYWRIABI0Cg9jb21tZW50X2RlbGV0ZWQYDSABKAsyGS5kdWtlci5Db21tZW50SXRlbVBheWxvYWRIABI0Cg9jb21tZW50X2ZsYWdnZWQYDiABKAsyGS5kdWtlci5Db21tZW50SXRlbVBheWxvYWRIABIxCgxjb21tZW50X2RlYWQYDyABKAsyGS5kdWtlci5Db21tZW50SXRlbVBheWxvYWRIABIvCg1jb21tZW50X2xpa2VkGBAgASgLMhYuZHVrZXIuTGlrZUl0ZW1QYXlsb2FkSAASMQoPY29tbWVudF91bmxpa2VkGBEgASgLMhYuZHVrZXIuTGlrZUl0ZW1QYXlsb2FkSAASLwoLdXNlcl9taW50ZWQYFSABKAsyGC5kdWtlci5Vc2VyTWludGVkUGF5bG9hZEgAEjEKDHVzZXJfYW1lbmRlZBgWIAEoCzIZLmR1a2VyLlVzZXJBbWVuZGVkUGF5bG9hZEgAEjcKD2Jvb3N0X2F0dGVudGlvbhgeIAEoCzIcLmR1a2VyLkJvb3N0QXR0ZW50aW9uUGF5bG9hZEgAEjkKEHVwdm90ZV9hdHRlbnRpb24YHyABKAsyHS5kdWtlci5VcHZvdGVBdHRlbnRpb25QYXlsb2FkSABCCQoHcGF5bG9hZCL+AQoKRHVrZXJUeFJlcRIPCgdhZGRyZXNzGAEgASgJEiAKCGFnZ190eXBlGAIgASgOMg4uZHVrZXIuQWdnVHlwZRIOCgZhZ2dfaWQYAyABKAQSIgoIZXZ0X3R5cGUYBCABKA4yEC5kdWtlci5FdmVudFR5cGUSHgoEZGF0YRgFIAEoCzIQLmR1a2VyLkV2ZW50RGF0YRIVCg1wYXltZW50X2NoYWluGAYgASgJEiIKGnBheW1lbnRfc3RhYmxlY29pbl9hZGRyZXNzGAcgASgJEi4KD3BheW1lbnRfcGF5bG9hZBgKIAEoCzIVLmR1a2VyLlBheW1lbnRQYXlsb2FkIkQKDlBheW1lbnRQYXlsb2FkEhAKCGRlYWRsaW5lGAEgASgEEhEKCXNpZ25hdHVyZRgCIAEoDBINCgV2YWx1ZRgDIAEoCSKSAgoHUGJFdmVudBIPCgdldnRfc2VxGAEgASgEEg8KB2FkZHJlc3MYAiABKAkSDwoHdHhfaGFzaBgDIAEoCRIQCgh1c2VybmFtZRgEIAEoCRIQCgh1c2VyX3NlcRgFIAEoBBIgCghhZ2dfdHlwZRgGIAEoDjIOLmR1a2VyLkFnZ1R5cGUSDgoGYWdnX2lkGAcgASgEEiIKCGV2dF90eXBlGAggASgOMhAuZHVrZXIuRXZlbnRUeXBlEhAKCGV2dF90aW1lGAkgASgEEhQKDGJsb2NrX251bWJlchgKIAEoBBIeCgRkYXRhGAsgASgLMhAuZHVrZXIuRXZlbnREYXRhEhIKCmNyZWF0ZWRfYXQYDCABKAQiXgoRUGJEZWx0YUV2ZW50c1Jlc3ASHgoGZXZlbnRzGAEgAygLMg4uZHVrZXIuUGJFdmVudBITCgtzeW5jX2N1cnNvchgCIAEoBBIUCgx1c2VyX2V2dF9zZXEYAyABKAQqnwMKCUV2ZW50VHlwZRIaChZFVkVOVF9UWVBFX1VOU1BFQ0lGSUVEEAASEAoMUE9TVF9DUkVBVEVEEAESEAoMUE9TVF9VUFZPVEVEEAISEAoMUE9TVF9GTEFHR0VEEAMSDgoKUE9TVF9BTUVORBAEEhAKDFBPU1RfREVMRVRFRBAFEg0KCVBPU1RfREVBRBAGEg4KClBPU1RfTElLRUQQBxIQCgxQT1NUX1VOTElLRUQQCBITCg9DT01NRU5UX0NSRUFURUQQChITCg9DT01NRU5UX1VQVk9URUQQCxIRCg1DT01NRU5UX0FNRU5EEAwSEwoPQ09NTUVOVF9ERUxFVEVEEA0SEwoPQ09NTUVOVF9GTEFHR0VEEA4SEAoMQ09NTUVOVF9ERUFEEA8SEQoNQ09NTUVOVF9MSUtFRBAQEhMKD0NPTU1FTlRfVU5MSUtFRBAREg8KC1VTRVJfTUlOVEVEEBUSEAoMVVNFUl9BTUVOREVEEBYSEwoPQk9PU1RfQVRURU5USU9OEB4SFAoQVVBWT1RFX0FUVEVOVElPThAfQnMKCWNvbS5kdWtlckIMRHVrZXJFc1Byb3RvUAFaJGdpdGh1Yi5jb20vYnVmYnVpbGQvYnVmLWV4YW1wbGVzL2dlbqICA0RYWKoCBUR1a2VyygIFRHVrZXLiAhFEdWtlclxHUEJNZXRhZGF0YeoCBUR1a2VyYgZwcm90bzM", [file_duker]);
 
 /**
  * @generated from message duker.PostCreatedPayload
@@ -96,15 +96,11 @@ export const PostCreatedPayloadSchema: GenMessage<PostCreatedPayload> = /*@__PUR
   messageDesc(file_duker_es, 0);
 
 /**
+ * Upvote — pure social signal, no payment
+ *
  * @generated from message duker.PostUpvotedPayload
  */
 export type PostUpvotedPayload = Message<"duker.PostUpvotedPayload"> & {
-  /**
-   * Marketing boost USDT (6-decimal micro units)
-   *
-   * @generated from field: uint64 boost_amount = 1;
-   */
-  boostAmount: bigint;
 };
 
 /**
@@ -115,11 +111,13 @@ export const PostUpvotedPayloadSchema: GenMessage<PostUpvotedPayload> = /*@__PUR
   messageDesc(file_duker_es, 1);
 
 /**
- * @generated from message duker.CommentUpvotedPayload
+ * Boost — pure economic signal, no vote. Works for posts and comments — agg_type identifies target.
+ *
+ * @generated from message duker.BoostAttentionPayload
  */
-export type CommentUpvotedPayload = Message<"duker.CommentUpvotedPayload"> & {
+export type BoostAttentionPayload = Message<"duker.BoostAttentionPayload"> & {
   /**
-   * Optional tip/boost USDT (6-decimal micro units)
+   * USDT paid (6-decimal micro units)
    *
    * @generated from field: uint64 boost_amount = 1;
    */
@@ -127,11 +125,41 @@ export type CommentUpvotedPayload = Message<"duker.CommentUpvotedPayload"> & {
 };
 
 /**
+ * Describes the message duker.BoostAttentionPayload.
+ * Use `create(BoostAttentionPayloadSchema)` to create a new message.
+ */
+export const BoostAttentionPayloadSchema: GenMessage<BoostAttentionPayload> = /*@__PURE__*/
+  messageDesc(file_duker_es, 2);
+
+/**
+ * Upvote — unified across post and comment (agg_type identifies target: 2=post, 3=comment)
+ *
+ * @generated from message duker.UpvoteAttentionPayload
+ */
+export type UpvoteAttentionPayload = Message<"duker.UpvoteAttentionPayload"> & {
+};
+
+/**
+ * Describes the message duker.UpvoteAttentionPayload.
+ * Use `create(UpvoteAttentionPayloadSchema)` to create a new message.
+ */
+export const UpvoteAttentionPayloadSchema: GenMessage<UpvoteAttentionPayload> = /*@__PURE__*/
+  messageDesc(file_duker_es, 3);
+
+/**
+ * Upvote — pure social signal, no payment
+ *
+ * @generated from message duker.CommentUpvotedPayload
+ */
+export type CommentUpvotedPayload = Message<"duker.CommentUpvotedPayload"> & {
+};
+
+/**
  * Describes the message duker.CommentUpvotedPayload.
  * Use `create(CommentUpvotedPayloadSchema)` to create a new message.
  */
 export const CommentUpvotedPayloadSchema: GenMessage<CommentUpvotedPayload> = /*@__PURE__*/
-  messageDesc(file_duker_es, 2);
+  messageDesc(file_duker_es, 4);
 
 /**
  * @generated from message duker.PostAmendPayload
@@ -179,7 +207,7 @@ export type PostAmendPayload = Message<"duker.PostAmendPayload"> & {
  * Use `create(PostAmendPayloadSchema)` to create a new message.
  */
 export const PostAmendPayloadSchema: GenMessage<PostAmendPayload> = /*@__PURE__*/
-  messageDesc(file_duker_es, 3);
+  messageDesc(file_duker_es, 5);
 
 /**
  * @generated from message duker.PostItemPayload
@@ -196,7 +224,7 @@ export type PostItemPayload = Message<"duker.PostItemPayload"> & {
  * Use `create(PostItemPayloadSchema)` to create a new message.
  */
 export const PostItemPayloadSchema: GenMessage<PostItemPayload> = /*@__PURE__*/
-  messageDesc(file_duker_es, 4);
+  messageDesc(file_duker_es, 6);
 
 /**
  * @generated from message duker.CommentCreatedPayload
@@ -244,7 +272,7 @@ export type CommentCreatedPayload = Message<"duker.CommentCreatedPayload"> & {
  * Use `create(CommentCreatedPayloadSchema)` to create a new message.
  */
 export const CommentCreatedPayloadSchema: GenMessage<CommentCreatedPayload> = /*@__PURE__*/
-  messageDesc(file_duker_es, 5);
+  messageDesc(file_duker_es, 7);
 
 /**
  * @generated from message duker.CommentAmendPayload
@@ -261,7 +289,7 @@ export type CommentAmendPayload = Message<"duker.CommentAmendPayload"> & {
  * Use `create(CommentAmendPayloadSchema)` to create a new message.
  */
 export const CommentAmendPayloadSchema: GenMessage<CommentAmendPayload> = /*@__PURE__*/
-  messageDesc(file_duker_es, 6);
+  messageDesc(file_duker_es, 8);
 
 /**
  * @generated from message duker.CommentItemPayload
@@ -278,23 +306,23 @@ export type CommentItemPayload = Message<"duker.CommentItemPayload"> & {
  * Use `create(CommentItemPayloadSchema)` to create a new message.
  */
 export const CommentItemPayloadSchema: GenMessage<CommentItemPayload> = /*@__PURE__*/
-  messageDesc(file_duker_es, 7);
+  messageDesc(file_duker_es, 9);
 
 /**
  * @generated from message duker.LikeItemPayload
  */
 export type LikeItemPayload = Message<"duker.LikeItemPayload"> & {
   /**
-   * "post" or "comment"
+   * 2=post, 3=comment
    *
-   * @generated from field: string item_type = 1;
+   * @generated from field: duker.AggType agg_type = 1;
    */
-  itemType: string;
+  aggType: AggType;
 
   /**
-   * @generated from field: int64 item_id = 2;
+   * @generated from field: int64 agg_id = 2;
    */
-  itemId: bigint;
+  aggId: bigint;
 };
 
 /**
@@ -302,7 +330,7 @@ export type LikeItemPayload = Message<"duker.LikeItemPayload"> & {
  * Use `create(LikeItemPayloadSchema)` to create a new message.
  */
 export const LikeItemPayloadSchema: GenMessage<LikeItemPayload> = /*@__PURE__*/
-  messageDesc(file_duker_es, 8);
+  messageDesc(file_duker_es, 10);
 
 /**
  * @generated from message duker.UserMintedPayload
@@ -345,7 +373,7 @@ export type UserMintedPayload = Message<"duker.UserMintedPayload"> & {
  * Use `create(UserMintedPayloadSchema)` to create a new message.
  */
 export const UserMintedPayloadSchema: GenMessage<UserMintedPayload> = /*@__PURE__*/
-  messageDesc(file_duker_es, 9);
+  messageDesc(file_duker_es, 11);
 
 /**
  * @generated from message duker.UserAmendedPayload
@@ -372,7 +400,7 @@ export type UserAmendedPayload = Message<"duker.UserAmendedPayload"> & {
  * Use `create(UserAmendedPayloadSchema)` to create a new message.
  */
 export const UserAmendedPayloadSchema: GenMessage<UserAmendedPayload> = /*@__PURE__*/
-  messageDesc(file_duker_es, 10);
+  messageDesc(file_duker_es, 12);
 
 /**
  * @generated from message duker.EventData
@@ -489,6 +517,20 @@ export type EventData = Message<"duker.EventData"> & {
      */
     value: UserAmendedPayload;
     case: "userAmended";
+  } | {
+    /**
+     * Unified attention events — agg_type identifies target (2=post, 3=comment)
+     *
+     * @generated from field: duker.BoostAttentionPayload boost_attention = 30;
+     */
+    value: BoostAttentionPayload;
+    case: "boostAttention";
+  } | {
+    /**
+     * @generated from field: duker.UpvoteAttentionPayload upvote_attention = 31;
+     */
+    value: UpvoteAttentionPayload;
+    case: "upvoteAttention";
   } | { case: undefined; value?: undefined };
 };
 
@@ -497,155 +539,6 @@ export type EventData = Message<"duker.EventData"> & {
  * Use `create(EventDataSchema)` to create a new message.
  */
 export const EventDataSchema: GenMessage<EventData> = /*@__PURE__*/
-  messageDesc(file_duker_es, 11);
-
-/**
- * @generated from message duker.CmdData
- */
-export type CmdData = Message<"duker.CmdData"> & {
-  /**
-   * @generated from oneof duker.CmdData.payload
-   */
-  payload: {
-    /**
-     * @generated from field: duker.PostCreatedPayload create_post = 1;
-     */
-    value: PostCreatedPayload;
-    case: "createPost";
-  } | {
-    /**
-     * @generated from field: duker.PostUpvotedPayload upvote_post = 2;
-     */
-    value: PostUpvotedPayload;
-    case: "upvotePost";
-  } | {
-    /**
-     * @generated from field: duker.PostItemPayload flag_post = 3;
-     */
-    value: PostItemPayload;
-    case: "flagPost";
-  } | {
-    /**
-     * @generated from field: duker.PostAmendPayload amend_post = 4;
-     */
-    value: PostAmendPayload;
-    case: "amendPost";
-  } | {
-    /**
-     * @generated from field: duker.PostItemPayload delete_post = 5;
-     */
-    value: PostItemPayload;
-    case: "deletePost";
-  } | {
-    /**
-     * @generated from field: duker.LikeItemPayload like_post = 6;
-     */
-    value: LikeItemPayload;
-    case: "likePost";
-  } | {
-    /**
-     * @generated from field: duker.LikeItemPayload unlike_post = 7;
-     */
-    value: LikeItemPayload;
-    case: "unlikePost";
-  } | {
-    /**
-     * @generated from field: duker.CommentCreatedPayload create_comment = 10;
-     */
-    value: CommentCreatedPayload;
-    case: "createComment";
-  } | {
-    /**
-     * @generated from field: duker.CommentUpvotedPayload upvote_comment = 11;
-     */
-    value: CommentUpvotedPayload;
-    case: "upvoteComment";
-  } | {
-    /**
-     * @generated from field: duker.CommentItemPayload flag_comment = 12;
-     */
-    value: CommentItemPayload;
-    case: "flagComment";
-  } | {
-    /**
-     * @generated from field: duker.CommentAmendPayload amend_comment = 13;
-     */
-    value: CommentAmendPayload;
-    case: "amendComment";
-  } | {
-    /**
-     * @generated from field: duker.CommentItemPayload delete_comment = 14;
-     */
-    value: CommentItemPayload;
-    case: "deleteComment";
-  } | {
-    /**
-     * @generated from field: duker.LikeItemPayload like_comment = 15;
-     */
-    value: LikeItemPayload;
-    case: "likeComment";
-  } | {
-    /**
-     * @generated from field: duker.LikeItemPayload unlike_comment = 16;
-     */
-    value: LikeItemPayload;
-    case: "unlikeComment";
-  } | {
-    /**
-     * @generated from field: duker.UserMintedPayload mint_user = 21;
-     */
-    value: UserMintedPayload;
-    case: "mintUser";
-  } | {
-    /**
-     * @generated from field: duker.UserAmendedPayload amend_user = 22;
-     */
-    value: UserAmendedPayload;
-    case: "amendUser";
-  } | { case: undefined; value?: undefined };
-};
-
-/**
- * Describes the message duker.CmdData.
- * Use `create(CmdDataSchema)` to create a new message.
- */
-export const CmdDataSchema: GenMessage<CmdData> = /*@__PURE__*/
-  messageDesc(file_duker_es, 12);
-
-/**
- * @generated from message duker.Cmd
- */
-export type Cmd = Message<"duker.Cmd"> & {
-  /**
-   * Actor wallet address
-   *
-   * @generated from field: string address = 1;
-   */
-  address: string;
-
-  /**
-   * Client's last known evt_seq
-   *
-   * @generated from field: int64 user_evt_seq = 2;
-   */
-  userEvtSeq: bigint;
-
-  /**
-   * @generated from field: duker.CmdType cmd_type = 3;
-   */
-  cmdType: CmdType;
-
-  /**
-   * @generated from field: duker.CmdData data = 4;
-   */
-  data?: CmdData;
-};
-
-/**
- * Describes the message duker.Cmd.
- * Use `create(CmdSchema)` to create a new message.
- */
-export const CmdSchema: GenMessage<Cmd> = /*@__PURE__*/
   messageDesc(file_duker_es, 13);
 
 /**
@@ -700,6 +593,15 @@ export type DukerTxReq = Message<"duker.DukerTxReq"> & {
    * @generated from field: string payment_stablecoin_address = 7;
    */
   paymentStablecoinAddress: string;
+
+  /**
+   * EIP-2612 permit — user signs to approve stablecoin spending for x402 flows.
+   * Required when x402 involves USDT payment (mint, boost, post-with-boost).
+   * Free operations (comment, upvote, amend) skip permit — no signature needed.
+   *
+   * @generated from field: duker.PaymentPayload payment_payload = 10;
+   */
+  paymentPayload?: PaymentPayload;
 };
 
 /**
@@ -708,6 +610,41 @@ export type DukerTxReq = Message<"duker.DukerTxReq"> & {
  */
 export const DukerTxReqSchema: GenMessage<DukerTxReq> = /*@__PURE__*/
   messageDesc(file_duker_es, 14);
+
+/**
+ * EIP-2612 permit signature for gasless stablecoin approvals.
+ *
+ * @generated from message duker.PaymentPayload
+ */
+export type PaymentPayload = Message<"duker.PaymentPayload"> & {
+  /**
+   * Unix timestamp — permit expires after this
+   *
+   * @generated from field: uint64 deadline = 1;
+   */
+  deadline: bigint;
+
+  /**
+   * 65-byte signature: r (32) + s (32) + v (1)
+   *
+   * @generated from field: bytes signature = 2;
+   */
+  signature: Uint8Array;
+
+  /**
+   * Amount approved (decimal string, micro units e.g. "1000000" = 1 USDT)
+   *
+   * @generated from field: string value = 3;
+   */
+  value: string;
+};
+
+/**
+ * Describes the message duker.PaymentPayload.
+ * Use `create(PaymentPayloadSchema)` to create a new message.
+ */
+export const PaymentPayloadSchema: GenMessage<PaymentPayload> = /*@__PURE__*/
+  messageDesc(file_duker_es, 15);
 
 /**
  * @generated from message duker.PbEvent
@@ -742,51 +679,58 @@ export type PbEvent = Message<"duker.PbEvent"> & {
   username: string;
 
   /**
+   * User's event sequence (from contract)
+   *
+   * @generated from field: uint64 user_seq = 5;
+   */
+  userSeq: bigint;
+
+  /**
    * Aggregate type
    *
-   * @generated from field: duker.AggType agg_type = 5;
+   * @generated from field: duker.AggType agg_type = 6;
    */
   aggType: AggType;
 
   /**
    * Aggregate ID
    *
-   * @generated from field: uint64 agg_id = 6;
+   * @generated from field: uint64 agg_id = 7;
    */
   aggId: bigint;
 
   /**
    * Event type enum
    *
-   * @generated from field: duker.EventType evt_type = 7;
+   * @generated from field: duker.EventType evt_type = 8;
    */
   evtType: EventType;
 
   /**
    * Event timestamp (Unix seconds, from block.timestamp)
    *
-   * @generated from field: uint64 evt_time = 8;
+   * @generated from field: uint64 evt_time = 9;
    */
   evtTime: bigint;
 
   /**
    * Block number the event was emitted in
    *
-   * @generated from field: uint64 block_number = 9;
+   * @generated from field: uint64 block_number = 10;
    */
   blockNumber: bigint;
 
   /**
    * Protobuf-serialized EventData bytes (opaque from contract)
    *
-   * @generated from field: duker.EventData data = 10;
+   * @generated from field: duker.EventData data = 11;
    */
   data?: EventData;
 
   /**
    * Record indexing time (Unix ms)
    *
-   * @generated from field: uint64 created_at = 11;
+   * @generated from field: uint64 created_at = 12;
    */
   createdAt: bigint;
 };
@@ -796,7 +740,7 @@ export type PbEvent = Message<"duker.PbEvent"> & {
  * Use `create(PbEventSchema)` to create a new message.
  */
 export const PbEventSchema: GenMessage<PbEvent> = /*@__PURE__*/
-  messageDesc(file_duker_es, 15);
+  messageDesc(file_duker_es, 16);
 
 /**
  * @generated from message duker.PbDeltaEventsResp
@@ -827,7 +771,7 @@ export type PbDeltaEventsResp = Message<"duker.PbDeltaEventsResp"> & {
  * Use `create(PbDeltaEventsRespSchema)` to create a new message.
  */
 export const PbDeltaEventsRespSchema: GenMessage<PbDeltaEventsResp> = /*@__PURE__*/
-  messageDesc(file_duker_es, 16);
+  messageDesc(file_duker_es, 17);
 
 /**
  * @generated from enum duker.EventType
@@ -881,8 +825,6 @@ export enum EventType {
   POST_UNLIKED = 8,
 
   /**
-   * Comment events
-   *
    * @generated from enum value: COMMENT_CREATED = 10;
    */
   COMMENT_CREATED = 10,
@@ -923,7 +865,7 @@ export enum EventType {
   COMMENT_UNLIKED = 17,
 
   /**
-   * User events
+   * User events (values must match EventData.payload oneof field numbers
    *
    * @generated from enum value: USER_MINTED = 21;
    */
@@ -933,6 +875,18 @@ export enum EventType {
    * @generated from enum value: USER_AMENDED = 22;
    */
   USER_AMENDED = 22,
+
+  /**
+   * Boost — unified across post and comment (agg_type identifies target)
+   *
+   * @generated from enum value: BOOST_ATTENTION = 30;
+   */
+  BOOST_ATTENTION = 30,
+
+  /**
+   * @generated from enum value: UPVOTE_ATTENTION = 31;
+   */
+  UPVOTE_ATTENTION = 31,
 }
 
 /**
@@ -940,144 +894,4 @@ export enum EventType {
  */
 export const EventTypeSchema: GenEnum<EventType> = /*@__PURE__*/
   enumDesc(file_duker_es, 0);
-
-/**
- * @generated from enum duker.AggType
- */
-export enum AggType {
-  /**
-   * @generated from enum value: AGG_TYPE_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
-
-  /**
-   * @generated from enum value: AGG_TYPE_USER = 1;
-   */
-  USER = 1,
-
-  /**
-   * @generated from enum value: AGG_TYPE_POST = 2;
-   */
-  POST = 2,
-
-  /**
-   * @generated from enum value: AGG_TYPE_COMMENT = 3;
-   */
-  COMMENT = 3,
-}
-
-/**
- * Describes the enum duker.AggType.
- */
-export const AggTypeSchema: GenEnum<AggType> = /*@__PURE__*/
-  enumDesc(file_duker_es, 1);
-
-/**
- * @generated from enum duker.CmdType
- */
-export enum CmdType {
-  /**
-   * @generated from enum value: CMD_TYPE_UNSPECIFIED = 0;
-   */
-  CMD_TYPE_UNSPECIFIED = 0,
-
-  /**
-   * Post commands
-   *
-   * @generated from enum value: CREATE_POST = 1;
-   */
-  CREATE_POST = 1,
-
-  /**
-   * @generated from enum value: UPVOTE_POST = 2;
-   */
-  UPVOTE_POST = 2,
-
-  /**
-   * @generated from enum value: FLAG_POST = 3;
-   */
-  FLAG_POST = 3,
-
-  /**
-   * @generated from enum value: AMEND_POST = 4;
-   */
-  AMEND_POST = 4,
-
-  /**
-   * @generated from enum value: DELETE_POST = 5;
-   */
-  DELETE_POST = 5,
-
-  /**
-   * @generated from enum value: LIKE_POST = 6;
-   */
-  LIKE_POST = 6,
-
-  /**
-   * @generated from enum value: UNLIKE_POST = 7;
-   */
-  UNLIKE_POST = 7,
-
-  /**
-   * Comment commands
-   *
-   * @generated from enum value: CREATE_COMMENT = 10;
-   */
-  CREATE_COMMENT = 10,
-
-  /**
-   * @generated from enum value: UPVOTE_COMMENT = 11;
-   */
-  UPVOTE_COMMENT = 11,
-
-  /**
-   * @generated from enum value: FLAG_COMMENT = 12;
-   */
-  FLAG_COMMENT = 12,
-
-  /**
-   * @generated from enum value: AMEND_COMMENT = 13;
-   */
-  AMEND_COMMENT = 13,
-
-  /**
-   * @generated from enum value: DELETE_COMMENT = 14;
-   */
-  DELETE_COMMENT = 14,
-
-  /**
-   * @generated from enum value: LIKE_COMMENT = 15;
-   */
-  LIKE_COMMENT = 15,
-
-  /**
-   * @generated from enum value: UNLIKE_COMMENT = 16;
-   */
-  UNLIKE_COMMENT = 16,
-
-  /**
-   * User commands
-   *
-   * reserved / deprecated
-   *
-   * @generated from enum value: CREATE_USER = 20;
-   */
-  CREATE_USER = 20,
-
-  /**
-   * @generated from enum value: MINT_USER = 21;
-   */
-  MINT_USER = 21,
-
-  /**
-   * @generated from enum value: AMEND_USER = 22;
-   */
-  AMEND_USER = 22,
-}
-
-/**
- * Describes the enum duker.CmdType.
- */
-export const CmdTypeSchema: GenEnum<CmdType> = /*@__PURE__*/
-  enumDesc(file_duker_es, 2);
 

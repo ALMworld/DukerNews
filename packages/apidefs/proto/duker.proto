@@ -24,6 +24,14 @@ enum DukiType {
   PROFIT  = 2;  // 净利润 — percentage of net profit
 }
 
+// Aggregate type — identifies domain entity type
+enum AggType {
+  AGG_TYPE_UNSPECIFIED = 0;
+  AGG_TYPE_USER    = 1;
+  AGG_TYPE_POST    = 2;
+  AGG_TYPE_COMMENT = 3;
+}
+
 // ─── Domain Messages ─────────────────────────────────────
 
 message PbUser {
@@ -105,15 +113,15 @@ message PbComment {
 }
 
 message PbVote {
-  string address    = 1;  // Voter wallet address
-  string item_type  = 2;  // "post" or "comment"
-  int64  item_id    = 3;  // Post or comment ID
-  int64  created_at = 4;  // Unix ms
+  string  address    = 1;  // Voter wallet address
+  AggType agg_type   = 2;  // 2=post, 3=comment
+  int64   agg_id     = 3;  // Post or comment ID
+  int64   created_at = 4;  // Unix ms
 }
 
 message PbLike {
-  string address    = 1;  // User wallet address
-  string item_type  = 2;  // "post" or "comment"
-  int64  item_id    = 3;  // Post or comment ID
-  int64  created_at = 4;  // Unix ms
+  string  address    = 1;  // User wallet address
+  AggType agg_type   = 2;  // 2=post, 3=comment
+  int64   agg_id     = 3;  // Post or comment ID
+  int64   created_at = 4;  // Unix ms
 }

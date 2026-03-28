@@ -13,14 +13,17 @@ import {
     EventDataSchema,
     CommentCreatedPayloadSchema,
     CommentAmendPayloadSchema,
-    CommentItemPayloadSchema,
-    CommentUpvotedPayloadSchema,
+    CommentItemPayloadSchema as _CommentItemPayloadSchema,
 } from '@repo/apidefs'
 import { getDisplayText } from '../lib/bagua-text'
 import { getLocaleName } from '../client'
 import { useChainHandle } from '../client/useChainHandle'
 import { useInteractions, VOTE_MASK, VOTE_UP } from '../client/useInteractions'
-import { DukiPayment, type DukiPaymentValue, type SubmitMethod } from './DukiPayment'
+import { useUpvoteMutation } from '../client/useUpvoteMutation'
+import { BoostPanel } from './BoostPanel'
+import { BoostArrow } from './BoostArrow'
+import { SubmitOnChainButton } from './SubmitOnChainButton'
+import { InteractionBar, type ActiveAction } from './InteractionBar'
 import CommentLocaleToggle, { getCommentLocaleConfig } from './CommentLocaleToggle'
 import CommentMeta from './CommentMeta'
 import type { CommentNav, ThreadContext } from './CommentMeta'
@@ -37,11 +40,11 @@ export const linkBtn: React.CSSProperties = {
     background: 'none',
     border: 'none',
     cursor: 'pointer',
-    color: 'var(--duki-100)',
+    color: 'var(--meta-color)',
     padding: 0,
     fontSize: 'inherit',
     fontFamily: 'inherit',
-    textDecoration: 'underline',
+    textDecoration: 'none',
 }
 
 // ---------------------------------------------------------------------------
@@ -79,7 +82,7 @@ export default function CommentItem({
     postId,
     postLocale,
     nav,
-    hasChildren,
+    hasChildren: _hasChildren,
     collapsed,
     hiddenCount,
     translatedText,
@@ -89,23 +92,21 @@ export default function CommentItem({
     onToggleCollapse,
     onReplyAdded,
     onCommentEdited,
-    onCommentDeleted,
+    onCommentDeleted: _onCommentDeleted,
     threadCtx,
     depthOffset = 0,
 }: CommentItemProps) {
-    const [showReply, setShowReply] = useState(false)
     const [replyText, setReplyText] = useState('')
     const [editing, setEditing] = useState(false)
     const [editText, setEditText] = useState(comment.text)
-    const [confirmDelete, setConfirmDelete] = useState(false)
+    // const [confirmDelete, setConfirmDelete] = useState(false)  // delete hidden — see below
+    const [localBoost, setLocalBoost] = useState(Number(comment.totalBoost ?? 0))
 
     // On-chain dispatch via useChainHandle
     const { dispatch, step, error: chainError, reset: resetChain } = useChainHandle()
     const cmdPending = step !== 'idle' && step !== 'done'
-    const [submitMethod, setSubmitMethod] = useState<SubmitMethod>('x402')
-    const [boostAmount, setBoostAmount] = useState(0)
-    const [paymentChainId, setPaymentChainId] = useState('')
-    const [paymentStablecoin, setPaymentStablecoin] = useState('')
+    const [activeAction, setActiveAction] = useState<ActiveAction>('none')
+
 
     // Local display state:
     // showTranslated = user manually requested translation
@@ -128,8 +129,8 @@ export default function CommentItem({
     const { requireAuth } = useRequireAuth()
 
     // IDB-backed interaction state for comment upvote
-    const { getBits, updateBits } = useInteractions()
-    const currentBits = getBits('comment', Number(comment.id))
+    const { getBits } = useInteractions()
+    const currentBits = getBits(AggType.COMMENT, Number(comment.id))
     const voted = (currentBits & VOTE_MASK) === VOTE_UP
 
     const currentUsername = me?.username ?? ''
@@ -140,35 +141,18 @@ export default function CommentItem({
     const createdAtMs = typeof comment.createdAt === 'bigint' ? Number(comment.createdAt) : comment.createdAt
     const isWithinWindow = Date.now() - createdAtMs < EDIT_WINDOW_MS
     const canEdit = isOwn && isWithinWindow
-    const canDelete = isOwn && isWithinWindow && !hasChildren
+    // const canDelete = isOwn && isWithinWindow && !hasChildren  // delete hidden — see action bar below
 
-    const handleUpvote = async () => {
-        if (voted || !me?.ego) return
-        // Optimistic: update IDB + cache
-        await updateBits('comment', Number(comment.id), (currentBits & ~VOTE_MASK) | VOTE_UP)
-        // Dispatch COMMENT_UPVOTED on-chain
-        try {
-            const txData = create(DukerTxReqSchema, {
-                address: me.ego,
-                aggType: AggType.COMMENT,
-                aggId: BigInt(comment.id),
-                evtType: EventType.COMMENT_UPVOTED,
-                paymentChain: paymentChainId,
-                paymentStablecoinAddress: paymentStablecoin,
-                data: create(EventDataSchema, {
-                    payload: {
-                        case: 'commentUpvoted',
-                        value: create(CommentUpvotedPayloadSchema, {
-                            boostAmount: BigInt(Math.round(boostAmount * 1_000_000)),
-                        }),
-                    },
-                }),
-            })
-            await dispatch(txData, true)  // Default x402 for upvotes (free)
-        } catch {
-            // Revert optimistic update on failure
-            await updateBits('comment', Number(comment.id), currentBits)
-        }
+    // Upvote mutation via TanStack Query
+    const upvoteMutation = useUpvoteMutation({
+        aggType: AggType.COMMENT,
+        aggId: Number(comment.id),
+        address: me?.ego ?? '',
+    })
+
+    const handleUpvote = () => {
+        if (voted || upvoteMutation.isPending || !me?.ego) return
+        upvoteMutation.mutate()
     }
 
     const commentLocale = (comment.locale || postLocale) as SupportedLocale
@@ -208,14 +192,11 @@ export default function CommentItem({
         e.preventDefault()
         if (!replyText.trim() || cmdPending || !me?.ego) return
         try {
-            const boostMicro = BigInt(Math.round(boostAmount * 1_000_000))
             const txData = create(DukerTxReqSchema, {
                 address: me.ego,
                 aggType: AggType.COMMENT,
                 aggId: 0n,  // contract auto-assigns
                 evtType: EventType.COMMENT_CREATED,
-                paymentChain: paymentChainId,
-                paymentStablecoinAddress: paymentStablecoin,
                 data: create(EventDataSchema, {
                     payload: {
                         case: 'commentCreated',
@@ -224,16 +205,15 @@ export default function CommentItem({
                             parentId: BigInt(comment.id),
                             text: replyText.trim(),
                             locale: replyLocale,
-                            // Ancestor path: parent's ancestor_path + parent's own ID
                             ancestorPath: comment.ancestorPath?.length
                                 ? comment.ancestorPath + '.' + comment.id
                                 : String(comment.id),
-                            boostAmount: boostMicro,
+                            boostAmount: 0n,  // always free; boost via dedicated action
                         }),
                     },
                 }),
             })
-            const result = await dispatch(txData, submitMethod === 'x402')
+            const result = await dispatch(txData, false)  // direct chain — free op
 
             // Apply events to get the new comment(s), pass to parent
             if (result.events?.length) {
@@ -241,7 +221,7 @@ export default function CommentItem({
                 if (newComments.length > 0) onReplyAdded(newComments)
             }
 
-            setReplyText(''); setShowReply(false); setBoostAmount(0)
+            setReplyText(''); setActiveAction('none')
             resetChain()
         } catch {
             // Error shown via chainError state
@@ -257,8 +237,6 @@ export default function CommentItem({
                 aggType: AggType.COMMENT,
                 aggId: BigInt(comment.id),
                 evtType: EventType.COMMENT_AMEND,
-                paymentChain: paymentChainId,
-                paymentStablecoinAddress: paymentStablecoin,
                 data: create(EventDataSchema, {
                     payload: {
                         case: 'commentAmended',
@@ -268,7 +246,7 @@ export default function CommentItem({
                     },
                 }),
             })
-            await dispatch(txData, submitMethod === 'x402')
+            await dispatch(txData, false)  // direct chain — free op
             onCommentEdited(comment.id, editText.trim())
             setEditing(false)
             resetChain()
@@ -277,32 +255,31 @@ export default function CommentItem({
         }
     }
 
-    const handleDelete = async () => {
-        if (cmdPending || !me?.ego) return
-        try {
-            const txData = create(DukerTxReqSchema, {
-                address: me.ego,
-                aggType: AggType.COMMENT,
-                aggId: BigInt(comment.id),
-                evtType: EventType.COMMENT_DELETED,
-                paymentChain: paymentChainId,
-                paymentStablecoinAddress: paymentStablecoin,
-                data: create(EventDataSchema, {
-                    payload: {
-                        case: 'commentDeleted',
-                        value: create(CommentItemPayloadSchema, {
-                            commentId: BigInt(comment.id),
-                        }),
-                    },
-                }),
-            })
-            await dispatch(txData, submitMethod === 'x402')
-            onCommentDeleted(comment.id)
-            resetChain()
-        } catch {
-            // Error shown via chainError state
-        }
-    }
+    // handleDelete — hidden for now, uncomment alongside delete UI below
+    // const handleDelete = async () => {
+    //     if (cmdPending || !me?.ego) return
+    //     try {
+    //         const txData = create(DukerTxReqSchema, {
+    //             address: me.ego,
+    //             aggType: AggType.COMMENT,
+    //             aggId: BigInt(comment.id),
+    //             evtType: EventType.COMMENT_DELETED,
+    //             data: create(EventDataSchema, {
+    //                 payload: {
+    //                     case: 'commentDeleted',
+    //                     value: create(CommentItemPayloadSchema, {
+    //                         commentId: BigInt(comment.id),
+    //                     }),
+    //                 },
+    //             }),
+    //         })
+    //         await dispatch(txData, false)  // direct chain — free op
+    //         onCommentDeleted(comment.id)
+    //         resetChain()
+    //     } catch {
+    //         // Error shown via chainError state
+    //     }
+    // }
 
     const baseText = getDisplayText(comment.text, userLocale)
     const displayText = effectiveShowTranslated ? translatedText! : baseText
@@ -312,28 +289,15 @@ export default function CommentItem({
     return (
         <div style={{ marginLeft: depth * 40 }} className="pt-2">
             <div id={`${comment.id}`} style={{ display: 'flex', gap: '4px' }}>
-                {/* Upvote gutter */}
-                <div style={{ flexShrink: 0, width: '14px', display: 'flex', alignItems: 'center', height: '14px' }}>
-                    {isOwn ? (
-                        <span style={{ color: 'var(--meta-color)', fontSize: '10px', lineHeight: 1, display: 'block', width: '14px', textAlign: 'center' }}>*</span>
-                    ) : (
-                        <button
-                            className="hover:opacity-80"
-                            onClick={handleUpvote}
-                            disabled={voted}
-                            style={{
-                                background: 'none',
-                                border: 'none',
-                                cursor: voted ? 'default' : 'pointer',
-                                color: voted ? 'var(--upvote-active)' : 'var(--meta-color)',
-                                padding: 0,
-                                fontSize: '10px',
-                                lineHeight: 1,
-                                display: 'block',
-                            }}
-                            title={voted ? 'Already upvoted' : 'Upvote'}
-                        >▲</button>
-                    )}
+                {/* Upvote gutter — shared BoostArrow */}
+                <div style={{ flexShrink: 0, width: '20px', display: 'flex', justifyContent: 'center', paddingTop: '1px' }}>
+                    <BoostArrow
+                        totalBoost={localBoost}
+                        voted={voted}
+                        isOwn={isOwn}
+                        loading={upvoteMutation.isPending}
+                        onClick={handleUpvote}
+                    />
                 </div>
 
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -366,25 +330,37 @@ export default function CommentItem({
                             )}
 
                             {!editing && (
-                                <div className="flex items-center gap-2" style={{ fontSize: '8pt', marginTop: '2px' }}>
-                                    <button onClick={() => { if (requireAuth()) setShowReply(!showReply) }} className="meta-link" style={linkBtn}>reply</button>
-                                    {canEdit && <button onClick={() => setEditing(true)} className="meta-link" style={linkBtn}>edit</button>}
-                                    {canDelete && !confirmDelete && <button onClick={() => setConfirmDelete(true)} className="meta-link" style={linkBtn}>delete</button>}
-                                    {canDelete && confirmDelete && (
-                                        <>
-                                            <button onClick={handleDelete} className="meta-link" style={{ ...linkBtn, color: 'var(--destructive, #e55)' }}>sure?</button>
-                                            <button onClick={() => setConfirmDelete(false)} className="meta-link" style={linkBtn}>cancel</button>
-                                        </>
-                                    )}
-                                    {/* Translate button — always visible when translation is relevant */}
-                                    {needsTranslation && (
+                                <div className="flex items-center" style={{ fontSize: '8pt', marginTop: '2px', gap: '6px' }}>
+                                    <InteractionBar
+                                        activeAction={activeAction}
+                                        onReply={() => { if (requireAuth()) { setActiveAction(a => a === 'reply' ? 'none' : 'reply') } }}
+                                        onBoost={() => { if (requireAuth()) { setActiveAction(a => a === 'boost' ? 'none' : 'boost') } }}
+                                    />
+                                    {canEdit && <>
+                                        <span style={{ opacity: 0.5, color: 'var(--meta-color)' }}>|</span>
+                                        <button onClick={() => setEditing(true)} className="meta-link" style={linkBtn}>edit</button>
+                                    </>}
+                                    {/* delete — hidden for now, uncomment when ready
+                                    <>
+                                        <span style={{ opacity: 0.2, color: 'var(--meta-color)' }}>|</span>
+                                        {canDelete && !confirmDelete && <button onClick={() => setConfirmDelete(true)} className="meta-link" style={linkBtn}>delete</button>}
+                                        {canDelete && confirmDelete && (
+                                            <>
+                                                <button onClick={handleDelete} className="meta-link" style={{ ...linkBtn, color: 'var(--destructive, #e55)' }}>sure?</button>
+                                                <button onClick={() => setConfirmDelete(false)} className="meta-link" style={linkBtn}>cancel</button>
+                                            </>
+                                        )}
+                                    </>
+                                    */}
+                                    {needsTranslation && <>
+                                        <span style={{ opacity: 0.2, color: 'var(--meta-color)' }}>|</span>
                                         <button
                                             onClick={handleTranslateClick}
                                             disabled={isTranslating && !translatedText}
                                             className="meta-link transition-colors"
                                             style={{
                                                 ...linkBtn,
-                                                color: effectiveShowTranslated ? 'var(--duki-400)' : 'var(--duki-100)',
+                                                color: effectiveShowTranslated ? 'var(--duki-400)' : 'var(--meta-color)',
                                                 cursor: isTranslating && !translatedText ? 'wait' : 'pointer',
                                             }}
                                             title={effectiveShowTranslated
@@ -397,11 +373,24 @@ export default function CommentItem({
                                                     ? `original (${getLocaleName(commentLocale)})`
                                                     : 'translate'}
                                         </button>
-                                    )}
+                                    </>}
                                 </div>
                             )}
 
-                            {showReply && (
+                            {/* Inline boost panel — hidden via display when not active */}
+                            <div style={{ display: (activeAction === 'boost' && !editing) ? undefined : 'none' }}>
+                                <BoostPanel
+                                    aggType={AggType.COMMENT}
+                                    aggId={BigInt(comment.id)}
+                                    amounts={[1, 2, 8, 16]}
+                                    defaultAmount={1}
+                                    subLabel="boost this comment"
+                                    onSuccess={(micro) => setLocalBoost(b => b + micro)}
+                                    onCancel={() => setActiveAction('none')}
+                                />
+                            </div>
+
+                            <div style={{ display: activeAction === 'reply' ? undefined : 'none' }}>
                                 <form onSubmit={handleSubmitReply} className="mt-1 mb-2 max-w-3xl">
                                     <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px' }}>
                                         <div style={{ position: 'relative', flex: 1 }}>
@@ -415,25 +404,6 @@ export default function CommentItem({
                                         <a href="/formatdoc" target="_blank" rel="noopener noreferrer" className="text-xs no-underline hover:underline" style={{ color: 'var(--meta-color)', paddingBottom: '4px' }}>help</a>
                                     </div>
 
-                                    {/* DukiPayment — chain method + optional tip */}
-                                    <div className="mt-2">
-                                        <DukiPayment
-                                            dukiBps={me?.dukiBps ?? 5000}
-                                            amounts={[0, 1, 2, 8]}
-                                            defaultAmount={0}
-                                            defaultMethod="x402"
-                                            amountLabel="Tip (optional)"
-                                            amountSubLabel="boost your reply"
-                                            onChange={(v: DukiPaymentValue) => {
-                                                setSubmitMethod(v.method)
-                                                setBoostAmount(v.amount)
-                                                setPaymentChainId(String(v.chainId))
-                                                setPaymentStablecoin(v.stablecoinAddress)
-                                            }}
-                                            disabled={cmdPending}
-                                        />
-                                    </div>
-
                                     {chainError && (
                                         <div className="mt-1 text-xs" style={{ color: 'var(--destructive, #e55)' }}>
                                             {chainError}
@@ -441,16 +411,18 @@ export default function CommentItem({
                                     )}
 
                                     <div className="flex gap-2 mt-2 items-center">
-                                        <button type="submit" disabled={cmdPending || !replyText.trim()} className="px-3 py-1 text-xs transition-all disabled:opacity-40" style={{ background: (cmdPending || !replyText.trim()) ? 'var(--background)' : 'var(--duki-600)', color: (cmdPending || !replyText.trim()) ? 'var(--foreground)' : 'var(--duki-100)', border: '1px solid var(--border)', borderRadius: 0, cursor: cmdPending ? 'wait' : 'pointer' }}>
-                                            {cmdPending ? `${step}...` : boostAmount > 0 ? `reply ($${boostAmount} tip)` : 'reply'}
-                                        </button>
-                                        <button type="button" onClick={() => { setShowReply(false); setReplyText(''); resetChain() }} className="px-3 py-1 text-xs" style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 0, cursor: 'pointer', color: 'var(--meta-color)' }}>cancel</button>
-                                        {step === 'done' && (
-                                            <span className="text-xs" style={{ color: 'var(--duki-400)' }}>✓ on-chain</span>
-                                        )}
+                                        <SubmitOnChainButton
+                                            label="reply"
+                                            step={step}
+                                            successMessage="✓ on-chain"
+                                            disabled={!replyText.trim()}
+                                            type="submit"
+                                            onDone={resetChain}
+                                        />
+                                        <button type="button" onClick={() => { setActiveAction('none'); setReplyText(''); resetChain() }} className="px-3 py-1 text-xs" style={{ background: 'none', border: '1px solid var(--border)', borderRadius: 0, cursor: 'pointer', color: 'var(--meta-color)' }}>cancel</button>
                                     </div>
                                 </form>
-                            )}
+                            </div>
                         </>
                     )}
                 </div>

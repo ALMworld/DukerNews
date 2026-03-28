@@ -19,7 +19,6 @@ enum EventType {
   POST_LIKED    = 7;
   POST_UNLIKED  = 8;
 
-  // Comment events
   COMMENT_CREATED  = 10;
   COMMENT_UPVOTED  = 11;
   COMMENT_AMEND    = 12;
@@ -29,19 +28,19 @@ enum EventType {
   COMMENT_LIKED    = 16;
   COMMENT_UNLIKED  = 17;
 
-  // User events
+
+  // User events (values must match EventData.payload oneof field numbers
   USER_MINTED   = 21;
   USER_AMENDED  = 22;
+
+  // Boost — unified across post and comment (agg_type identifies target)
+  BOOST_ATTENTION = 30;
+  UPVOTE_ATTENTION = 31;
 }
 
 // ─── Aggregate Type ─────────────────────────────────────
 
-enum AggType {
-  AGG_TYPE_UNSPECIFIED = 0;
-  AGG_TYPE_USER    = 1;
-  AGG_TYPE_POST   = 2;
-  AGG_TYPE_COMMENT = 3;
-}
+// AggType is defined in duker.proto (imported above)
 
 // ─── Event Payloads ──────────────────────────────────────
 
@@ -60,12 +59,21 @@ message PostCreatedPayload {
   uint64     boost_amount = 11;  // Marketing boost USDT (6-decimal micro units)
 }
 
+// Upvote — pure social signal, no payment
 message PostUpvotedPayload {
-  uint64     boost_amount = 1;  // Marketing boost USDT (6-decimal micro units)
 }
 
+// Boost — pure economic signal, no vote. Works for posts and comments — agg_type identifies target.
+message BoostAttentionPayload {
+  uint64 boost_amount = 1;  // USDT paid (6-decimal micro units)
+}
+
+// Upvote — unified across post and comment (agg_type identifies target: 2=post, 3=comment)
+message UpvoteAttentionPayload {
+}
+
+// Upvote — pure social signal, no payment
 message CommentUpvotedPayload {
-  uint64 boost_amount  = 1;  // Optional tip/boost USDT (6-decimal micro units)
 }
 
 message PostAmendPayload {
@@ -102,8 +110,8 @@ message CommentItemPayload {
 }
 
 message LikeItemPayload {
-  string item_type = 1;  // "post" or "comment"
-  int64  item_id   = 2;
+  AggType agg_type  = 1;  // 2=post, 3=comment
+  int64   agg_id    = 2;
 }
 
 // ─── User Payloads ───────────────────────────────────────
@@ -143,74 +151,14 @@ message EventData {
     CommentItemPayload    comment_dead     = 15;
     LikeItemPayload       comment_liked    = 16;
     LikeItemPayload       comment_unliked  = 17;
-
     UserMintedPayload  user_minted  = 21;
     UserAmendedPayload user_amended = 22;
+
+    // Unified attention events — agg_type identifies target (2=post, 3=comment)
+    BoostAttentionPayload  boost_attention  = 30;
+    UpvoteAttentionPayload upvote_attention = 31;
   }
 }
-
-// ─── Legacy: CmdType / CmdData / Cmd ─────────────────────
-// Kept for backward-compat with goapi CmdService pipeline.
-// New on-chain flow uses DukerCmd + EventData instead.
-
-enum CmdType {
-  CMD_TYPE_UNSPECIFIED = 0;
-
-  // Post commands
-  CREATE_POST    = 1;
-  UPVOTE_POST    = 2;
-  FLAG_POST      = 3;
-  AMEND_POST     = 4;
-  DELETE_POST    = 5;
-  LIKE_POST      = 6;
-  UNLIKE_POST    = 7;
-
-  // Comment commands
-  CREATE_COMMENT  = 10;
-  UPVOTE_COMMENT  = 11;
-  FLAG_COMMENT    = 12;
-  AMEND_COMMENT   = 13;
-  DELETE_COMMENT  = 14;
-  LIKE_COMMENT    = 15;
-  UNLIKE_COMMENT  = 16;
-
-  // User commands
-  CREATE_USER  = 20;  // reserved / deprecated
-  MINT_USER    = 21;
-  AMEND_USER   = 22;
-}
-
-message CmdData {
-  oneof payload {
-    PostCreatedPayload    create_post    = 1;
-    PostUpvotedPayload    upvote_post    = 2;
-    PostItemPayload       flag_post      = 3;
-    PostAmendPayload      amend_post     = 4;
-    PostItemPayload       delete_post    = 5;
-    LikeItemPayload       like_post      = 6;
-    LikeItemPayload       unlike_post    = 7;
-
-    CommentCreatedPayload create_comment  = 10;
-    CommentUpvotedPayload upvote_comment  = 11;
-    CommentItemPayload    flag_comment    = 12;
-    CommentAmendPayload   amend_comment   = 13;
-    CommentItemPayload    delete_comment  = 14;
-    LikeItemPayload       like_comment    = 15;
-    LikeItemPayload       unlike_comment  = 16;
-
-    UserMintedPayload  mint_user   = 21;
-    UserAmendedPayload amend_user  = 22;
-  }
-}
-
-message Cmd {
-  string   address       = 1;  // Actor wallet address
-  int64    user_evt_seq  = 2;  // Client's last known evt_seq
-  CmdType  cmd_type      = 3;
-  CmdData  data          = 4;
-}
-
-// ─── Unified Command Request (sent from frontend → server → contract) ────
 
 message DukerTxReq {
   string    address      = 1;  // Actor address (from NFT)
@@ -220,6 +168,18 @@ message DukerTxReq {
   EventData data          = 5;  // The payload — same type used in events
   string    payment_chain = 6;  // Payment chain where x402 settles (e.g. "56" for BNB, "11155111" for Sepolia)
   string    payment_stablecoin_address = 7;  // Stablecoin used for payment on the payment chain
+
+  // EIP-2612 permit — user signs to approve stablecoin spending for x402 flows.
+  // Required when x402 involves USDT payment (mint, boost, post-with-boost).
+  // Free operations (comment, upvote, amend) skip permit — no signature needed.
+  PaymentPayload payment_payload = 10;
+}
+
+// EIP-2612 permit signature for gasless stablecoin approvals.
+message PaymentPayload {
+  uint64 deadline  = 1;  // Unix timestamp — permit expires after this
+  bytes  signature = 2;  // 65-byte signature: r (32) + s (32) + v (1)
+  string value     = 3;  // Amount approved (decimal string, micro units e.g. "1000000" = 1 USDT)
 }
 
 // ─── Event Envelope (emitted from contract, indexed by backend) ──
@@ -229,13 +189,14 @@ message PbEvent {
   string    address      = 2;  // Actor wallet address (ego)
   string    tx_hash      = 3;  // Transaction hash
   string    username     = 4;  // Actor display name
-  AggType   agg_type     = 5;  // Aggregate type
-  uint64    agg_id       = 6;  // Aggregate ID
-  EventType evt_type     = 7;  // Event type enum
-  uint64    evt_time     = 8;  // Event timestamp (Unix seconds, from block.timestamp)
-  uint64    block_number = 9; // Block number the event was emitted in
-  EventData data         = 10;  // Protobuf-serialized EventData bytes (opaque from contract)
-  uint64    created_at   = 11; // Record indexing time (Unix ms)
+  uint64    user_seq = 5;  // User's event sequence (from contract)
+  AggType   agg_type     = 6;  // Aggregate type
+  uint64    agg_id       = 7;  // Aggregate ID
+  EventType evt_type     = 8;  // Event type enum
+  uint64    evt_time     = 9;  // Event timestamp (Unix seconds, from block.timestamp)
+  uint64    block_number = 10; // Block number the event was emitted in
+  EventData data         = 11;  // Protobuf-serialized EventData bytes (opaque from contract)
+  uint64    created_at   = 12; // Record indexing time (Unix ms)
 }
 
 // ─── Delta Events Response ──────────────────────────────

@@ -3,7 +3,7 @@
  * Theme-context aware (respects light/dark via CSS vars).
  * Client-only component.
  */
-import { useAccount, useChainId, useDisconnect, useSignMessage, useConnect, useConnectors } from 'wagmi'
+import { useAccount, useChainId, useDisconnect, useSignMessage, useConnect, useConnectors, useSwitchChain } from 'wagmi'
 import { useCallback, useEffect, useState, useMemo } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
@@ -11,6 +11,7 @@ import { SiweMessage } from 'siwe'
 import { useAuthStore } from '../lib/authStore'
 import { authApi } from '../lib/authService'
 import { queryKeys } from '../client'
+import { DEFAULT_CHAIN_ID } from '../lib/contracts'
 import * as m from '../paraglide/messages.js'
 import type { Connector } from 'wagmi'
 
@@ -100,6 +101,7 @@ export function ConnectModal() {
     const { signMessageAsync } = useSignMessage()
     const connectHook = useConnect()
     const connectors = useConnectors()
+    const { switchChainAsync } = useSwitchChain()
     const { authStatus, me, setAuthStatus, setMe, setConnectModalOpen } = useAuthStore()
     const queryClient = useQueryClient()
     const navigate = useNavigate()
@@ -139,6 +141,18 @@ export function ConnectModal() {
         }
     }, [isAuthenticated, needsUsername, setConnectModalOpen])
 
+    // Handle wallet reconnect — detect address mismatch
+    useEffect(() => {
+        if (!isConnected || !isAuthenticated || !me?.ego || !address) return
+        if (address.toLowerCase() !== me.ego.toLowerCase()) {
+            // Different address connected — invalidate stale auth, user must re-sign
+            authApi.logout().catch(() => { /* ignore */ })
+            setAuthStatus('unauthenticated')
+            setMe(null)
+            queryClient.setQueryData(queryKeys.authMe(), null)
+        }
+    }, [isConnected, isAuthenticated, address, me?.ego, setAuthStatus, setMe, queryClient])
+
     const close = useCallback(() => {
         setConnectModalOpen(false)
         setError(null)
@@ -165,12 +179,18 @@ export function ConnectModal() {
         setError(null)
         try {
             await connectHook.connectAsync({ connector })
+            // Auto-switch to home chain if wallet is on a different network
+            try {
+                await switchChainAsync({ chainId: DEFAULT_CHAIN_ID })
+            } catch {
+                // Ignore switch errors — user may reject, but connection still works
+            }
         } catch (e: any) {
             const msg = e?.message || 'Connection failed'
             if (msg.toLowerCase().includes('rejected') || msg.toLowerCase().includes('denied')) return
             setError(msg.length > 120 ? msg.slice(0, 120) + '…' : msg)
         }
-    }, [connectHook])
+    }, [connectHook, switchChainAsync])
 
     // Step 2: SIWE sign-in
     const handleStep2 = useCallback(async () => {
@@ -259,8 +279,8 @@ export function ConnectModal() {
                     <div style={{ flex: 1, height: 4, borderRadius: 4, overflow: 'hidden', background: 'var(--muted)' }}>
                         <div style={{
                             height: '100%', borderRadius: 4, transition: 'all 0.5s',
-                            width: isAuthenticated ? '100%' : isConnected ? '50%' : '0%',
-                            background: isAuthenticated
+                            width: (isAuthenticated && isConnected) ? '100%' : isConnected ? '50%' : isAuthenticated ? '30%' : '0%',
+                            background: (isAuthenticated && isConnected)
                                 ? 'linear-gradient(90deg, #22c55e, #4ade80)'
                                 : 'linear-gradient(90deg, var(--accent), var(--primary))',
                         }} />
@@ -418,60 +438,70 @@ export function ConnectModal() {
                     </div>
 
                     {/* Step 2: Sign In */}
-                    <button
-                        onClick={handleStep2}
-                        disabled={!isConnected || isAuthenticated || isSigning}
-                        style={{
-                            width: '100%', display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left',
-                            padding: '14px 16px', borderRadius: 12,
-                            border: isAuthenticated
-                                ? '1px solid rgba(34,197,94,0.15)'
-                                : isConnected
-                                    ? '1px solid color-mix(in srgb, var(--accent) 20%, transparent)'
-                                    : '1px solid var(--border)',
-                            background: isAuthenticated
-                                ? 'rgba(34,197,94,0.06)'
-                                : isConnected
-                                    ? 'color-mix(in srgb, var(--accent) 8%, transparent)'
-                                    : 'var(--muted)',
-                            cursor: !isConnected || isAuthenticated || isSigning ? 'default' : 'pointer',
-                            opacity: !isConnected && !isAuthenticated ? 0.4 : 1,
-                            transition: 'all 0.2s',
-                        }}
-                    >
-                        <div
-                            style={{
-                                width: 32, height: 32, borderRadius: '50%',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                flexShrink: 0, fontSize: '14px', fontWeight: 700,
-                                background: isAuthenticated
-                                    ? 'rgba(34,197,94,0.15)'
-                                    : isConnected ? 'var(--accent)' : 'var(--muted)',
-                                color: isAuthenticated ? '#4ade80' : isConnected ? '#fff' : 'var(--muted-foreground)',
-                            }}
-                        >
-                            {isAuthenticated ? <CheckIcon /> : '2'}
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                            <p style={{
-                                fontSize: '14px', fontWeight: 500, margin: 0,
-                                color: isAuthenticated ? '#4ade80' : isConnected ? 'var(--foreground)' : 'var(--muted-foreground)',
-                            }}>
-                                Sign In
-                            </p>
-                            <p style={{ fontSize: '12px', color: 'var(--muted-foreground)', marginTop: 2, margin: 0 }}>
-                                {isAuthenticated
-                                    ? 'Signed in ✓'
-                                    : isSigning
-                                        ? 'Waiting for signature…'
+                    {(() => {
+                        // Step 2 is only "done" visually if BOTH authenticated AND wallet connected
+                        const step2Done = isAuthenticated && isConnected
+                        // Auth exists but wallet dropped — show as needing reconnect
+                        const needsReconnect = isAuthenticated && !isConnected
+                        return (
+                            <button
+                                onClick={handleStep2}
+                                disabled={!isConnected || isAuthenticated || isSigning}
+                                style={{
+                                    width: '100%', display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left',
+                                    padding: '14px 16px', borderRadius: 12,
+                                    border: step2Done
+                                        ? '1px solid rgba(34,197,94,0.15)'
                                         : isConnected
-                                            ? 'Sign a message to verify ownership'
-                                            : 'Connect wallet first'}
-                            </p>
-                        </div>
-                        {isSigning && <SpinnerIcon />}
-                        {isConnected && !isAuthenticated && !isSigning && <PenIcon />}
-                    </button>
+                                            ? '1px solid color-mix(in srgb, var(--accent) 20%, transparent)'
+                                            : '1px solid var(--border)',
+                                    background: step2Done
+                                        ? 'rgba(34,197,94,0.06)'
+                                        : isConnected
+                                            ? 'color-mix(in srgb, var(--accent) 8%, transparent)'
+                                            : 'var(--muted)',
+                                    cursor: !isConnected || isAuthenticated || isSigning ? 'default' : 'pointer',
+                                    opacity: !isConnected && !isAuthenticated ? 0.4 : 1,
+                                    transition: 'all 0.2s',
+                                }}
+                            >
+                                <div
+                                    style={{
+                                        width: 32, height: 32, borderRadius: '50%',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        flexShrink: 0, fontSize: '14px', fontWeight: 700,
+                                        background: step2Done
+                                            ? 'rgba(34,197,94,0.15)'
+                                            : isConnected ? 'var(--accent)' : 'var(--muted)',
+                                        color: step2Done ? '#4ade80' : isConnected ? '#fff' : 'var(--muted-foreground)',
+                                    }}
+                                >
+                                    {step2Done ? <CheckIcon /> : '2'}
+                                </div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                    <p style={{
+                                        fontSize: '14px', fontWeight: 500, margin: 0,
+                                        color: step2Done ? '#4ade80' : isConnected ? 'var(--foreground)' : 'var(--muted-foreground)',
+                                    }}>
+                                        Sign In
+                                    </p>
+                                    <p style={{ fontSize: '12px', color: 'var(--muted-foreground)', marginTop: 2, margin: 0 }}>
+                                        {step2Done
+                                            ? 'Signed in ✓'
+                                            : needsReconnect
+                                                ? 'Reconnect wallet to continue'
+                                                : isSigning
+                                                    ? 'Waiting for signature…'
+                                                    : isConnected
+                                                        ? 'Sign a message to verify ownership'
+                                                        : 'Connect wallet first'}
+                                    </p>
+                                </div>
+                                {isSigning && <SpinnerIcon />}
+                                {isConnected && !isAuthenticated && !isSigning && <PenIcon />}
+                            </button>
+                        )
+                    })()}
 
                     {/* Step 3: Mint Username (only for first-time users) */}
                     {needsUsername && (

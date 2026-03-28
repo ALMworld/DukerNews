@@ -1,10 +1,10 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useAuthStore } from '../lib/authStore'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import * as m from '../paraglide/messages.js'
 import { DukiIcon } from '../components/icons'
 import FlowDiagram from '../components/FlowDiagram'
-import { useChainId, useSwitchChain, useBalance } from 'wagmi'
+import { useChainId, useSwitchChain, useBalance, useAccount } from 'wagmi'
 import { useQueryClient } from '@tanstack/react-query'
 import { DEFAULT_CHAIN_ID } from '../lib/contracts'
 import { queryKeys } from '../client'
@@ -245,6 +245,7 @@ function MintPanel({ address }: { address: string }) {
                         disabled={saving}
                         amountLabel="Amount (USDT)"
                         onChange={setPayment}
+                        walletAddress={address}
                     >
                         {/* Gas status */}
                         <div style={{
@@ -311,8 +312,17 @@ function MintPanel({ address }: { address: string }) {
 //  WelcomePage
 // ─────────────────────────────────────────────────────────────────────────────
 function WelcomePage() {
-    const { me } = useAuthStore()
+    const { me, setConnectModalOpen } = useAuthStore()
+    const { isConnected, status: accountStatus } = useAccount()
     const address = me?.ego ?? ''
+
+    // Auto-open ConnectModal when authenticated but wallet truly disconnected
+    // (wait for wagmi to finish reconnecting before deciding — avoids modal flash)
+    useEffect(() => {
+        if (address && accountStatus === 'disconnected') {
+            setConnectModalOpen(true)
+        }
+    }, [address, accountStatus, setConnectModalOpen])
 
     return (
         <div style={{ maxWidth: 680, margin: '0 auto', padding: '32px 20px' }}>

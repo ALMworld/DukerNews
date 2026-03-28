@@ -16,15 +16,28 @@ import {
     getJwtExpirySecs,
     type JWTPayload,
 } from '../../server/auth-utils'
-import { requireLoginMiddleware } from '../../middleware'
+import { authMiddleware } from '../../middleware'
 
 export const Route = createFileRoute('/api/notify-tx')({
     server: {
-        middleware: [requireLoginMiddleware],
+        // Note: auth is enforced inline to allow X-E2E-Secret dev bypass for e2e tests.
+        // requireLoginMiddleware is NOT used here so the bypass header can be checked first.
+        middleware: [authMiddleware],
         handlers: {
             POST: async ({ request, context }) => {
                 try {
-                    const payload = context.auth!
+                    // Dev-only: e2e tests bypass auth with a special header
+                    const isE2E = process.env.NODE_ENV !== 'production'
+                        && request.headers.get('X-E2E-Secret') === 'duker-e2e-dev'
+
+                    // Enforce auth for non-e2e requests
+                    if (!isE2E && !context.auth) {
+                        return Response.json({ success: false, message: 'Not logged in' }, { status: 401 })
+                    }
+
+                    const payload = isE2E
+                        ? { address: request.headers.get('X-E2E-Address') ?? '', username: '', ego: 'human', chainId: '', dukiBps: 0, expireAt: 0 } as any
+                        : context.auth!
 
                     // Parse request body
                     const body = await request.json() as { txHash: string; dukiBps?: number }

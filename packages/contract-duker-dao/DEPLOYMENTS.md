@@ -1,6 +1,6 @@
 # DukerNews Production Deployment Addresses
 
-> Deployed: 2026-03-26 | Deployer: `0xfe0a6760458A1E75c284B9903ecc64D2B87c00a6`
+> Fresh deploy: 2026-03-28 | Deployer: `0xfe0a6760458A1E75c284B9903ecc64D2B87c00a6`
 
 ---
 
@@ -8,8 +8,8 @@
 
 | Contract | Address | Explorer |
 |----------|---------|----------|
-| **DukerNews (proxy)** | `0x4E622724cd88AB0CEC2E8304AE4EDAf6c00ac22f` | [oklink](https://www.oklink.com/xlayer/address/0x4E622724cd88AB0CEC2E8304AE4EDAf6c00ac22f) |
-| DukerNews (impl) | `0x985955084d513651A618B83ADbf91b1E8C228330` | [oklink](https://www.oklink.com/xlayer/address/0x985955084d513651A618B83ADbf91b1E8C228330) |
+| **DukerNews (proxy)** | `0x348C88cC171bffDB9128bc9DEcDa49c0820FB29F` | [oklink](https://www.oklink.com/xlayer/address/0x348C88cC171bffDB9128bc9DEcDa49c0820FB29F) |
+| DukerNews (impl) | `0x565C8206D626dc9Ddee7f1958A96602cA5dAd32c` | [oklink](https://www.oklink.com/xlayer/address/0x565C8206D626dc9Ddee7f1958A96602cA5dAd32c) |
 
 | Config | Value |
 |--------|-------|
@@ -23,7 +23,19 @@
 
 ## Sepolia Testnet (Chain ID: 11155111)
 
+> Fresh deployment: 2026-03-28 | Deployer: `0xBB68A2363861d595cfF23abE0AC247fd36c0e7E7`
+
 | Contract | Address |
 |----------|---------|
-| DukerNews (proxy) | `0x127600D0833296D0722f265fd90C19DfD51EAd79` |
-| DukerNews (impl) | `0xEB67e6362C753813E987D06F57DF12cF4fccaf9B` |
+| **DukerNews (proxy)** | `0xEEfb66A4656fB695D6f718676A1D57aF023d1F6f` |
+| DukerNews (impl) | `0xD25fBEeCd88F141F9123a45B70F806F084479f33` |
+
+| Config | Value |
+|--------|-------|
+| USDT (MockUSDT + ERC20Permit) | `0x60Aad2540Cc4CE0FA6188a796fD9b8e48917004c` |
+| Minter (AlmWorldDukiMinter) | `0x58B8C2444fbC4C3B7e2c403D33cF372035877154` |
+| DUKIToken | `0x7620D286c67cc5654f222a559777E5ACF9338d12` |
+| ALMToken | `0xd69D0aCe89c396c5b46A20a98De0086E01d61526` |
+| Treasury (= Deployer) | `0xBB68A2363861d595cfF23abE0AC247fd36c0e7E7` |
+| Owner (= Deployer) | `0xBB68A2363861d595cfF23abE0AC247fd36c0e7E7` |
+| MintFee | 1 USDT (1e6) |

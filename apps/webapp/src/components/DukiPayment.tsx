@@ -5,7 +5,7 @@
  *  1. Amount selection (preset chips + custom input)
  *  2. Stablecoin selector (when multiple stablecoins available per chain)
  *  3. Read-only distribution table (DukerNews vs DUKI Treasury with addresses)
- *  4. Submit method toggle (Wallet Gas / Gasless x402) — configurable
+ *  4. Execution toggle (🔗 On-chain / ⚡ Gasless) — configurable
  *  5. Children slot for action buttons, tx status, etc.
  *
  * The dukiBps is ALWAYS passed in from outside (set once at mint).
@@ -16,7 +16,7 @@
 import { useState, useCallback } from 'react'
 import { cn } from '@/lib/utils'
 import { Wallet, Zap, ExternalLink, Copy, Check, AlertTriangle } from 'lucide-react'
-import { useAccount, useReadContract } from 'wagmi'
+import { useAccount, useReadContract, useBalance } from 'wagmi'
 import {
     ADDRESSES, LOCAL_CHAIN_ID, DEFAULT_CHAIN_ID, SUPPORTED_CHAINS,
     ERC20_ABI, getDefaultStablecoin, getStablecoins,
@@ -55,7 +55,7 @@ export interface DukiPaymentProps {
     currency?: string
     /** Show x402 gasless option */
     showX402?: boolean
-    /** Default submit method */
+    /** Default execution mode */
     defaultMethod?: SubmitMethod
     /** Whether the whole panel is disabled */
     disabled?: boolean
@@ -67,6 +67,8 @@ export interface DukiPaymentProps {
     amountSubLabel?: string
     /** Children rendered after everything (e.g. custom submit button) */
     children?: React.ReactNode
+    /** Optional wallet address (fallback when useAccount is disconnected) */
+    walletAddress?: string
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -147,8 +149,11 @@ export function DukiPayment({
     amountLabel,
     amountSubLabel,
     children,
+    walletAddress,
 }: DukiPaymentProps) {
-    const { address } = useAccount()
+    const { address: wagmiAddress } = useAccount()
+    // Use wagmi address if available, otherwise fall back to prop
+    const address = (wagmiAddress ?? walletAddress) as `0x${string}` | undefined
 
     // ── Chain selector state ──
     // Default to DEFAULT_CHAIN_ID (from env), user can switch within SUPPORTED_CHAINS
@@ -173,6 +178,7 @@ export function DukiPayment({
     const stablecoinName = selectedStablecoin.symbol
     const addrs = ADDRESSES[selectedChainId] ?? ADDRESSES[LOCAL_CHAIN_ID]
     const explorerBase = selectedMeta?.explorerUrl ? selectedMeta.explorerUrl + '/address/' : ''
+    const gasSymbol = selectedMeta?.nativeCurrency?.symbol ?? 'ETH'
 
     // Read stablecoin balance for connected wallet — always query selectedChainId's RPC
     const { data: rawBalance, isError: balanceError, isFetched: balanceFetched } = useReadContract({
@@ -186,6 +192,14 @@ export function DukiPayment({
     const tokenBalance = rawBalance != null ? Number(rawBalance as bigint) / (10 ** selectedStablecoin.decimals) : null
     const effectiveBalance = tokenBalance ?? (balanceFetched && !!selectedStablecoin.address ? 0 : null)
     const insufficientBalance = effectiveBalance !== null && currentAmount > 0 && currentAmount > effectiveBalance
+
+    // Read native gas token balance
+    const { data: nativeBalData } = useBalance({
+        address: address,
+        chainId: selectedChainId,
+        query: { enabled: !!address },
+    })
+    const gasBalance = nativeBalData ? Number(nativeBalData.value) / (10 ** (nativeBalData.decimals ?? 18)) : null
 
     const emitChange = useCallback((amt: number, m: SubmitMethod, cid?: number, sc?: StablecoinMeta) => {
         const coin = sc ?? selectedStablecoin
@@ -365,33 +379,38 @@ export function DukiPayment({
                 <div
                     className="rounded-lg border overflow-hidden"
                     style={{
-                        borderColor: 'rgba(109,40,217,0.35)',
-                        background: 'rgba(30,27,75,0.4)',
+                        borderColor: 'var(--border)',
+                        background: 'var(--muted)',
                     }}
                 >
                     {/* Header row: chain + coin + balance */}
                     <div
                         className="px-3 py-1.5 flex items-center justify-between text-[10px]"
                         style={{
-                            borderBottom: '1px solid rgba(109,40,217,0.2)',
+                            borderBottom: '1px solid var(--border)',
                             color: 'var(--meta-color)',
                         }}
                     >
-                        <span className="flex items-center gap-1">
+                        <span className="flex items-center gap-1 flex-wrap">
                             <span style={{ fontWeight: 600, color: 'var(--duki-300)' }}>{stablecoinName}</span>
                             {' on '}
                             <span style={{ fontWeight: 600, color: 'var(--duki-400)' }}>{chainName}</span>
-                            {effectiveBalance !== null && (
-                                <span className="ml-1" style={{
-                                    fontVariantNumeric: 'tabular-nums',
-                                    color: insufficientBalance ? '#ef4444' : 'var(--meta-color)',
-                                    fontWeight: insufficientBalance ? 600 : 400,
-                                }}>
-                                    · Bal: {fmt(effectiveBalance)}
-                                </span>
-                            )}
+                            <span className="ml-1" style={{
+                                fontVariantNumeric: 'tabular-nums',
+                                color: insufficientBalance ? '#ef4444' : 'var(--meta-color)',
+                                fontWeight: insufficientBalance ? 600 : 400,
+                            }}>
+                                · {stablecoinName}: {effectiveBalance !== null ? fmt(effectiveBalance) : '—'}
+                            </span>
+                            <span style={{
+                                fontVariantNumeric: 'tabular-nums',
+                                color: 'var(--meta-color)',
+                                opacity: 0.75,
+                            }}>
+                                · {gasSymbol}: {gasBalance !== null ? fmt(gasBalance) : '—'}
+                            </span>
                         </span>
-                        <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--duki-300)' }}>
+                        <span style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--duki-400)' }}>
                             {fmt(currentAmount)} {stablecoinName}
                         </span>
                     </div>
@@ -414,15 +433,15 @@ export function DukiPayment({
                     {/* DukerNews row */}
                     <div
                         className="px-3 py-2.5 flex items-center justify-between"
-                        style={{ borderBottom: '1px solid rgba(109,40,217,0.15)' }}
+                        style={{ borderBottom: '1px solid var(--border)' }}
                     >
                         <div>
-                            <div className="text-[11px] font-semibold flex items-center gap-1" style={{ color: '#e879f9' }}>
+                            <div className="text-[11px] font-semibold flex items-center gap-1" style={{ color: 'var(--duki-500)' }}>
                                 Duker News Treasury · {(10000 - dukiBps) / 100}%
                             </div>
                             <div className="text-[9px] flex items-center gap-1" style={{ color: 'var(--meta-color)', opacity: 0.7 }}>
                                 {addrs && (
-                                    <><AddrLink addr={addrs.DukerNews} explorerBase={explorerBase} color="rgba(232,121,249,0.5)" /> · </>
+                                    <><AddrLink addr={addrs.DukerNews} explorerBase={explorerBase} color="var(--duki-400)" /> · </>
                                 )}
                                 Platform operations & survivorship
                             </div>
@@ -430,7 +449,7 @@ export function DukiPayment({
                         <div className="text-right">
                             <div
                                 className="text-base font-bold"
-                                style={{ color: '#e879f9', fontVariantNumeric: 'tabular-nums' }}
+                                style={{ color: 'var(--duki-500)', fontVariantNumeric: 'tabular-nums' }}
                             >
                                 {fmt(dukerNewsAmt)}
                                 <span className="text-[9px] font-normal ml-1 opacity-60">{stablecoinName}</span>
@@ -464,11 +483,11 @@ export function DukiPayment({
                 </div>
             )}
 
-            {/* ── Submit method toggle ── */}
+            {/* ── Execution toggle ── */}
             {showX402 && (
                 <div>
                     <label className="mb-1 block text-xs font-medium" style={{ color: 'var(--meta-color)' }}>
-                        Submit Method
+                        Execution
                         {!isHomeChain && (
                             <span className="ml-2 font-normal opacity-60">
                                 (x402 only on {chainName})
@@ -477,8 +496,8 @@ export function DukiPayment({
                     </label>
                     <div className="flex gap-1.5">
                         {([
-                            ['direct', 'Wallet Gas', Wallet],
-                            ['x402', 'Gasless (x402)', Zap],
+                            ['direct', 'Direct On-chain', Wallet],
+                            ['x402', 'Sponsored Gasless', Zap],
                         ] as const).map(([m, label, Icon]) => {
                             const on = method === m
                             const isDirectDisabled = m === 'direct' && (!isHomeChain || currentAmount === 0)
@@ -505,8 +524,8 @@ export function DukiPayment({
             <div
                 className="rounded border px-3 py-2 text-[10px] leading-relaxed"
                 style={{
-                    borderColor: 'rgba(234,179,8,0.3)',
-                    background: 'rgba(234,179,8,0.05)',
+                    borderColor: 'var(--border)',
+                    background: 'var(--muted)',
                     color: 'var(--meta-color)',
                 }}
             >

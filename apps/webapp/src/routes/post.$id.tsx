@@ -17,8 +17,10 @@ import CommentThread from '../components/CommentThread'
 import CommentLocaleToggle, { getCommentLocaleConfig } from '../components/CommentLocaleToggle'
 import { useRequireAuth } from '../lib/useRequireAuth'
 import { useChainHandle } from '../client/useChainHandle'
-import { DukiPayment, type DukiPaymentValue, type SubmitMethod } from '../components/DukiPayment'
 import PostItem from '../components/PostItem'
+import { BoostPanel } from '../components/BoostPanel'
+import { SubmitOnChainButton } from '../components/SubmitOnChainButton'
+import { InteractionBar } from '../components/InteractionBar'
 import { translateText } from '../client'
 import { getDisplayText } from '../lib/bagua-text'
 
@@ -42,11 +44,23 @@ function PostDetailPage() {
     const [loadingMore, setLoadingMore] = useState(false)
     const [commentText, setCommentText] = useState('')
     const [commentLocale, setCommentLocale] = useState<SupportedLocale>(userLocale)
-    const [submitting, setSubmitting] = useState(false)
-    const [submitMethod, setSubmitMethod] = useState<SubmitMethod>('x402')
-    const [boostAmount, setBoostAmount] = useState(0)
-    const [paymentChainId, setPaymentChainId] = useState('')
-    const [paymentStablecoin, setPaymentStablecoin] = useState('')
+
+    // Boost panel state — mutually exclusive with comment form
+    const [showBoost, setShowBoost] = useState(false)
+    const [showCommentForm, setShowCommentForm] = useState(true)
+
+    const handleToggleBoost = () => {
+        const next = !showBoost
+        setShowBoost(next)
+        setShowCommentForm(!next)  // hide comment form when boost opens
+    }
+
+    const handleToggleReply = () => {
+        const next = !showCommentForm
+        setShowCommentForm(next)
+        setShowBoost(!next ? false : showBoost)  // close boost if opening reply
+        if (next) setShowBoost(false)
+    }
 
     // Body text translation — PostItem handles title translation internally
     // and calls onTranslateToggle so we can fetch+show body translation in sync.
@@ -70,16 +84,12 @@ function PostDetailPage() {
         e.preventDefault()
         if (!commentText.trim() || !post || cmdPending) return
         if (!requireAuth()) return
-        setSubmitting(true)
         try {
-            const boostMicro = BigInt(Math.round(boostAmount * 1_000_000))
             const txData = create(DukerTxReqSchema, {
                 address: me?.ego ?? '',
                 aggType: AggType.COMMENT,
                 aggId: 0n,  // contract auto-assigns
                 evtType: EventType.COMMENT_CREATED,
-                paymentChain: paymentChainId,
-                paymentStablecoinAddress: paymentStablecoin,
                 data: create(EventDataSchema, {
                     payload: {
                         case: 'commentCreated',
@@ -88,26 +98,22 @@ function PostDetailPage() {
                             parentId: 0n,  // top-level comment — no parent
                             text: commentText.trim(),
                             locale: commentLocale,
-                            ancestorPath: '',  // no ancestors for root comment
-                            boostAmount: boostMicro,
+                            ancestorPath: '',
+                            boostAmount: 0n,  // always free; boost via dedicated action
                         }),
                     },
                 }),
             })
-            const result = await dispatch(txData, submitMethod === 'x402')
+            const result = await dispatch(txData, false)  // direct chain — free op
 
-            // Apply enriched events to update comments in-place
             if (result.events?.length) {
                 setComments(prev => applyCommentEvents(prev, result.events!))
             }
 
             setCommentText('')
-            setBoostAmount(0)
             resetChain()
         } catch {
             // Error shown via chainError state
-        } finally {
-            setSubmitting(false)
         }
     }
 
@@ -151,115 +157,120 @@ function PostDetailPage() {
                     translateAllActive={translateAllActive}
                     onTranslateAll={() => setTranslateAllActive(v => !v)}
                     onTranslateToggle={handleTranslateToggle}
+                    activeAction={showCommentForm ? 'reply' : showBoost ? 'boost' : 'none'}
+                    onReply={handleToggleReply}
+                    onBoost={handleToggleBoost}
+                    onBoostSuccess={(delta) => {
+                        setPost(p => p ? { ...p, totalBoost: (p.totalBoost ?? 0) + BigInt(delta) } as PbPost : p)
+                    }}
                 />
 
                 {/* Post body text (text posts only) */}
                 {(displayText || post.text) && (
                     <div
                         className="mt-1 text-sm leading-normal"
-                        style={{ color: 'var(--foreground)', paddingLeft: '18px' }}
+                        style={{ color: 'var(--foreground)', paddingLeft: '18px', whiteSpace: 'pre-wrap' }}
                     >
                         {displayText || post.text}
                     </div>
                 )}
+
+                {/* Reply / Boost actions — below body text */}
+                <div className="mt-2" style={{ paddingLeft: '18px', fontSize: '8pt', color: 'var(--meta-color)' }}>
+                    <InteractionBar
+                        activeAction={showCommentForm ? 'reply' : showBoost ? 'boost' : 'none'}
+                        exclusive
+                        onReply={handleToggleReply}
+                        onBoost={handleToggleBoost}
+                    />
+                </div>
             </div>
 
-            {/* Add comment form */}
-            {(() => {
-                const localeConfig = getCommentLocaleConfig(userLocale, post.locale, showTranslated)
-                return (
-                    <form onSubmit={handleSubmitComment} className="mb-2 max-w-3xl" style={{ paddingLeft: '18px' }}>
-                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px' }}>
-                            <div style={{ position: 'relative', flex: 1 }}>
-                                <textarea
-                                    value={commentText}
-                                    onChange={(e) => setCommentText(e.target.value)}
-                                    placeholder="Add a comment..."
-                                    rows={4}
-                                    className="w-full p-2 text-sm"
-                                    style={{
-                                        background: 'var(--input)',
-                                        color: 'var(--foreground)',
-                                        border: '1px solid var(--border)',
-                                        borderRadius: 0,
-                                        outline: 'none',
-                                        resize: 'both',
-                                        paddingBottom: localeConfig ? '32px' : undefined,
-                                    }}
-                                    onFocus={(e) => {
-                                        e.currentTarget.style.borderColor = 'var(--ring)'
-                                    }}
-                                    onBlur={(e) => {
-                                        e.currentTarget.style.borderColor = 'var(--border)'
-                                    }}
-                                />
-                                {localeConfig && (
-                                    <div style={{ position: 'absolute', bottom: '12px', right: '8px' }}>
-                                        <CommentLocaleToggle
-                                            options={localeConfig.options}
-                                            value={commentLocale}
-                                            onChange={setCommentLocale}
-                                        />
-                                    </div>
-                                )}
-                            </div>
-                            <a
-                                href="/formatdoc"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-xs no-underline hover:underline"
-                                style={{ color: 'var(--meta-color)', paddingBottom: '4px' }}
-                            >
-                                help
-                            </a>
-                        </div>
-                        {/* DukiPayment — chain method + optional tip */}
-                        <div className="mt-2">
-                            <DukiPayment
-                                dukiBps={me?.dukiBps ?? 5000}
-                                amounts={[0, 1, 2, 8]}
-                                defaultAmount={0}
-                                defaultMethod="x402"
-                                amountLabel="Tip (optional)"
-                                amountSubLabel="boost your comment"
-                                onChange={(v: DukiPaymentValue) => {
-                                    setSubmitMethod(v.method)
-                                    setBoostAmount(v.amount)
-                                    setPaymentChainId(String(v.chainId))
-                                    setPaymentStablecoin(v.stablecoinAddress)
-                                }}
-                                disabled={cmdPending || submitting}
-                            />
-                        </div>
+            {/* Boost panel — hidden via display when not active */}
+            <div style={{ display: showBoost ? undefined : 'none' }} className="mb-3 max-w-md pl-[18px]">
+                <BoostPanel
+                    aggType={AggType.POST}
+                    aggId={post.id}
+                    amounts={[1, 2, 8, 20, 100]}
+                    defaultAmount={2}
+                    subLabel="support this post"
+                    onSuccess={(micro) => {
+                        setPost(p => p ? { ...p, totalBoost: (p.totalBoost ?? 0) + BigInt(micro) } as PbPost : p)
+                    }}
+                    onCancel={() => { setShowBoost(false); setShowCommentForm(true) }}
+                />
+            </div>
 
-                        {chainError && (
-                            <div className="mt-1 text-xs" style={{ color: 'var(--destructive, #e55)' }}>
-                                {chainError}
+            {/* Add comment form — hidden via display when boost panel is open */}
+            <div style={{ display: showCommentForm ? undefined : 'none' }}>
+                {(() => {
+                    const localeConfig = getCommentLocaleConfig(userLocale, post.locale, showTranslated)
+                    return (
+                        <form onSubmit={handleSubmitComment} className="mb-2 max-w-3xl" style={{ paddingLeft: '18px' }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px' }}>
+                                <div style={{ position: 'relative', flex: 1 }}>
+                                    <textarea
+                                        value={commentText}
+                                        onChange={(e) => setCommentText(e.target.value)}
+                                        placeholder="Add a comment..."
+                                        rows={4}
+                                        className="w-full p-2 text-sm"
+                                        style={{
+                                            background: 'var(--input)',
+                                            color: 'var(--foreground)',
+                                            border: '1px solid var(--border)',
+                                            borderRadius: 0,
+                                            outline: 'none',
+                                            resize: 'both',
+                                            paddingBottom: localeConfig ? '32px' : undefined,
+                                        }}
+                                        onFocus={(e) => {
+                                            e.currentTarget.style.borderColor = 'var(--ring)'
+                                        }}
+                                        onBlur={(e) => {
+                                            e.currentTarget.style.borderColor = 'var(--border)'
+                                        }}
+                                    />
+                                    {localeConfig && (
+                                        <div style={{ position: 'absolute', bottom: '12px', right: '8px' }}>
+                                            <CommentLocaleToggle
+                                                options={localeConfig.options}
+                                                value={commentLocale}
+                                                onChange={setCommentLocale}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+                                <a
+                                    href="/formatdoc"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-xs no-underline hover:underline"
+                                    style={{ color: 'var(--meta-color)', paddingBottom: '4px' }}
+                                >
+                                    help
+                                </a>
                             </div>
-                        )}
-
-                        <div className="flex gap-2 mt-2 items-center">
-                            <button
-                                type="submit"
-                                disabled={submitting || cmdPending || !commentText.trim()}
-                                className="px-3 py-1 text-sm transition-all disabled:opacity-40"
-                                style={{
-                                    background: (submitting || cmdPending || !commentText.trim()) ? 'var(--background)' : 'var(--duki-600)',
-                                    color: (submitting || cmdPending || !commentText.trim()) ? 'var(--foreground)' : 'var(--duki-100)',
-                                    border: '1px solid var(--border)',
-                                    borderRadius: 0,
-                                    cursor: (submitting || cmdPending) ? 'wait' : 'pointer',
-                                }}
-                            >
-                                {cmdPending ? `${step}...` : submitting ? 'posting...' : boostAmount > 0 ? `add comment ($${boostAmount} tip)` : 'add comment'}
-                            </button>
-                            {step === 'done' && (
-                                <span className="text-xs" style={{ color: 'var(--duki-400)' }}>✓ on-chain</span>
+                            {chainError && (
+                                <div className="mt-1 text-xs" style={{ color: 'var(--destructive, #e55)' }}>
+                                    {chainError}
+                                </div>
                             )}
-                        </div>
-                    </form>
-                )
-            })()}
+
+                            <div className="flex gap-2 mt-2 items-center">
+                                <SubmitOnChainButton
+                                    label="add comment"
+                                    step={step}
+                                    successMessage="✓ on-chain"
+                                    disabled={!commentText.trim()}
+                                    type="submit"
+                                    onDone={resetChain}
+                                />
+                            </div>
+                        </form>
+                    )
+                })()}
+            </div>
 
             {/* Comments */}
             <div id="comments" />

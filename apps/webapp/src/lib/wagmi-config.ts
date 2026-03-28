@@ -23,10 +23,12 @@ export { projectId }
 //   xlayer  → X Layer only (production)
 //   sepolia → Sepolia only (testnet)
 //   local   → Anvil + Sepolia (dev)
+// Only the home chain is registered in wagmi — cross-chain balance reads use
+// the DukiPayment UI fallback ('—') when a non-home chain is selected.
 const chains =
     chainEnv === 'xlayer' ? ([xLayer] as const)
-    : chainEnv === 'sepolia' ? ([sepolia] as const)
-    : ([anvil, sepolia] as const)
+        : chainEnv === 'sepolia' ? ([sepolia] as const)
+            : ([anvil, sepolia] as const)
 
 export const wagmiConfig = createConfig({
     chains,

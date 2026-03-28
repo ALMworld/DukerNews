@@ -8,7 +8,7 @@
 
 import { getKysely } from '../lib/db'
 import { sql } from 'kysely'
-import { EventType, type PbEvent } from '@repo/apidefs'
+import { EventType, AggType, type PbEvent } from '@repo/apidefs'
 import * as PostService from './post-service'
 import * as CommentService from './comment-service'
 import * as InteractionService from './interaction-service'
@@ -121,6 +121,7 @@ async function applyEvent(evt: PbEvent): Promise<ApplyResult> {
 
             await ensureUser(evt.address, evt.username, now)
             await PostService.createPost({
+                aggId: evt.aggId,
                 title: v.title,
                 url: v.url,
                 text: v.text,
@@ -138,16 +139,42 @@ async function applyEvent(evt: PbEvent): Promise<ApplyResult> {
         }
 
         case EventType.POST_UPVOTED: {
-            const p = evt.data?.payload
-            if (p?.case !== 'postUpvoted') throw new Error('POST_UPVOTED: missing payload')
-
             await PostService.upvotePost({
                 postId: evt.aggId,
                 address: evt.address,
-                boostAmount: BigInt(p.value.boostAmount ?? 0),
+                boostAmount: 0n,  // upvote is free — no boost
             })
+            console.log(`[events-service] POST_UPVOTED: post=${evt.aggId} by ${evt.address}`)
+            return { evtSeq: Number(evt.evtSeq), eventType: evt.evtType }
+        }
 
-            console.log(`[events-service] POST_UPVOTED: post=${evt.aggId} by ${evt.address} boost=${p.value.boostAmount}`)
+        // Unified upvote — agg_type: 2=post, 3=comment
+        case EventType.UPVOTE_ATTENTION: {
+            const db = getKysely()
+            const username = evt.username  // already in event from contract
+            if (evt.aggType === 2) {
+                // Post upvote
+                await PostService.upvotePost({
+                    postId: evt.aggId,
+                    address: evt.address,
+                    boostAmount: 0n,
+                })
+                // Save vote bit for the actor
+                if (username) {
+                    await InteractionService.setVote(username, AggType.POST, evt.aggId, InteractionService.VOTE_UP)
+                }
+            } else if (evt.aggType === 3 && db) {
+                // Comment upvote
+                if (username) {
+                    await InteractionService.setVote(username, AggType.COMMENT, evt.aggId, InteractionService.VOTE_UP)
+                }
+                await db
+                    .updateTable('comments')
+                    .set({ points: sql`points + 1` })
+                    .where('id', '=', Number(evt.aggId) as any) // D1 needs Number
+                    .execute()
+            }
+            console.log(`[events-service] UPVOTE_ATTENTION: aggType=${evt.aggType} id=${evt.aggId} by ${evt.username}`)
             return { evtSeq: Number(evt.evtSeq), eventType: evt.evtType }
         }
 
@@ -168,7 +195,7 @@ async function applyEvent(evt: PbEvent): Promise<ApplyResult> {
                         text_en: p.value.textEn,
                         updated_at: now,
                     })
-                    .where('id', '=', evt.aggId)
+                    .where('id', '=', Number(evt.aggId) as any) // D1 needs Number
                     .execute()
             }
 
@@ -185,7 +212,7 @@ async function applyEvent(evt: PbEvent): Promise<ApplyResult> {
                 await db
                     .updateTable('posts')
                     .set({ dead: 1, updated_at: now })
-                    .where('id', '=', evt.aggId)
+                    .where('id', '=', Number(evt.aggId) as any) // D1 needs Number
                     .execute()
             }
 
@@ -202,7 +229,7 @@ async function applyEvent(evt: PbEvent): Promise<ApplyResult> {
                 await db
                     .updateTable('posts')
                     .set({ flags: sql`flags + 1`, updated_at: now })
-                    .where('id', '=', evt.aggId)
+                    .where('id', '=', Number(evt.aggId) as any) // D1 needs Number
                     .execute()
             }
 
@@ -219,7 +246,7 @@ async function applyEvent(evt: PbEvent): Promise<ApplyResult> {
                 await db
                     .updateTable('posts')
                     .set({ dead: 1, updated_at: now })
-                    .where('id', '=', evt.aggId)
+                    .where('id', '=', Number(evt.aggId) as any) // D1 needs Number
                     .execute()
             }
 
@@ -238,27 +265,65 @@ async function applyEvent(evt: PbEvent): Promise<ApplyResult> {
         }
 
         case EventType.COMMENT_UPVOTED: {
+            const db = getKysely()
+            if (db) {
+                if (evt.username) {
+                    await InteractionService.setVote(evt.username, AggType.COMMENT, evt.aggId, InteractionService.VOTE_UP)
+                }
+                // Upvote is free — only increment points, no boost delta
+                await db
+                    .updateTable('comments')
+                    .set({ points: sql`points + 1` })
+                    .where('id', '=', Number(evt.aggId) as any) // D1 needs Number
+                    .execute()
+            }
+            console.log(`[events-service] COMMENT_UPVOTED (legacy): comment=${evt.aggId} by ${evt.username}`)
+            return { evtSeq: Number(evt.evtSeq), eventType: evt.evtType }
+        }
+
+        case EventType.BOOST_ATTENTION: {
             const p = evt.data?.payload
-            if (p?.case !== 'commentUpvoted') throw new Error('COMMENT_UPVOTED: missing payload')
+            if (p?.case !== 'boostAttention') throw new Error('BOOST_ATTENTION: missing payload')
+            const boostDelta = Number(p.value.boostAmount ?? 0)
+            const username = evt.username  // already in event from contract
+            const aggId = Number(evt.aggId)  // D1 doesn't support bigint
 
             const db = getKysely()
             if (db) {
-                const username = await getUsernameByAddress(evt.address)
-                if (username) {
-                    await InteractionService.setVote(username, 'comment', evt.aggId, InteractionService.VOTE_UP)
-                }
-                const boostDelta = Number(p.value.boostAmount ?? 0)
+                const isPost = evt.aggType === 2
+                const table  = isPost ? 'posts' : 'comments'
+
+                // Always accumulate the economic boost
                 await db
-                    .updateTable('comments')
-                    .set({
-                        points: sql`points + 1`,
-                        total_boost: sql`COALESCE(total_boost, 0) + ${boostDelta}`,
-                    })
-                     .where('id', '=', evt.aggId)
+                    .updateTable(table as any)
+                    .set({ total_boost: sql`COALESCE(total_boost, 0) + ${boostDelta}` })
+                    .where('id', '=', aggId as any)
                     .execute()
+
+                // Boost = upvote + money.
+                // If the user hasn't voted yet, a boost also counts as an implicit upvote
+                // (increments points). Existing votes — up or down — are preserved.
+                if (username) {
+                    const targetType = isPost ? AggType.POST : AggType.COMMENT
+                    const currentVote = await InteractionService.getVote(username, targetType, BigInt(aggId))
+                    if (currentVote === InteractionService.VOTE_NONE) {
+                        await InteractionService.setVote(username, targetType, BigInt(aggId), InteractionService.VOTE_UP)
+                        await db
+                            .updateTable(table as any)
+                            .set({ points: sql`points + 1` })
+                            .where('id', '=', aggId as any)
+                            .execute()
+                    }
+                }
             }
 
-            console.log(`[events-service] COMMENT_UPVOTED: comment=${evt.aggId} boost=${p.value.boostAmount}`)
+            // Record BIT_BOOST so client sync shows the boost indicator
+            if (username) {
+                const targetType = evt.aggType === 2 ? AggType.POST : AggType.COMMENT
+                await InteractionService.setBits(username, targetType, BigInt(aggId), InteractionService.BIT_BOOST)
+            }
+
+            console.log(`[events-service] BOOST_ATTENTION: aggType=${evt.aggType} id=${aggId} +$${boostDelta / 1e6}`)
             return { evtSeq: Number(evt.evtSeq), eventType: evt.evtType }
         }
 
@@ -300,7 +365,7 @@ async function applyEvent(evt: PbEvent): Promise<ApplyResult> {
                 await db
                     .updateTable('comments')
                     .set({ dead: 1 })
-                    .where('id', '=', evt.aggId)
+                    .where('id', '=', Number(evt.aggId) as any) // D1 needs Number
                     .execute()
             }
 
@@ -314,12 +379,12 @@ async function applyEvent(evt: PbEvent): Promise<ApplyResult> {
             const p = evt.data?.payload
             if (p?.case !== 'postLiked') throw new Error('POST_LIKED: missing payload')
 
-            const username = await getUsernameByAddress(evt.address)
+            const username = evt.username
             if (username) {
-                await InteractionService.setVote(username, p.value.itemType, p.value.itemId, InteractionService.VOTE_UP)
+                await InteractionService.setVote(username, evt.aggType as AggType, p.value.itemId, InteractionService.VOTE_UP)
             }
 
-            console.log(`[events-service] POST_LIKED: ${p.value.itemType}=${p.value.itemId}`)
+            console.log(`[events-service] POST_LIKED: aggType=${evt.aggType} id=${p.value.itemId}`)
             return { evtSeq: Number(evt.evtSeq), eventType: evt.evtType }
         }
 
@@ -327,12 +392,12 @@ async function applyEvent(evt: PbEvent): Promise<ApplyResult> {
             const p = evt.data?.payload
             if (p?.case !== 'postUnliked') throw new Error('POST_UNLIKED: missing payload')
 
-            const username = await getUsernameByAddress(evt.address)
+            const username = evt.username
             if (username) {
-                await InteractionService.setVote(username, p.value.itemType, p.value.itemId, 0)
+                await InteractionService.setVote(username, evt.aggType as AggType, p.value.itemId, 0)
             }
 
-            console.log(`[events-service] POST_UNLIKED: ${p.value.itemType}=${p.value.itemId}`)
+            console.log(`[events-service] POST_UNLIKED: aggType=${evt.aggType} id=${p.value.itemId}`)
             return { evtSeq: Number(evt.evtSeq), eventType: evt.evtType }
         }
 
@@ -340,12 +405,12 @@ async function applyEvent(evt: PbEvent): Promise<ApplyResult> {
             const p = evt.data?.payload
             if (p?.case !== 'commentLiked') throw new Error('COMMENT_LIKED: missing payload')
 
-            const username = await getUsernameByAddress(evt.address)
+            const username = evt.username
             if (username) {
-                await InteractionService.setVote(username, p.value.itemType, p.value.itemId, InteractionService.VOTE_UP)
+                await InteractionService.setVote(username, evt.aggType as AggType, p.value.itemId, InteractionService.VOTE_UP)
             }
 
-            console.log(`[events-service] COMMENT_LIKED: ${p.value.itemType}=${p.value.itemId}`)
+            console.log(`[events-service] COMMENT_LIKED: aggType=${evt.aggType} id=${p.value.itemId}`)
             return { evtSeq: Number(evt.evtSeq), eventType: evt.evtType }
         }
 
@@ -353,12 +418,12 @@ async function applyEvent(evt: PbEvent): Promise<ApplyResult> {
             const p = evt.data?.payload
             if (p?.case !== 'commentUnliked') throw new Error('COMMENT_UNLIKED: missing payload')
 
-            const username = await getUsernameByAddress(evt.address)
+            const username = evt.username
             if (username) {
-                await InteractionService.setVote(username, p.value.itemType, p.value.itemId, 0)
+                await InteractionService.setVote(username, evt.aggType as AggType, p.value.itemId, 0)
             }
 
-            console.log(`[events-service] COMMENT_UNLIKED: ${p.value.itemType}=${p.value.itemId}`)
+            console.log(`[events-service] COMMENT_UNLIKED: aggType=${evt.aggType} id=${p.value.itemId}`)
             return { evtSeq: Number(evt.evtSeq), eventType: evt.evtType }
         }
 
@@ -419,13 +484,4 @@ async function ensureUser(address: string, username: string, now: number) {
         VALUES (${address}, ${username}, ${now}, ${now})`.execute(db)
 }
 
-async function getUsernameByAddress(address: string): Promise<string | null> {
-    const db = getKysely()
-    if (!db) return null
-    const row = await db
-        .selectFrom('users')
-        .select('username')
-        .where('address', '=', address)
-        .executeTakeFirst()
-    return row?.username ?? null
-}
+

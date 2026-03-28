@@ -17,4 +17,6 @@ interface IDukerNewsErrors {
     error PaymentAlreadyProcessed(bytes32 txHash);
     error TransferFailed();
     error NotAggOwner(uint8 aggType, uint64 aggId);
+    error AmendWindowClosed(uint8 aggType, uint64 aggId);
+    error CommentWindowClosed(uint64 parentAggId);
 }

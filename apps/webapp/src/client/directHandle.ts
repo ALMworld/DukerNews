@@ -10,7 +10,9 @@
 import { toBinary } from '@bufbuild/protobuf'
 import { toHex } from 'viem'
 import { EventType, EventDataSchema, type DukerTxReq } from '@repo/apidefs'
-import { ADDRESSES, dukerNewsAbi, ERC20_ABI, DEFAULT_CHAIN_ID, getDefaultStablecoin } from '../lib/contracts'
+import { ADDRESSES, dukerNewsAbi, ERC20_ABI, DEFAULT_CHAIN_ID, getDefaultStablecoin, MIN_APPROVE_MICRO } from '../lib/contracts'
+
+function maxBigInt(a: bigint, b: bigint): bigint { return a > b ? a : b }
 import { notifyTx, refreshAuth } from './auth-api'
 import type { NotifyTxResult, AuthRefreshResult } from './auth-api'
 
@@ -53,15 +55,24 @@ export async function directHandle(
             const { username, mintAmount, dukiBps } = payload.value
             const amountMicro = BigInt(mintAmount)
 
-            // Approve stablecoin
+            // Approve stablecoin (skip if allowance already sufficient)
+            const approveAmount = maxBigInt(MIN_APPROVE_MICRO, amountMicro)
             ctx.onStep('approving')
-            const approveTx = await ctx.writeContractAsync({
+            const allowance = await ctx.readContract({
                 address: stablecoin.address,
                 abi: ERC20_ABI,
-                functionName: 'approve',
-                args: [addrs.DukerNews, amountMicro],
-            })
-            await ctx.waitForReceipt(approveTx)
+                functionName: 'allowance',
+                args: [ctx.address, addrs.DukerNews],
+            }) as bigint
+            if (allowance < amountMicro) {
+                const approveTx = await ctx.writeContractAsync({
+                    address: stablecoin.address,
+                    abi: ERC20_ABI,
+                    functionName: 'approve',
+                    args: [addrs.DukerNews, approveAmount],
+                })
+                await ctx.waitForReceipt(approveTx)
+            }
 
             // Call mintUsername
             ctx.onStep('executing')
@@ -105,7 +116,7 @@ export async function directHandle(
                         address: stablecoin.address,
                         abi: ERC20_ABI,
                         functionName: 'approve',
-                        args: [addrs.DukerNews, amountMicro],
+                        args: [addrs.DukerNews, maxBigInt(MIN_APPROVE_MICRO, amountMicro)],
                     })
                     await ctx.waitForReceipt(approveTx)
                 }
@@ -130,41 +141,17 @@ export async function directHandle(
 
         case EventType.COMMENT_CREATED:
         case EventType.COMMENT_DELETED: {
-            // submitComment — optional boostAmount (tip)
-            const boostMicro = txData.data?.payload?.case === 'commentCreated'
-                ? BigInt(txData.data.payload.value.boostAmount ?? 0)
-                : 0n
-
+            // submitComment is always free — no boost
             const hexData = txData.data
                 ? toHex(toBinary(EventDataSchema, txData.data))
                 : ('0x' as `0x${string}`)
-
-            // Approve stablecoin if boost > 0
-            if (boostMicro > 0n) {
-                ctx.onStep('approving')
-                const allowance = await ctx.readContract({
-                    address: stablecoin.address,
-                    abi: ERC20_ABI,
-                    functionName: 'allowance',
-                    args: [ctx.address, addrs.DukerNews],
-                }) as bigint
-                if (allowance < boostMicro) {
-                    const approveTx = await ctx.writeContractAsync({
-                        address: stablecoin.address,
-                        abi: ERC20_ABI,
-                        functionName: 'approve',
-                        args: [addrs.DukerNews, boostMicro],
-                    })
-                    await ctx.waitForReceipt(approveTx)
-                }
-            }
 
             ctx.onStep('executing')
             const commentTx = await ctx.writeContractAsync({
                 address: addrs.DukerNews,
                 abi: dukerNewsAbi,
                 functionName: 'submitComment',
-                args: [txData.aggType, BigInt(txData.aggId ?? 0), txData.evtType, hexData, boostMicro],
+                args: [txData.aggType, BigInt(txData.aggId ?? 0), txData.evtType, hexData, 0n],
             })
 
             ctx.onStep('confirming')
@@ -195,41 +182,20 @@ export async function directHandle(
             return { txHash: amendTx, notifyResult }
         }
 
-        case EventType.COMMENT_UPVOTED: {
-            // upvoteComment — optional boostAmount (tip)
-            const boostMicro = txData.data?.payload?.case === 'commentUpvoted'
-                ? BigInt(txData.data.payload.value.boostAmount ?? 0)
-                : 0n
-
+        // Legacy alias — routes to unified upvoteAttention
+        case EventType.COMMENT_UPVOTED:
+        case EventType.UPVOTE_ATTENTION: {
+            // upvoteAttention — always free, pure social signal (aggType: 2=post, 3=comment)
             const hexData = txData.data
                 ? toHex(toBinary(EventDataSchema, txData.data))
                 : ('0x' as `0x${string}`)
-
-            if (boostMicro > 0n) {
-                ctx.onStep('approving')
-                const allowance = await ctx.readContract({
-                    address: stablecoin.address,
-                    abi: ERC20_ABI,
-                    functionName: 'allowance',
-                    args: [ctx.address, addrs.DukerNews],
-                }) as bigint
-                if (allowance < boostMicro) {
-                    const approveTx = await ctx.writeContractAsync({
-                        address: stablecoin.address,
-                        abi: ERC20_ABI,
-                        functionName: 'approve',
-                        args: [addrs.DukerNews, boostMicro],
-                    })
-                    await ctx.waitForReceipt(approveTx)
-                }
-            }
 
             ctx.onStep('executing')
             const upvoteTx = await ctx.writeContractAsync({
                 address: addrs.DukerNews,
                 abi: dukerNewsAbi,
-                functionName: 'upvoteComment',
-                args: [txData.aggType, BigInt(txData.aggId ?? 0), txData.evtType, hexData, boostMicro],
+                functionName: 'upvoteAttention',
+                args: [txData.aggType, BigInt(txData.aggId ?? 0), txData.evtType, hexData],
             })
 
             ctx.onStep('confirming')
@@ -237,6 +203,49 @@ export async function directHandle(
             try { notifyResult = await notifyTx(upvoteTx) } catch { /* best-effort */ }
 
             return { txHash: upvoteTx, notifyResult }
+        }
+
+        case EventType.BOOST_ATTENTION: {
+            // boost — paid economic signal, requires USDT approval
+            const p = txData.data?.payload
+            const boostMicro = p?.case === 'boostAttention'
+                ? BigInt(p.value.boostAmount ?? 0)
+                : 0n
+
+            const hexData = txData.data
+                ? toHex(toBinary(EventDataSchema, txData.data))
+                : ('0x' as `0x${string}`)
+
+            ctx.onStep('approving')
+            const allowance = await ctx.readContract({
+                address: stablecoin.address,
+                abi: ERC20_ABI,
+                functionName: 'allowance',
+                args: [ctx.address, addrs.DukerNews],
+            }) as bigint
+            if (allowance < boostMicro) {
+                const approveTx = await ctx.writeContractAsync({
+                    address: stablecoin.address,
+                    abi: ERC20_ABI,
+                    functionName: 'approve',
+                    args: [addrs.DukerNews, maxBigInt(MIN_APPROVE_MICRO, boostMicro)],
+                })
+                await ctx.waitForReceipt(approveTx)
+            }
+
+            ctx.onStep('executing')
+            const boostTx = await ctx.writeContractAsync({
+                address: addrs.DukerNews,
+                abi: dukerNewsAbi,
+                functionName: 'boostAttention',
+                args: [txData.aggType, BigInt(txData.aggId ?? 0), txData.evtType, hexData, boostMicro],
+            })
+
+            ctx.onStep('confirming')
+            let notifyResult2: NotifyTxResult | undefined
+            try { notifyResult2 = await notifyTx(boostTx) } catch { /* best-effort */ }
+
+            return { txHash: boostTx, notifyResult: notifyResult2 }
         }
 
         default:

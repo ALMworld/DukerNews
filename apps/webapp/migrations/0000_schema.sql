@@ -74,18 +74,19 @@ CREATE INDEX IF NOT EXISTS idx_comments_username ON comments (username, created_
 
 CREATE INDEX IF NOT EXISTS idx_comments_parent ON comments (parent_id);
 
--- User Interactions (bitmask: bits 0-1=vote, bit 2=flag, bit 3=hide, bit 4=favorite, bit 5=vouch)
+-- User Interactions (bitmask: bits 0-1=vote, bit 2=flag, bit 3=hide, bit 4=favorite, bit 5=vouch, bit 6=boost)
+-- agg_type stores AggType integer: 2=post, 3=comment
 CREATE TABLE IF NOT EXISTS user_interactions (
   username TEXT NOT NULL,
-  item_type TEXT NOT NULL,
-  item_id INTEGER NOT NULL,
+  agg_type INTEGER NOT NULL,
+  agg_id INTEGER NOT NULL,
   bits_flag INTEGER NOT NULL DEFAULT 0,
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
-  PRIMARY KEY (username, item_type, item_id)
+  PRIMARY KEY (username, agg_type, agg_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_ui_item ON user_interactions (item_type, item_id);
+CREATE INDEX IF NOT EXISTS idx_ui_item ON user_interactions (agg_type, agg_id);
 
 CREATE INDEX IF NOT EXISTS idx_ui_user ON user_interactions (username, updated_at DESC);
 

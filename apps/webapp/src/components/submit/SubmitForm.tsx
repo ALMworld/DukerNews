@@ -22,6 +22,7 @@ import { useRequireAuth } from '../../lib/useRequireAuth'
 import { useChainHandle } from '../../client/useChainHandle'
 import { AggType, EventType, DukerTxReqSchema, EventDataSchema, PostCreatedPayloadSchema } from '@repo/apidefs'
 import { DukiPayment, type DukiPaymentValue } from '../DukiPayment'
+import { SubmitOnChainButton } from '../SubmitOnChainButton'
 import { SectionHeader } from './SectionHeader'
 import { useAppForm } from './form-context'
 
@@ -421,8 +422,8 @@ export default function SubmitForm() {
 
                     <DukiPayment
                         dukiBps={userDukiBps}
-                        amounts={[0, 1, 2, 8, 16, 64]}
-                        defaultAmount={0}
+                        amounts={[1, 2, 8, 16, 64]}
+                        defaultAmount={1}
                         showX402={true}
                         disabled={isSubmitting || isConfirmed}
                         amountLabel="Marketing Boost (USDT)"
@@ -431,15 +432,17 @@ export default function SubmitForm() {
                     >
                         {/* Submit button */}
                         <div className="flex items-center gap-3 pt-1">
-                            <form.AppForm>
-                                <form.SubscribeButton label={
-                                    isSubmitting
-                                        ? 'Submitting…'
-                                        : paymentValue.method === 'direct'
-                                            ? `Submit On-Chain${paymentValue.amount > 0 ? ` ($${paymentValue.amount})` : ''}`
-                                            : `Submit via x402${paymentValue.amount > 0 ? ` ($${paymentValue.amount})` : ''}`
-                                } />
-                            </form.AppForm>
+                            <SubmitOnChainButton
+                                label={
+                                    paymentValue.method === 'direct'
+                                        ? `Submit On-Chain${paymentValue.amount > 0 ? ` ($${paymentValue.amount})` : ''}`
+                                        : `Submit via x402${paymentValue.amount > 0 ? ` ($${paymentValue.amount})` : ''}`
+                                }
+                                step={step}
+                                successMessage="Post submitted on-chain!"
+                                type="submit"
+                                disabled={isConfirmed}
+                            />
                         </div>
 
                         {/* Tx status */}

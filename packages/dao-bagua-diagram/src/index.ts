@@ -24,9 +24,7 @@ export { InfoPanel } from './InfoPanel';
 export type { InfoPanelProps } from './InfoPanel';
 
 // ── Shader canvases ──
-export { ShaderCanvas2 } from './ShaderCanvas2';
-export { ShaderCanvas3 } from './ShaderCanvas3';
-export { ShaderCanvas4 } from './ShaderCanvas4';
+export { ShaderCanvas } from './ShaderCanvas2';
 
 // ── Flow diagrams (DUKI explained) ──
 export { FlowDiagram } from './FlowDiagram';

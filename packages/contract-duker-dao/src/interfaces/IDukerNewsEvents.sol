@@ -21,6 +21,7 @@ interface IDukerNewsEvents {
         address indexed ego,
         uint64 indexed evtSeq,
         string username,
+        uint64 userSeq,
         uint32 eventType,
         uint8 aggType,
         uint64 aggId,

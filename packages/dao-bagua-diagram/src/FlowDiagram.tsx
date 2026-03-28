@@ -90,8 +90,8 @@ export function FlowDiagram({ locale = 'en', className, style }: FlowDiagramProp
                             <div style={{
                                 width: 32, height: 32, flexShrink: 0, borderRadius: '50%',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                background: 'color-mix(in srgb,var(--duki-700,#4c1d95) 60%,transparent)',
-                                border: '1.5px solid var(--duki-600,#6d28d9)',
+                                background: 'var(--muted)',
+                                border: '1.5px solid var(--duki-400,#a78bfa)',
                             }}>
                                 {step.icon}
                             </div>
@@ -113,7 +113,7 @@ export function FlowDiagram({ locale = 'en', className, style }: FlowDiagramProp
                                             <span style={{
                                                 width: TOKEN_W, minWidth: TOKEN_W, padding: '2px 0', flexShrink: 0,
                                                 fontSize: 12, fontWeight: 700, borderRadius: 4, textAlign: 'center',
-                                                background: P700, color: P300, border: `1px solid ${P600}`,
+                                                background: 'var(--muted)', color: 'var(--duki-600,#6d28d9)', border: `1px solid var(--border)`,
                                             }}>
                                                 {t.label}
                                             </span>

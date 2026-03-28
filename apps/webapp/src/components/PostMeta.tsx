@@ -8,7 +8,6 @@
  */
 import { Link } from '@tanstack/react-router'
 import type { PbPost, PbPostData } from '@repo/apidefs'
-import { PostKind } from '@repo/apidefs'
 import { WorksBadge } from './WorksBadge'
 import { timeAgo } from '../lib/utils'
 import { useLocale } from '../lib/locale-context'
@@ -90,8 +89,10 @@ export function PostMeta({
                 {post.commentCount} comments
             </Link>
 
-            {/* Translate All — detail-page only */}
-            {titleRow && onTranslateAll && (
+            {/* InteractionBar moved to post detail page — rendered after body text */}
+
+            {/* Translate All — detail-page only, locale-aware */}
+            {titleRow && onTranslateAll && post.locale && post.locale !== userLocale && (
                 <><Sep /><button
                     onClick={onTranslateAll}
                     className="comment-nav-link"

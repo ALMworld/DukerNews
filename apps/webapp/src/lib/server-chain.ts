@@ -29,19 +29,21 @@ export function getHomeChain() {
             return {
                 chainId: SEPOLIA_CHAIN_ID,
                 addrs: ADDRESSES[SEPOLIA_CHAIN_ID] as { DukerNews: Address; Treasury: Address },
+                deployBlock: 10_536_920n,  // DukerNews proxy deploy block (2026-03-28 fresh deploy)
                 viemChain: {
                     id: SEPOLIA_CHAIN_ID,
                     name: 'Sepolia',
                     nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-                    rpcUrls: { default: { http: [process.env.RPC_URL_SEPOLIA ?? 'https://1rpc.io/sepolia'] } },
+                    rpcUrls: { default: { http: [process.env.RPC_URL_SEPOLIA ?? 'https://blockchain.googleapis.com/v1/projects/gen-lang-client-0353869734/locations/asia-east1/endpoints/ethereum-sepolia/rpc?key=AIzaSyCygRUVltm8-BXV9UwAjKLAS6lwk8LjRFg'] } },
                 } as const,
-                rpcUrl: process.env.RPC_URL_SEPOLIA ?? 'https://1rpc.io/sepolia',
+                rpcUrl: process.env.RPC_URL_SEPOLIA ?? 'https://blockchain.googleapis.com/v1/projects/gen-lang-client-0353869734/locations/asia-east1/endpoints/ethereum-sepolia/rpc?key=AIzaSyCygRUVltm8-BXV9UwAjKLAS6lwk8LjRFg',
             }
 
         case 'xlayer':
             return {
                 chainId: XLAYER_CHAIN_ID,
                 addrs: ADDRESSES[XLAYER_CHAIN_ID],
+                deployBlock: 12_000_000n,  // approximate XLayer deployment block
                 viemChain: {
                     id: XLAYER_CHAIN_ID,
                     name: 'XLayer',
@@ -55,6 +57,7 @@ export function getHomeChain() {
             return {
                 chainId: LOCAL_CHAIN_ID,
                 addrs: ADDRESSES[LOCAL_CHAIN_ID],
+                deployBlock: 0n,
                 viemChain: {
                     id: LOCAL_CHAIN_ID,
                     name: 'Anvil',

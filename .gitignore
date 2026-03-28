@@ -57,8 +57,15 @@ yarn-error.log*
 
 # Unfinished designs & whitepaper (keep locally, do not publish)
 designs/
+**/draft/
 packages/contract_duki_alm_world/whitepaper/
 
 # Agent & Claude local configs
 .agent/
 .claude/
+
+# Third-party reference repos (not build dependencies)
+onchainos-skills/
+
+# webapp secrets
+apps/webapp/.env

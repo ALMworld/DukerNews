@@ -1,6 +1,6 @@
 import { iChingRawNames, WUJI_KEY } from './data';
 import React, { useMemo, useState } from 'react';
-import ShaderCanvas2 from './ShaderCanvas2';
+import ShaderCanvas from './ShaderCanvas2';
 import { IChingDiagramGroup } from './IChingDiagram';
 
 // ── Color theme types ──
@@ -696,7 +696,7 @@ export const DaoBaguaDiagram: React.FC<DaoBaguaDiagramProps> = ({
     return (
         <div className={className} style={{ position: 'relative', ...styleProp }}>
             <div style={{ position: 'absolute', top: '0%', left: '0%', width: '100%', height: '100%', borderRadius: '0%', overflow: 'hidden' }}>
-                <ShaderCanvas2 bgColor={currentTheme === 'dark' ? '#1e1b4b' : '#ede9fe'} />
+                <ShaderCanvas bgColor={currentTheme === 'dark' ? '#1e1b4b' : '#ede9fe'} />
             </div>
             <svg
                 xmlns="http://www.w3.org/2000/svg"

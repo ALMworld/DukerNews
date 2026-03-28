@@ -1,19 +1,21 @@
 /**
- * POST /api/x402/submit-post — Gasless post submission via x402 simulation.
+ * POST /api/x402/submit-post — Gasless post submission via x402.
  *
  * Flow:
  *   1. Auth via middleware → get address + username
- *   2. Build protobuf EventData bytes from request body
- *   3. Use deployer key to call X402.submitPostViaX402() on behalf of user
+ *   2. settleX402Payment():
+ *      - XLayer + paymentPayload → OKX verify + settle (real USDT transfer)
+ *      - local/Sepolia or no payload → mock mint (dev simulation)
+ *   3. Operator calls DukerNews.submitPostViaX402() → emits DukerEvent
  *   4. Return txHash to frontend
- *
- * In production, step 2 would include actual x402 payment verification.
  */
 import { createFileRoute } from '@tanstack/react-router'
 import { createPublicClient, createWalletClient, http, keccak256, toHex } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import { getHomeChain } from '../../../lib/server-chain'
 import { dukerNewsAbi } from '@alm/duker-dao-contract'
+import { settleX402Payment } from '../../../lib/x402-settlement'
+import type { OkxPaymentPayload } from '../../../services/okx402-service'
 import { requireAuthMiddleware } from '../../../middleware'
 
 // Deployer / operator key — reads from env, falls back to Anvil account #0 for local dev
@@ -34,16 +36,19 @@ export const Route = createFileRoute('/api/x402/submit-post')({
 
                     // Parse request
                     const body = await request.json() as {
-                        eventDataHex: string      // protobuf EventData bytes as hex
-                        amount?: number            // marketing boost amount (USDT)
+                        eventDataHex: string        // protobuf EventData bytes as hex
+                        amount?: number             // marketing boost amount (USDT)
+                        /** EIP-3009 signed payload from frontend (required on XLayer) */
+                        paymentPayload?: OkxPaymentPayload
                     }
-                    const { eventDataHex, amount = 0 } = body
+                    const { eventDataHex, amount = 0, paymentPayload } = body
                     if (!eventDataHex || !eventDataHex.startsWith('0x')) {
                         return Response.json({ success: false, message: 'Invalid eventDataHex' }, { status: 400 })
                     }
 
                     const userAddress = payload.ego as `0x${string}`
                     const { addrs, viemChain, rpcUrl } = getHomeChain()
+                    const amountMicro = BigInt(Math.round((amount || 0) * 1_000_000))
 
                     // Set up viem clients
                     const publicClient = createPublicClient({
@@ -57,14 +62,18 @@ export const Route = createFileRoute('/api/x402/submit-post')({
                         transport: http(rpcUrl),
                     })
 
-                    // Generate idempotency nonce
-                    const paymentNonce = keccak256(
-                        toHex(`x402-post:${userAddress}:${Date.now()}`)
-                    )
+                    // === Step 1: Settle payment (if boost > 0) ===
+                    const { paymentTxHash } = await settleX402Payment({
+                        amountMicro,
+                        userAddress,
+                        paymentPayload,
+                        description: 'DukerNews post submission',
+                    })
 
-                    // TODO: If amount > 0, handle marketing payment (USDT transfer)
-                    // For x402 path, the backend needs to transfer USDT from user
-                    const amountMicro = BigInt(Math.round((amount || 0) * 1_000_000))
+                    // Idempotency nonce
+                    const paymentNonce = keccak256(
+                        toHex(`x402-post:${userAddress}:${paymentTxHash}`)
+                    )
 
                     // Call submitPostViaX402
                     const txHash = await walletClient.writeContract({

@@ -77,10 +77,10 @@ export interface Translations {
 }
 
 export interface UserInteractions {
+  agg_id: bigint;
+  agg_type: number;  // AggType enum value: 2=post, 3=comment
   bits_flag: Generated<number>;
   created_at: number;
-  item_id: bigint;
-  item_type: string;
   updated_at: number;
   username: string;
 }

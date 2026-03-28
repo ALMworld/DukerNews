@@ -75,18 +75,27 @@ export const Route = createFileRoute('/rpc/$')({
                             )
                         }
 
-                        // Username required: if username is still the default (= address), block mutations
-                        if (!payload.username || payload.username.toLowerCase() === payload.ego.toLowerCase()) {
-                            return Response.json(
-                                { code: 'username_required', message: 'Please set a username before posting', ego: payload.ego },
-                                { status: 403 }
-                            )
+                        // Username required for NotifyTx (posting);
+                        // X402Handle allows mint (which creates the username)
+                        if (rpcPath !== '/duker.CmdService/X402Handle') {
+                            if (!payload.username || payload.username.toLowerCase() === payload.ego.toLowerCase()) {
+                                return Response.json(
+                                    { code: 'username_required', message: 'Please set a username before posting', ego: payload.ego },
+                                    { status: 403 }
+                                )
+                            }
                         }
 
-                        // JWT verified, username set — pass request through as-is.
-                        // The client already sends address in the Cmd proto;
-                        // no need to rewrite the body.
-                        const uReq = universalServerRequestFromFetch(request, {})
+                        // JWT verified — inject verified address as header
+                        // so the service handler can validate req.address matches JWT identity
+                        const authedRequest = new Request(request, {
+                            headers: new Headers([
+                                ...Array.from(request.headers.entries()),
+                                ['x-verified-address', payload.ego],
+                                ['x-verified-username', payload.username || ''],
+                            ]),
+                        })
+                        const uReq = universalServerRequestFromFetch(authedRequest, {})
                         const uRes = await handler(uReq)
                         return universalServerResponseToFetch(uRes)
                     }

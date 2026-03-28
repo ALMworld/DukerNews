@@ -8,7 +8,15 @@
  *   bit  3:   hide
  *   bit  4:   favorite
  *   bit  5:   vouch
+ *   bit  6:   boost (user has boosted this item)
  */
+
+/**
+ * Item type — re-exported from AggType proto enum.
+ * Call sites use AggType.POST (2) / AggType.COMMENT (3).
+ * Stored as integer in DB and on-chain.
+ */
+export { AggType } from '@repo/apidefs'
 
 export const VOTE_MASK  = 0b11       // 3  — covers bits 0-1
 export const VOTE_UP    = 0b01       // 1
@@ -19,3 +27,4 @@ export const BIT_FLAG     = 1 << 2   // 4
 export const BIT_HIDE     = 1 << 3   // 8
 export const BIT_FAVORITE = 1 << 4   // 16
 export const BIT_VOUCH    = 1 << 5   // 32
+export const BIT_BOOST    = 1 << 6   // 64  — user has boosted this item

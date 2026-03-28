@@ -78,14 +78,6 @@ export default function CommentMeta({
                 {authorDisplay}
             </Link>
 
-            {/* Boost badge — visual conviction indicator */}
-            {Number(comment.totalBoost ?? 0) > 0 && (
-                <span
-                    style={{ color: 'var(--duki-400)', fontWeight: 600 }}
-                    title={`Boosted with $${(Number(comment.totalBoost) / 1_000_000).toFixed(0)} USDT`}
-                >💎</span>
-            )}
-
             {/* Time */}
             <span>{ago}</span>
 

@@ -5,3 +5,4 @@ dist/
 .tanstack/
 *.local
 data/
+.dev.vars

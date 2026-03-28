@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useMemo } from 'react'
-import DaoBaguaDiagram, { IChingDiagram, BAGUA_THEMES, BaguaSectionCard, ShaderCanvas2 } from '@alm/dao-bagua-diagram'
+import DaoBaguaDiagram, { IChingDiagram, BAGUA_THEMES, BaguaSectionCard, ShaderCanvas } from '@alm/dao-bagua-diagram'
 import * as m from '../paraglide/messages.js'
 import { useTheme } from '../lib/theme-context'
 import { useLocale } from '../lib/locale-context'
@@ -26,9 +26,9 @@ function YiIcon({ size = 18 }: { size?: number }) {
 
 const btnStyle = (active: boolean): React.CSSProperties => ({
     padding: '2px 8px', fontSize: 11, borderRadius: 6,
-    border: '1px solid rgba(167,139,250,0.5)',
-    background: active ? 'rgba(124,58,237,0.7)' : 'rgba(30,27,75,0.7)',
-    color: active ? '#fff' : 'rgba(167,139,250,0.7)',
+    border: '1px solid var(--border)',
+    background: active ? 'var(--duki-600)' : 'var(--muted)',
+    color: active ? 'var(--duki-100)' : 'var(--duki-400)',
     cursor: 'pointer', transition: 'all 0.2s',
 });
 
@@ -111,9 +111,10 @@ function DaoPage() {
                             style={{
                                 position: 'absolute', top: 8, left: 8, zIndex: 10,
                                 width: 28, height: 28, borderRadius: '50%',
-                                border: '1px solid rgba(167,139,250,0.4)',
-                                background: showDebug ? 'rgba(124,58,237,0.6)' : 'rgba(30,27,75,0.5)',
-                                color: 'rgba(167,139,250,0.8)', cursor: 'pointer',
+                                border: '1px solid var(--border)',
+                                background: showDebug ? 'var(--duki-600)' : 'var(--muted)',
+                                color: showDebug ? 'var(--duki-100)' : 'var(--duki-400)',
+                                cursor: 'pointer',
                                 fontSize: 14, lineHeight: '26px', textAlign: 'center',
                                 padding: 0, transition: 'all 0.2s',
                             }}
@@ -128,9 +129,10 @@ function DaoPage() {
                             style={{
                                 position: 'absolute', top: 8, right: 8, zIndex: 10,
                                 width: 28, height: 28, borderRadius: '50%',
-                                border: '1px solid rgba(167,139,250,0.4)',
-                                background: 'rgba(30,27,75,0.5)',
-                                color: 'rgba(167,139,250,0.8)', cursor: 'pointer',
+                                border: '1px solid var(--border)',
+                                background: 'var(--muted)',
+                                color: 'var(--duki-400)',
+                                cursor: 'pointer',
                                 fontSize: 14, lineHeight: '26px', textAlign: 'center',
                                 padding: 0, transition: 'all 0.2s',
                             }}
@@ -174,7 +176,7 @@ function DaoPage() {
                                 borderRadius: 16, overflow: 'hidden',
                             }}>
                                 <div style={{ position: 'absolute', inset: 0 }}>
-                                    <ShaderCanvas2 bgColor={isDark ? '#1e1b4b' : '#ede9fe'} />
+                                    <ShaderCanvas bgColor={isDark ? '#1e1b4b' : '#eac3f8ff'} />
                                 </div>
                                 <div style={{
                                     position: 'relative', width: '100%', height: '100%',

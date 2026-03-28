@@ -10,8 +10,6 @@ import "../src/DukerNews.sol";
  * Deploys a new implementation and calls upgradeTo() on the existing proxy,
  * preserving all state (minted usernames, events, balances).
  *
- * Then calls migrateOwnerToTokenId() to backfill the new mapping.
- *
  * Usage:
  *   forge script script/UpgradeDukerNews.s.sol --fork-url http://127.0.0.1:8545 --broadcast
  */
@@ -31,14 +29,10 @@ contract UpgradeDukerNews is Script {
         DukerNews proxy = DukerNews(proxyAddr);
         proxy.upgradeToAndCall(address(newImpl), "");
 
-        // 3. Backfill ownerToTokenId for existing holders
-        proxy.migrateOwnerToTokenId();
-
         vm.stopBroadcast();
 
         console.log("=== DukerNews UUPS Upgrade Complete ===");
         console.log("Proxy (unchanged):  ", proxyAddr);
         console.log("New implementation: ", address(newImpl));
-        console.log("ownerToTokenId migrated");
     }
 }
