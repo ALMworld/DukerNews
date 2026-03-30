@@ -20,8 +20,8 @@ The core innovation: **every USDT boost (tip) mints DUKI** — a stablecoin dist
 
 ```
 ┌─────────────┐     USDT Boost      ┌──────────────────┐
-│   Tipper     │ ──────────────────► │  DukerNews       │
-│   (Taker)    │                     │  Smart Contract  │
+│  Community   │ ──────────────────► │  DukerNews       │
+│(Taker + Maker)│                     │  Smart Contract  │
 └─────────────┘                     └────────┬─────────┘
                                              │
                               ┌──────────────┼──────────────┐
@@ -29,7 +29,7 @@ The core innovation: **every USDT boost (tip) mints DUKI** — a stablecoin dist
                         ┌──────────┐  ┌──────────┐  ┌──────────┐
                         │  DUKI    │  │   ALM    │  │   ALM    │
                         │ Treasury │  │  50%     │  │  50%     │
-                        │ (for all │  │  Tipper  │  │  Creator │
+                        │ (for all │  │DukerNews │  │  BOOSTER │
                         │ humans)  │  │          │  │          │
                         └──────────┘  └──────────┘  └──────────┘
 ```
@@ -37,7 +37,7 @@ The core innovation: **every USDT boost (tip) mints DUKI** — a stablecoin dist
 1. **Post** your project — it goes on-chain, permanent and uncensorable
 2. **Boost** (tip) with USDT — funds flow to the DUKI Treasury
 3. **DUKI** is minted and distributed to all verified humans
-4. **ALM** governance tokens are minted — 50% to tipper, 50% to creator
+4. **ALM** governance tokens are minted — 50% to DukerNews, 50% to booster
 5. **Comment & Upvote** — all interactions are on-chain
 
 ## Key Features
@@ -45,11 +45,10 @@ The core innovation: **every USDT boost (tip) mints DUKI** — a stablecoin dist
 | Feature | Description |
 |---------|-------------|
 | 📝 **On-chain Content** | Posts, comments, and upvotes stored permanently on X Layer |
-| 💰 **USDT Boost** | Tip content creators with USDT, triggering DUKI/ALM minting |
+| 💰 **Interactions and Boost** | Boost comments or makers' works with USDT, triggering DUKI/ALM minting |
 | ⚡ **Gasless via x402** | Zero-gas posting and username minting through x402 protocol |
 | 🔐 **Username NFT** | On-chain soul-bound NFT as your identity |
 | 🏛️ **ALM Governance** | Governance tokens earned through participation, not purchased |
-| 🤖 **AI Agent** | Autonomous content evaluation and boosting via OnchainOS Wallet |
 
 ## Architecture
 
@@ -63,15 +62,7 @@ The core innovation: **every USDT boost (tip) mints DUKI** — a stablecoin dist
 | DukerNews (Impl) | [`0x565C8206D626dc9Ddee7f1958A96602cA5dAd32c`](https://www.oklink.com/xlayer/address/0x565C8206D626dc9Ddee7f1958A96602cA5dAd32c) |
 
 
-### Tech Stack
 
-- **Blockchain**: Solidity, Foundry, X Layer (EVM)
-- **Frontend**: TanStack Start (SSR), React, Viem, Wagmi
-- **Backend**: Cloudflare Workers, D1 Database
-- **Protocol**: ConnectRPC, Protobuf
-- **Tokens**: ERC-20 (DUKI, ALM), ERC-721 (Username SBT), LayerZero OFT
-- **Payments**: USDT (USD₮0), x402 gasless protocol
-- **Wallet**: WalletConnect
 
 ## Repository Structure
 
@@ -90,7 +81,6 @@ The core innovation: **every USDT boost (tip) mints DUKI** — a stablecoin dist
 ## OnchainOS Integration
 
 - **x402 Payments** — Gasless username minting and post submission
-- **Wallet API** — AI agent uses OnchainOS Agentic Wallet for autonomous payments
 - **DApp Wallet Connect** — Browser wallet connection via WalletConnect
 
 ## The DUKI Protocol
