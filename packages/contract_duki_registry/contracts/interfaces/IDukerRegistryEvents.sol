@@ -3,51 +3,78 @@ pragma solidity ^0.8.22;
 
 /// @title IDukerRegistryEvents
 /// @notice Events emitted by DukerRegistry.
+///         Uses a unified DukerEvent log (matching DukigenRegistry pattern)
+///         with `username` as a common field on every event.
 interface IDukerRegistryEvents {
-    /// @notice Emitted when a new username identity NFT is minted on the origin chain.
-    event UserMinted(
-        address indexed user,
-        uint256 indexed tokenId,
-        string displayName,
-        uint32 originChainEid
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  EVENT TYPE ENUM
+    // ══════════════════════════════════════════════════════════════════════════
+
+    enum DukerEventType {
+        USER_MINTED,                           // 0
+        IDENTITY_REPLICATE_SENT,               // 1
+        IDENTITY_BURNED,                       // 2
+        IDENTITY_REPLICATE_RECEIVED_PENDING,   // 3 — cross-address, needs manual claim
+        IDENTITY_REPLICATE_RECEIVED_CLAIMED,   // 4 — auto-minted (same addr) or manually claimed
+        IDENTITY_REPLICATE_RECEIVED_REJECTED   // 5 — conflict (see RejectReason)
+    }
+
+    enum RejectReason {
+        ALREADY_REPLICATED,           // 0 — token already exists on this chain
+        ALREADY_HAS_IDENTITY,         // 1 — recipient already owns a different identity
+        USER_REJECTED                 // 2 — recipient explicitly rejected via rejectReplica()
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  UNIFIED EVENT LOG — DukerEvent (indexed by off-chain services)
+    // ══════════════════════════════════════════════════════════════════════════
+
+    /// @notice Universal event — all DukerRegistry mutations emit this.
+    ///         Every mutation increments evtSeq (global monotonic counter).
+    ///
+    /// @param tokenId    The NFT token ID (indexed — primary entity key)
+    /// @param evtSeq     Global event sequence (indexed, monotonic)
+    /// @param eventType  What happened (DukerEventType enum)
+    /// @param ego        Actor's wallet address (who triggered the mutation)
+    /// @param username   The identity username (e.g. "alice.30184") — common to all events
+    /// @param evtTime    Block timestamp
+    /// @param eventData  ABI-encoded event-specific data (see structs below)
+    event DukerEvent(
+        uint256         indexed tokenId,
+        uint64          indexed evtSeq,
+        DukerEventType  eventType,
+        address         ego,
+        string          username,
+        uint64          evtTime,
+        bytes           eventData
     );
 
-    /// @notice Emitted when a user replicates their identity to another chain.
-    ///         Emitted on the SOURCE chain. toAddress is always msg.sender.
-    event IdentityReplicateSent(
-        address indexed user,
-        uint256 indexed tokenId,
-        uint32 dstChainEid
-    );
+    // ══════════════════════════════════════════════════════════════════════════
+    //  EVENT DATA STRUCTS — ABI-encoded in DukerEvent.eventData
+    // ══════════════════════════════════════════════════════════════════════════
 
-    /// @notice Emitted when a replicated identity arrives on a new chain.
-    ///         Emitted on the DESTINATION chain.
-    event IdentityReplicateReceived(
-        address indexed user,
-        uint256 indexed tokenId,
-        string displayName,
-        uint32 originChainEid
-    );
+    /// @notice Data for IDENTITY_REPLICATE_SENT
+    struct IdentityReplicateSentData {
+        uint32 dstChainEid;
+    }
 
-    /// @notice Emitted when a user burns their identity on a specific chain.
-    event IdentityBurned(
-        address indexed user,
-        uint256 indexed tokenId,
-        uint32 chainEid
-    );
+    /// @notice Data for IDENTITY_BURNED
+    struct IdentityBurnedData {
+        uint32 chainEid;
+    }
 
-    /// @notice Emitted when a replica is stored as pending (cross-address replication).
-    ///         The recipient must call claimReplica() to accept.
-    event ReplicaPending(
-        address indexed toAddress,
-        uint256 indexed tokenId,
-        string displayName,
-        uint32 originChainEid
-    );
+    /// @notice Data for REPLICA_REJECTED
+    struct ReplicaRejectedData {
+        RejectReason reason;
+    }
 
-    /// @notice Emitted when a recipient rejects a pending replica.
-    event ReplicaRejected(
-        address indexed user,
-        uint256 indexed tokenId
-    );
+    // Note: USER_MINTED, IDENTITY_REPLICATE_RECEIVED, REPLICA_PENDING,
+    //       REPLICA_CLAIMED carry no extra data beyond the common fields.
+
+    // ── ABI Helpers — expose struct types for wagmi/viem codegen ─────────────
+
+    error _ABI_IdentityReplicateSentData(IdentityReplicateSentData data);
+    error _ABI_IdentityBurnedData(IdentityBurnedData data);
+    error _ABI_ReplicaRejectedData(ReplicaRejectedData data);
 }

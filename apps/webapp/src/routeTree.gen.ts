@@ -22,6 +22,7 @@ import { Route as NewestRouteImport } from './routes/newest'
 import { Route as JobsRouteImport } from './routes/jobs'
 import { Route as FormatdocRouteImport } from './routes/formatdoc'
 import { Route as FavoritesRouteImport } from './routes/favorites'
+import { Route as DukigenRouteImport } from './routes/dukigen'
 import { Route as DaoRouteImport } from './routes/dao'
 import { Route as CommentsRouteImport } from './routes/comments'
 import { Route as IndexRouteImport } from './routes/index'
@@ -102,6 +103,11 @@ const FormatdocRoute = FormatdocRouteImport.update({
 const FavoritesRoute = FavoritesRouteImport.update({
   id: '/favorites',
   path: '/favorites',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DukigenRoute = DukigenRouteImport.update({
+  id: '/dukigen',
+  path: '/dukigen',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DaoRoute = DaoRouteImport.update({
@@ -189,6 +195,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/comments': typeof CommentsRoute
   '/dao': typeof DaoRoute
+  '/dukigen': typeof DukigenRoute
   '/favorites': typeof FavoritesRoute
   '/formatdoc': typeof FormatdocRoute
   '/jobs': typeof JobsRoute
@@ -220,6 +227,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/comments': typeof CommentsRoute
   '/dao': typeof DaoRoute
+  '/dukigen': typeof DukigenRoute
   '/favorites': typeof FavoritesRoute
   '/formatdoc': typeof FormatdocRoute
   '/jobs': typeof JobsRoute
@@ -252,6 +260,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/comments': typeof CommentsRoute
   '/dao': typeof DaoRoute
+  '/dukigen': typeof DukigenRoute
   '/favorites': typeof FavoritesRoute
   '/formatdoc': typeof FormatdocRoute
   '/jobs': typeof JobsRoute
@@ -285,6 +294,7 @@ export interface FileRouteTypes {
     | '/'
     | '/comments'
     | '/dao'
+    | '/dukigen'
     | '/favorites'
     | '/formatdoc'
     | '/jobs'
@@ -316,6 +326,7 @@ export interface FileRouteTypes {
     | '/'
     | '/comments'
     | '/dao'
+    | '/dukigen'
     | '/favorites'
     | '/formatdoc'
     | '/jobs'
@@ -347,6 +358,7 @@ export interface FileRouteTypes {
     | '/'
     | '/comments'
     | '/dao'
+    | '/dukigen'
     | '/favorites'
     | '/formatdoc'
     | '/jobs'
@@ -379,6 +391,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CommentsRoute: typeof CommentsRoute
   DaoRoute: typeof DaoRoute
+  DukigenRoute: typeof DukigenRoute
   FavoritesRoute: typeof FavoritesRoute
   FormatdocRoute: typeof FormatdocRoute
   JobsRoute: typeof JobsRoute
@@ -500,6 +513,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FavoritesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dukigen': {
+      id: '/dukigen'
+      path: '/dukigen'
+      fullPath: '/dukigen'
+      preLoaderRoute: typeof DukigenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dao': {
       id: '/dao'
       path: '/dao'
@@ -619,6 +639,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CommentsRoute: CommentsRoute,
   DaoRoute: DaoRoute,
+  DukigenRoute: DukigenRoute,
   FavoritesRoute: FavoritesRoute,
   FormatdocRoute: FormatdocRoute,
   JobsRoute: JobsRoute,

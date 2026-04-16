@@ -1,0 +1,42 @@
+
+@startuml syncEgoDaoEvents
+
+Actor client
+Participant "worker" 
+Participant "cache"
+Participant "db"
+
+
+client -> worker: handleYoulanguaCmd(cmd)
+
+== Step 1: Load Agg ==
+worker -> cache: egoAgg = getAggCache(cmd.ego)
+
+alt egoAgg Not Found:
+    worker -> db: egoAgg = loadEgoAggFromDb(cmd.ego)
+    alt egoAgg Not Found:
+        worker -> worker: egoAgg = initializeEgoAgg(cmd.ego)
+        note right: first time seen ego, do initialization
+    end
+end
+
+== Step 2: Check clientEvtSeq ==
+worker -> worker: clientEvtSeq  = deriveFrom(cmd) // cmd.nounce
+alt  (clientEvtSeq invalid) or (clientEvtSeq > egoAgg.latestEvtSeq) :
+    worker -> client: Code.INVALID_PARAMS response
+    note right: The client is ahead, return error
+else clientEvtSeq < egoAgg.latestEvtSeq:
+    worker -> db: findEgoEvents(evolver=cmd.ego, min=clientEvtSeq, max=egoAgg.latestEvtSeq)
+    note right:  select * from user_events where ego = cmd.ego and evtSeq > clientEvtSeq and evtSeq <= egoAgg.latestEvtSeq order by evtSeq asc
+    worker -> client: return historyEgoEvents (status=OK)
+end
+
+== Step 3: Handle Cmd ==
+worker -> worker: newEgoEvents = egoAgg.applyCmdToEgoAgg(cmd)
+note right: update egoAgg state in memory: latestEvtSeq
+worker -> db: batchUpdateEgoAgg(toSaveEvents, newEgoEvents)
+note right: insert into user_events ..., update users set latestEgoEvtSeq=...
+worker -> cache: updateEgoAggCache(egoAgg)
+worker -> client: return newEgoEvents
+
+@enduml

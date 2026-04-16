@@ -11,6 +11,7 @@ interface IDukigenRegistryErrors {
     error ReservedMetadataKey(string key);
     error DukiBpsOutOfRange(uint16 dukiBps, uint16 min, uint16 max);
     error InvalidDukiBpsConfig(uint16 min, uint16 max, uint16 defaultBps);
+    error InvalidAgentName();
     error PaymentAmountZero();
     error TransferFailed();
     error InvalidSignature();

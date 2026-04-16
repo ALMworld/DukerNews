@@ -12,9 +12,10 @@ contract DeployDukerNews is Script {
         address deployer = vm.addr(deployerKey);
 
         // Read addresses from env
-        address usdtAddr = vm.envOr("USDT_ADDRESS", address(0x5FbDB2315678afecb367f032d93F642f64180aa3));
-        address treasuryAddr = vm.envOr("TREASURY_ADDRESS", deployer);
-        address minterAddr = vm.envOr("MINTER_ADDRESS", address(0));
+        address dukerRegistryAddr = vm.envOr("DUKER_REGISTRY_ADDRESS", address(0));
+        address dukigenRegistryAddr = vm.envOr("DUKIGEN_REGISTRY_ADDRESS", address(0));
+        uint256 dukerNewsAgentId = vm.envOr("DUKERNEWS_AGENT_ID", uint256(0));
+        address stableCoinAddr = vm.envOr("STABLECOIN_ADDRESS", address(0x5FbDB2315678afecb367f032d93F642f64180aa3));
 
         vm.startBroadcast(deployerKey);
 
@@ -24,20 +25,13 @@ contract DeployDukerNews is Script {
         // 2. Deploy ERC1967Proxy pointing to implementation
         bytes memory initData = abi.encodeCall(
             DukerNews.initialize,
-            (usdtAddr, treasuryAddr)
+            (dukerRegistryAddr, dukigenRegistryAddr, dukerNewsAgentId, stableCoinAddr)
         );
         ERC1967Proxy proxy = new ERC1967Proxy(address(impl), initData);
 
-        // 3. Wire up minter if provided
-        DukerNews dukerNews = DukerNews(address(proxy));
-        if (minterAddr != address(0)) {
-            dukerNews.setMinter(minterAddr);
-            console.log("Minter:            ", minterAddr);
-        }
-
         vm.stopBroadcast();
 
-        // 4. Write address to deployments
+        // 3. Write address to deployments
         string memory chainId = vm.toString(block.chainid);
         string memory json = string.concat(
             '{\n',
@@ -52,8 +46,10 @@ contract DeployDukerNews is Script {
         console.log("=== DukerNews Deployed (UUPS Proxy) ===");
         console.log("DukerNews (proxy):", address(proxy));
         console.log("DukerNews (impl): ", address(impl));
-        console.log("USDT:              ", usdtAddr);
-        console.log("Treasury:          ", treasuryAddr);
+        console.log("DukerRegistry:     ", dukerRegistryAddr);
+        console.log("DukigenRegistry:   ", dukigenRegistryAddr);
+        console.log("AgentId:           ", dukerNewsAgentId);
+        console.log("Stablecoin:        ", stableCoinAddr);
         console.log("Written to", filename);
     }
 }

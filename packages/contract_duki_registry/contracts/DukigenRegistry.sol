@@ -7,10 +7,10 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { EIP712 } from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import { SignatureChecker } from "@openzeppelin/contracts/utils/cryptography/SignatureChecker.sol";
 
-import { AgentRecord } from "./interfaces/IDukigenTypes.sol";
+import { AgentRecord, ProductType, DukiType } from "./interfaces/IDukigenTypes.sol";
 import { IDukigenRegistryEvents } from "./interfaces/IDukigenRegistryEvents.sol";
 import { IDukigenRegistryErrors } from "./interfaces/IDukigenRegistryErrors.sol";
-import { DukerNameValidator } from "./libraries/DukerNameValidator.sol";
+import { AgentNameValidator } from "./libraries/AgentNameValidator.sol";
 
 /// @notice Minimal interface for AlmWorldDukiMinter.
 interface IAlmWorldDukiMinter {
@@ -32,7 +32,8 @@ interface IAlmWorldDukiMinter {
 ///         DUKIGEN extensions:
 ///           - dukiBps split configuration (min/max/default)
 ///           - pay() routes payments through DUKI ecosystem
-///           - AgentRecord with name + originChainEid
+///           - Unified DukigenEvent log with global evtSeq
+///           - Works metadata: productType, dukiType, pledgeUrl, tags
 contract DukigenRegistry is ERC721, EIP712, Ownable, IDukigenRegistryEvents, IDukigenRegistryErrors {
 
     // ── Constants ───────────────────────────────────────────────────────────
@@ -48,6 +49,17 @@ contract DukigenRegistry is ERC721, EIP712, Ownable, IDukigenRegistryEvents, IDu
     bytes32 public constant SET_AGENT_WALLET_TYPEHASH =
         keccak256("SetAgentWallet(uint256 agentId,address newWallet,uint256 deadline)");
 
+    // ── Event type constants ────────────────────────────────────────────────
+
+    uint32 private constant EVT_AGENT_REGISTERED      = 1;
+    uint32 private constant EVT_AGENT_URI_UPDATED     = 2;
+    uint32 private constant EVT_AGENT_DUKI_BPS_SET    = 3;
+    uint32 private constant EVT_AGENT_WORKS_DATA_SET  = 4;
+    uint32 private constant EVT_AGENT_METADATA_SET    = 5;
+    uint32 private constant EVT_AGENT_WALLET_SET      = 6;
+    uint32 private constant EVT_AGENT_WALLET_UNSET    = 7;
+    uint32 private constant EVT_PAYMENT_PROCESSED     = 8;
+
     // ── State ───────────────────────────────────────────────────────────────
 
     /// @notice This chain's LayerZero Endpoint ID
@@ -56,11 +68,11 @@ contract DukigenRegistry is ERC721, EIP712, Ownable, IDukigenRegistryEvents, IDu
     /// @notice Auto-incrementing agent ID counter
     uint256 private _nextAgentId;
 
-    /// @notice agentId → agent record
-    mapping(uint256 => AgentRecord) private _agents;
+    /// @notice Global event sequence counter (monotonic)
+    uint64 private _evtSeq;
 
-    /// @notice agentId → agentURI (off-chain registration file)
-    mapping(uint256 => string) private _agentURIs;
+    /// @notice agentId → agent record (includes agentURI, works metadata)
+    mapping(uint256 => AgentRecord) private _agents;
 
     /// @notice agent name → agentId (uniqueness check)
     mapping(string => uint256) public nameToAgentId;
@@ -100,12 +112,16 @@ contract DukigenRegistry is ERC721, EIP712, Ownable, IDukigenRegistryEvents, IDu
 
     /// @notice ERC-8004: Register with agentURI only. Uses default dukiBps.
     function register(string calldata _agentURI) external returns (uint256 agentId) {
-        return _register("", _agentURI, GLOBAL_MIN_DUKI_BPS, GLOBAL_MIN_DUKI_BPS, GLOBAL_MAX_DUKI_BPS);
+        string[] memory emptyTags = new string[](0);
+        return _register("", _agentURI, GLOBAL_MIN_DUKI_BPS, GLOBAL_MIN_DUKI_BPS, GLOBAL_MAX_DUKI_BPS,
+            ProductType.UNSPECIFIED, DukiType.UNSPECIFIED, "", emptyTags);
     }
 
     /// @notice ERC-8004: Register with no args. agentURI set later via setAgentURI().
     function register() external returns (uint256 agentId) {
-        return _register("", "", GLOBAL_MIN_DUKI_BPS, GLOBAL_MIN_DUKI_BPS, GLOBAL_MAX_DUKI_BPS);
+        string[] memory emptyTags = new string[](0);
+        return _register("", "", GLOBAL_MIN_DUKI_BPS, GLOBAL_MIN_DUKI_BPS, GLOBAL_MAX_DUKI_BPS,
+            ProductType.UNSPECIFIED, DukiType.UNSPECIFIED, "", emptyTags);
     }
 
     /// @notice DUKIGEN: Register with name, URI, and custom dukiBps configuration.
@@ -117,14 +133,35 @@ contract DukigenRegistry is ERC721, EIP712, Ownable, IDukigenRegistryEvents, IDu
         uint16 maxDukiBps
     ) external returns (uint256 agentId) {
         _validateDukiBpsConfig(minDukiBps, maxDukiBps, defaultDukiBps);
-        return _register(agentName, _agentURI, defaultDukiBps, minDukiBps, maxDukiBps);
+        string[] memory emptyTags = new string[](0);
+        return _register(agentName, _agentURI, defaultDukiBps, minDukiBps, maxDukiBps,
+            ProductType.UNSPECIFIED, DukiType.UNSPECIFIED, "", emptyTags);
     }
 
     /// @notice DUKIGEN: Register with name + URI, default dukiBps.
     function register(string calldata agentName, string calldata _agentURI)
         external returns (uint256 agentId)
     {
-        return _register(agentName, _agentURI, GLOBAL_MIN_DUKI_BPS, GLOBAL_MIN_DUKI_BPS, GLOBAL_MAX_DUKI_BPS);
+        string[] memory emptyTags = new string[](0);
+        return _register(agentName, _agentURI, GLOBAL_MIN_DUKI_BPS, GLOBAL_MIN_DUKI_BPS, GLOBAL_MAX_DUKI_BPS,
+            ProductType.UNSPECIFIED, DukiType.UNSPECIFIED, "", emptyTags);
+    }
+
+    /// @notice DUKIGEN: Full registration with works metadata.
+    function register(
+        string calldata agentName,
+        string calldata _agentURI,
+        uint16 defaultDukiBps,
+        uint16 minDukiBps,
+        uint16 maxDukiBps,
+        ProductType productType,
+        DukiType dukiType,
+        string calldata pledgeUrl,
+        string[] calldata tags
+    ) external returns (uint256 agentId) {
+        _validateDukiBpsConfig(minDukiBps, maxDukiBps, defaultDukiBps);
+        return _register(agentName, _agentURI, defaultDukiBps, minDukiBps, maxDukiBps,
+            productType, dukiType, pledgeUrl, tags);
     }
 
     /// @dev Shared registration logic.
@@ -133,11 +170,15 @@ contract DukigenRegistry is ERC721, EIP712, Ownable, IDukigenRegistryEvents, IDu
         string memory _agentURI,
         uint16 defaultDukiBps,
         uint16 minDukiBps,
-        uint16 maxDukiBps
+        uint16 maxDukiBps,
+        ProductType productType,
+        DukiType dukiType,
+        string memory pledgeUrl,
+        string[] memory tags
     ) internal returns (uint256 agentId) {
         // Name validation + uniqueness check (only if name is provided)
         if (bytes(agentName).length > 0) {
-            DukerNameValidator.validate(agentName);
+            AgentNameValidator.validate(agentName);
             if (nameToAgentId[agentName] != 0) revert AgentNameTaken(agentName);
         }
 
@@ -146,71 +187,124 @@ contract DukigenRegistry is ERC721, EIP712, Ownable, IDukigenRegistryEvents, IDu
 
         _agents[agentId] = AgentRecord({
             name: agentName,
+            agentURI: _agentURI,
             originChainEid: localChainEid,
             defaultDukiBps: defaultDukiBps,
             minDukiBps: minDukiBps,
-            maxDukiBps: maxDukiBps
+            maxDukiBps: maxDukiBps,
+            productType: productType,
+            dukiType: dukiType,
+            pledgeUrl: pledgeUrl,
+            tags: tags
         });
 
-        _agentURIs[agentId] = _agentURI;
         if (bytes(agentName).length > 0) {
             nameToAgentId[agentName] = agentId;
         }
         _metadata[agentId][AGENT_WALLET_KEY] = abi.encode(msg.sender);
 
-        // ERC-8004 standard event
+        // ERC-8004 standard events
         emit Registered(agentId, _agentURI, msg.sender);
-
-        // agentWallet MetadataSet event (ERC-8004 requires this on register)
         emit MetadataSet(agentId, AGENT_WALLET_KEY, AGENT_WALLET_KEY, abi.encode(msg.sender));
+
+        // Unified DukigenEvent
+        _emitEvent(agentId, EVT_AGENT_REGISTERED, msg.sender,
+            abi.encode(AgentRegisteredData({ name: agentName, agentURI: _agentURI })));
     }
 
     // ══════════════════════════════════════════════════════════════════════════
-    //  PAY — route payments through dukiBps split (Revenue model)
+    //  PAY — route payments through dukiBps split
     // ══════════════════════════════════════════════════════════════════════════
 
-    /// @notice Pay an agent using the agent's default dukiBps.
-    function pay(uint256 agentId, uint256 amount) external {
+    /// @notice Pay an agent on behalf of `payer` using a specified stablecoin.
+    ///         `payer` must have approved this registry for `stableCoinAddress`.
+    ///         userPreferDukiBps is clamped to the agent's min/max range.
+    /// @param agentId              Registered agent receiving payment
+    /// @param amount               Stablecoin amount (native decimals)
+    /// @param userPreferDukiBps    User's preferred DUKI split (clamped to agent's range)
+    /// @param payer                Wallet to pull stablecoin from
+    /// @param stableCoinAddress    ERC-20 stablecoin to use for this payment
+    function payTo(
+        uint256 agentId,
+        uint256 amount,
+        uint16 userPreferDukiBps,
+        address payer,
+        address stableCoinAddress
+    ) external {
         AgentRecord storage agent = _agents[agentId];
         if (bytes(agent.name).length == 0 && agent.originChainEid == 0) revert AgentNotFound(agentId);
-        _processPay(agentId, amount, agent.defaultDukiBps);
+        uint16 finalBps = _clampBps(userPreferDukiBps, agent.minDukiBps, agent.maxDukiBps);
+        _processPay(agentId, amount, finalBps, payer, stableCoinAddress);
     }
 
-    /// @notice Pay an agent with a custom dukiBps (within agent's allowed range).
-    function pay(uint256 agentId, uint256 amount, uint16 dukiBps) external {
-        AgentRecord storage agent = _agents[agentId];
-        if (bytes(agent.name).length == 0 && agent.originChainEid == 0) revert AgentNotFound(agentId);
-        if (dukiBps < agent.minDukiBps || dukiBps > agent.maxDukiBps) {
-            revert DukiBpsOutOfRange(dukiBps, agent.minDukiBps, agent.maxDukiBps);
-        }
-        _processPay(agentId, amount, dukiBps);
+    /// @dev Clamp user preference to agent's allowed range.
+    function _clampBps(uint16 userPref, uint16 minBps, uint16 maxBps) internal pure returns (uint16) {
+        if (userPref < minBps) return minBps;
+        if (userPref > maxBps) return maxBps;
+        return userPref;
     }
 
     /// @dev Shared payment logic.
-    function _processPay(uint256 agentId, uint256 amount, uint16 dukiBps) internal {
+    ///      REVENUE_SHARE: split via dukiBps — DUKI portion goes to minter (real-time DUKI minting).
+    ///      PROFIT_SHARE:  100% goes to agentWallet — agent pledges profit-share separately.
+    /// @param payer              The wallet to pull stablecoin from
+    /// @param stableCoinAddress  The ERC-20 stablecoin used for this payment
+    function _processPay(
+        uint256 agentId,
+        uint256 amount,
+        uint16 dukiBps,
+        address payer,
+        address stableCoinAddress
+    ) internal {
         if (amount == 0) revert PaymentAmountZero();
 
-        uint256 dukiAmount = (amount * dukiBps) / BPS_DENOMINATOR;
-        uint256 agentAmount = amount - dukiAmount;
-
+        IERC20 token = IERC20(stableCoinAddress);
         address agentWallet = _getAgentWallet(agentId);
+        AgentRecord storage agent = _agents[agentId];
 
-        // 1. Pull DUKI portion → this contract → minter → DUKI + ALM
-        //    ALM yin → payer (user reputation)
-        //    ALM yang → agentWallet (agent reputation)
-        if (dukiAmount > 0) {
-            bool ok1 = payToken.transferFrom(msg.sender, address(this), dukiAmount);
-            if (!ok1) revert TransferFailed();
-            minter.mint(address(payToken), msg.sender, agentWallet, dukiAmount);
+        uint256 dukiAmount;
+        uint256 agentAmount;
+
+        if (agent.dukiType == DukiType.PROFIT_SHARE) {
+            // PROFIT_SHARE: 100% → agentWallet (no automatic DUKI minting)
+            // Agent contributes DUKI share from profits off-chain/periodically
+            dukiAmount = 0;
+            agentAmount = amount;
+
+            bool ok = token.transferFrom(payer, agentWallet, amount);
+            if (!ok) revert TransferFailed();
+        } else {
+            // REVENUE_SHARE (default): dukiBps split with real-time DUKI minting
+            dukiAmount = (amount * dukiBps) / BPS_DENOMINATOR;
+            agentAmount = amount - dukiAmount;
+
+            // 1. Pull DUKI portion → this contract → minter → DUKI + ALM
+            //    ALM yin → payer (user reputation)
+            //    ALM yang → agentWallet (agent reputation)
+            if (dukiAmount > 0) {
+                bool ok1 = token.transferFrom(payer, address(this), dukiAmount);
+                if (!ok1) revert TransferFailed();
+                minter.mint(stableCoinAddress, payer, agentWallet, dukiAmount);
+            }
+
+            // 2. Pull agent portion → directly to agentWallet
+            if (agentAmount > 0) {
+                bool ok2 = token.transferFrom(payer, agentWallet, agentAmount);
+                if (!ok2) revert TransferFailed();
+            }
         }
 
-        // 2. Pull agent portion → directly to agentWallet
-        if (agentAmount > 0) {
-            bool ok2 = payToken.transferFrom(msg.sender, agentWallet, agentAmount);
-            if (!ok2) revert TransferFailed();
-        }
+        // ERC-8004 extension event
+        emit PaymentProcessed(agentId, payer, amount, dukiAmount, agentAmount, dukiBps);
 
-        emit PaymentProcessed(agentId, msg.sender, amount, dukiAmount, agentAmount, dukiBps);
+        // Unified DukigenEvent
+        _emitEvent(agentId, EVT_PAYMENT_PROCESSED, payer,
+            abi.encode(PaymentProcessedData({
+                amount: amount,
+                dukiAmount: dukiAmount,
+                agentAmount: agentAmount,
+                dukiBps: dukiBps
+            })));
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -220,8 +314,14 @@ contract DukigenRegistry is ERC721, EIP712, Ownable, IDukigenRegistryEvents, IDu
     /// @notice ERC-8004: Update the agentURI (points to registration JSON).
     function setAgentURI(uint256 agentId, string calldata newURI) external {
         _requireOwnerOrApproved(agentId);
-        _agentURIs[agentId] = newURI;
+        _agents[agentId].agentURI = newURI;
+
+        // ERC-8004 standard event
         emit URIUpdated(agentId, newURI, msg.sender);
+
+        // Unified DukigenEvent
+        _emitEvent(agentId, EVT_AGENT_URI_UPDATED, msg.sender,
+            abi.encode(AgentURIUpdatedData({ newURI: newURI })));
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -239,6 +339,43 @@ contract DukigenRegistry is ERC721, EIP712, Ownable, IDukigenRegistryEvents, IDu
         agent.defaultDukiBps = defaultDukiBps;
         agent.minDukiBps = minDukiBps;
         agent.maxDukiBps = maxDukiBps;
+
+        // Unified DukigenEvent
+        _emitEvent(agentId, EVT_AGENT_DUKI_BPS_SET, msg.sender,
+            abi.encode(AgentDukiBpsSetData({
+                defaultDukiBps: defaultDukiBps,
+                minDukiBps: minDukiBps,
+                maxDukiBps: maxDukiBps
+            })));
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  WORKS DATA — update works-specific metadata
+    // ══════════════════════════════════════════════════════════════════════════
+
+    /// @notice DUKIGEN: Update works metadata fields for an existing agent.
+    function setWorksData(
+        uint256 agentId,
+        ProductType productType,
+        DukiType dukiType,
+        string calldata pledgeUrl,
+        string[] calldata tags
+    ) external {
+        _requireOwnerOrApproved(agentId);
+        AgentRecord storage agent = _agents[agentId];
+        agent.productType = productType;
+        agent.dukiType = dukiType;
+        agent.pledgeUrl = pledgeUrl;
+        agent.tags = tags;
+
+        // Unified DukigenEvent
+        _emitEvent(agentId, EVT_AGENT_WORKS_DATA_SET, msg.sender,
+            abi.encode(AgentWorksDataSetData({
+                productType: productType,
+                dukiType: dukiType,
+                pledgeUrl: pledgeUrl,
+                tags: tags
+            })));
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -252,7 +389,13 @@ contract DukigenRegistry is ERC721, EIP712, Ownable, IDukigenRegistryEvents, IDu
         _requireOwnerOrApproved(agentId);
         if (_isReservedKey(metadataKey)) revert ReservedMetadataKey(metadataKey);
         _metadata[agentId][metadataKey] = metadataValue;
+
+        // ERC-8004 standard event
         emit MetadataSet(agentId, metadataKey, metadataKey, metadataValue);
+
+        // Unified DukigenEvent
+        _emitEvent(agentId, EVT_AGENT_METADATA_SET, msg.sender,
+            abi.encode(AgentMetadataSetData({ key: metadataKey, value: metadataValue })));
     }
 
     /// @notice ERC-8004: Get on-chain metadata for an agent.
@@ -293,14 +436,25 @@ contract DukigenRegistry is ERC721, EIP712, Ownable, IDukigenRegistryEvents, IDu
         }
 
         _metadata[agentId][AGENT_WALLET_KEY] = abi.encode(newWallet);
+
+        // ERC-8004 standard event
         emit MetadataSet(agentId, AGENT_WALLET_KEY, AGENT_WALLET_KEY, abi.encode(newWallet));
+
+        // Unified DukigenEvent
+        _emitEvent(agentId, EVT_AGENT_WALLET_SET, msg.sender,
+            abi.encode(AgentWalletSetData({ newWallet: newWallet })));
     }
 
     /// @notice ERC-8004: Clear the agentWallet (resets to owner's address).
     function unsetAgentWallet(uint256 agentId) external {
         _requireOwnerOrApproved(agentId);
         delete _metadata[agentId][AGENT_WALLET_KEY];
+
+        // ERC-8004 standard event
         emit MetadataSet(agentId, AGENT_WALLET_KEY, AGENT_WALLET_KEY, "");
+
+        // Unified DukigenEvent
+        _emitEvent(agentId, EVT_AGENT_WALLET_UNSET, msg.sender, "");
     }
 
     /// @notice ERC-8004: Get the agent's wallet address (defaults to owner if unset).
@@ -325,7 +479,7 @@ contract DukigenRegistry is ERC721, EIP712, Ownable, IDukigenRegistryEvents, IDu
 
     /// @notice Get the agent's registration URI (ERC-8004: agentURI).
     function agentURI(uint256 agentId) external view returns (string memory) {
-        return _agentURIs[agentId];
+        return _agents[agentId].agentURI;
     }
 
     /// @notice Total number of registered agents.
@@ -333,10 +487,15 @@ contract DukigenRegistry is ERC721, EIP712, Ownable, IDukigenRegistryEvents, IDu
         return _nextAgentId;
     }
 
+    /// @notice Current global event sequence number.
+    function worldEvtSeq() external view returns (uint64) {
+        return _evtSeq;
+    }
+
     /// @notice ERC721 tokenURI override — returns agentURI (ERC-8004 compatible).
     function tokenURI(uint256 agentId) public view override returns (string memory) {
         if (_ownerOf(agentId) == address(0)) revert AgentNotFound(agentId);
-        return _agentURIs[agentId];
+        return _agents[agentId].agentURI;
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -350,6 +509,12 @@ contract DukigenRegistry is ERC721, EIP712, Ownable, IDukigenRegistryEvents, IDu
         }
         minter = IAlmWorldDukiMinter(_minter);
         payToken.approve(_minter, type(uint256).max);
+    }
+
+    /// @notice Approve a stablecoin for the minter (enables multi-stablecoin payments).
+    ///         Must be called for each new stablecoin before it can be used with payTo().
+    function approveTokenForMinter(address token) external onlyOwner {
+        IERC20(token).approve(address(minter), type(uint256).max);
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -371,6 +536,17 @@ contract DukigenRegistry is ERC721, EIP712, Ownable, IDukigenRegistryEvents, IDu
     // ══════════════════════════════════════════════════════════════════════════
     //  INTERNAL
     // ══════════════════════════════════════════════════════════════════════════
+
+    /// @dev Emit the unified DukigenEvent with auto-incrementing evtSeq.
+    function _emitEvent(
+        uint256 agentId,
+        uint32 eventType,
+        address ego,
+        bytes memory eventData
+    ) internal {
+        uint64 seq = ++_evtSeq;
+        emit DukigenEvent(agentId, seq, eventType, ego, uint64(block.timestamp), eventData);
+    }
 
     function _requireOwnerOrApproved(uint256 agentId) internal view {
         if (_ownerOf(agentId) == address(0)) revert AgentNotFound(agentId);

@@ -6,7 +6,7 @@ pragma solidity ^0.8.22;
 ///
 ///         Rules:
 ///           - 1-192 bytes (~64 CJK chars or 192 ASCII)
-///           - at-sign forbidden (reserved as fullId delimiter)
+///           - dot and at-sign forbidden (reserved as fullId delimiter)
 ///           - No control chars, no SVG/XML injection chars
 ///           - No zero-width chars, direction overrides, etc.
 ///           - No Latin+Cyrillic mixing (homoglyph attack prevention)
@@ -28,8 +28,8 @@ library DukerNameValidator {
 
             // Control characters + space (0x00-0x20)
             if (c <= 0x20) revert InvalidName();
-            // SVG/XML injection chars + @: " & ' < > @
-            if (c == 0x22 || c == 0x26 || c == 0x27 || c == 0x3C || c == 0x3E || c == 0x40) revert InvalidName();
+            // SVG/XML injection chars + reserved delimiters: " & ' . < > @
+            if (c == 0x22 || c == 0x26 || c == 0x27 || c == 0x2E || c == 0x3C || c == 0x3E || c == 0x40) revert InvalidName();
             // DEL character
             if (c == 0x7F) revert InvalidName();
 

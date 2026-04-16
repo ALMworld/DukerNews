@@ -22,18 +22,21 @@ export const DEFAULT_CHAIN_ID: number =
 export const MIN_APPROVE_MICRO = BigInt(8_000_000)
 
 // ── Contract addresses (non-stablecoin) ──────────────────────────────────────
-export const ADDRESSES: Record<number, { DukerNews: Address; Treasury: Address }> = {
+export const ADDRESSES: Record<number, { DukerNews: Address; Treasury: Address; DukigenRegistry: Address }> = {
     [LOCAL_CHAIN_ID]: {
         DukerNews: '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0',
         Treasury: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
+        DukigenRegistry: '0x0000000000000000000000000000000000000000', // TODO: deploy
     },
     [SEPOLIA_CHAIN_ID]: {
         DukerNews: '0xEEfb66A4656fB695D6f718676A1D57aF023d1F6f',
         Treasury: '0xBB68A2363861d595cfF23abE0AC247fd36c0e7E7',
+        DukigenRegistry: '0x0000000000000000000000000000000000000000', // TODO: deploy
     },
     [XLAYER_CHAIN_ID]: {
         DukerNews: '0x348C88cC171bffDB9128bc9DEcDa49c0820FB29F',
         Treasury: '0xfe0a6760458A1E75c284B9903ecc64D2B87c00a6',
+        DukigenRegistry: '0x0000000000000000000000000000000000000000', // TODO: deploy
     },
 }
 
@@ -168,4 +171,47 @@ export const ERC20_ABI = [
         outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
         stateMutability: 'view',
     },
+] as const
+
+// ── DukigenRegistry ABI (minimal — functions + errors needed by webapp) ──────
+export const dukigenRegistryAbi = [
+	{ type: 'error', inputs: [{ name: 'name', type: 'string' }], name: 'AgentNameTaken' },
+	{ type: 'error', inputs: [{ name: 'agentId', type: 'uint256' }], name: 'AgentNotFound' },
+	{ type: 'error', inputs: [], name: 'InvalidAgentName' },
+	{ type: 'error', inputs: [{ name: 'min', type: 'uint16' }, { name: 'max', type: 'uint16' }, { name: 'defaultBps', type: 'uint16' }], name: 'InvalidDukiBpsConfig' },
+	{ type: 'error', inputs: [{ name: 'agentId', type: 'uint256' }], name: 'NotAgentOwner' },
+	{ type: 'function', name: 'getAgent', stateMutability: 'view',
+		inputs: [{ name: 'agentId', type: 'uint256' }],
+		outputs: [{ name: '', type: 'tuple', components: [
+			{ name: 'name', type: 'string' }, { name: 'agentURI', type: 'string' },
+			{ name: 'originChainEid', type: 'uint32' }, { name: 'defaultDukiBps', type: 'uint16' },
+			{ name: 'minDukiBps', type: 'uint16' }, { name: 'maxDukiBps', type: 'uint16' },
+			{ name: 'productType', type: 'uint8' }, { name: 'dukiType', type: 'uint8' },
+			{ name: 'pledgeUrl', type: 'string' }, { name: 'tags', type: 'string[]' },
+		] }],
+	},
+	{ type: 'function', name: 'isRegistered', stateMutability: 'view',
+		inputs: [{ name: 'agentId', type: 'uint256' }], outputs: [{ name: '', type: 'bool' }] },
+	{ type: 'function', name: 'totalAgents', stateMutability: 'view',
+		inputs: [], outputs: [{ name: '', type: 'uint256' }] },
+	{ type: 'function', name: 'nameToAgentId', stateMutability: 'view',
+		inputs: [{ name: '', type: 'string' }], outputs: [{ name: '', type: 'uint256' }] },
+	{ type: 'function', name: 'ownerOf', stateMutability: 'view',
+		inputs: [{ name: 'tokenId', type: 'uint256' }], outputs: [{ name: '', type: 'address' }] },
+	{ type: 'function', name: 'balanceOf', stateMutability: 'view',
+		inputs: [{ name: 'owner', type: 'address' }], outputs: [{ name: '', type: 'uint256' }] },
+	{ type: 'function', name: 'register', stateMutability: 'nonpayable',
+		inputs: [
+			{ name: 'agentName', type: 'string' }, { name: '_agentURI', type: 'string' },
+			{ name: 'defaultDukiBps', type: 'uint16' }, { name: 'minDukiBps', type: 'uint16' },
+			{ name: 'maxDukiBps', type: 'uint16' }, { name: 'productType', type: 'uint8' },
+			{ name: 'dukiType', type: 'uint8' }, { name: 'pledgeUrl', type: 'string' },
+			{ name: 'tags', type: 'string[]' },
+		], outputs: [{ name: 'agentId', type: 'uint256' }] },
+	{ type: 'function', name: 'setWorksData', stateMutability: 'nonpayable',
+		inputs: [
+			{ name: 'agentId', type: 'uint256' }, { name: 'productType', type: 'uint8' },
+			{ name: 'dukiType', type: 'uint8' }, { name: 'pledgeUrl', type: 'string' },
+			{ name: 'tags', type: 'string[]' },
+		], outputs: [] },
 ] as const

@@ -1,0 +1,39 @@
+
+@startuml syncEvents
+
+Actor client
+Participant "worker" 
+Participant "cache"
+Participant "db"
+
+
+client -> worker: syncEvents(request)
+
+== Step 1: Load Agg ==
+worker -> cache: egoAgg = getAggCache(request.ego)
+
+alt egoAgg Not Found:
+    worker -> db: egoAgg = loadEgoAggFromDb(cmd.ego)
+    note right: select * from users where ego = request.ego limit
+    alt egoAgg Not Found:
+        worker -> client: Code.NOT_FOUND 404
+        note right: The ego is not found
+    else 
+        worker -> cache: setAggCache(egoAgg)
+        note right: update cache
+    end
+end
+
+
+== Step 2: Check clientEvtSeq ==
+worker -> worker: clientEvtSeq  = deriveFrom(request.clientEvtNounce) 
+alt  clientEvtSeq > egoAgg.latestEgoEvtSeq :
+    worker -> client: Code.INVALID_PARAMS 401
+    note right: The client is ahead, return error
+end
+
+== Step 3: Query And Return ==
+worker -> db: historyEvents = queryEgoEvents(ego, min=clientEvtSeq, max=egoAgg.latestEgoEvtSeq)
+worker -> client: return newEgoEvents
+
+@enduml

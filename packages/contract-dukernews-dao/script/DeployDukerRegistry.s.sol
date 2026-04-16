@@ -6,29 +6,33 @@ import "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import "../src/MockUSDT.sol";
 import "../src/DukerNews.sol";
 
-contract DeployDukerRegistry is Script {
+/// @notice Local dev deployment: MockUSDT + DukerNews (UUPS proxy).
+///         DukerRegistry and DukigenRegistry must be deployed separately.
+contract DeployLocalDukerNews is Script {
     function run() external {
-        // Anvil account #0 private key
         uint256 deployerKey = vm.envOr("PRIVATE_KEY", uint256(0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80));
         address deployer = vm.addr(deployerKey);
+
+        // Registry addresses (set after deploying registries)
+        address dukerRegistryAddr = vm.envOr("DUKER_REGISTRY_ADDRESS", address(0));
+        address dukigenRegistryAddr = vm.envOr("DUKIGEN_REGISTRY_ADDRESS", address(0));
+        uint256 agentId = vm.envOr("DUKERNEWS_AGENT_ID", uint256(0));
 
         vm.startBroadcast(deployerKey);
 
         // 1. Deploy MockUSDT
         MockUSDT usdt = new MockUSDT();
 
-        // 2. Deploy DukerNews implementation
+        // 2. Deploy DukerNews implementation + proxy
         DukerNews impl = new DukerNews();
-
-        // 3. Deploy ERC1967Proxy pointing to implementation
         bytes memory initData = abi.encodeCall(
             DukerNews.initialize,
-            (address(usdt), deployer) // treasury = deployer for local testing
+            (dukerRegistryAddr, dukigenRegistryAddr, agentId, address(usdt))
         );
         ERC1967Proxy proxy = new ERC1967Proxy(address(impl), initData);
 
-        // 4. Mint USDT to first 5 Anvil accounts for testing
-        uint256 mintAmount = 10_000 * 1e6; // 10,000 USDT each
+        // 3. Mint USDT to first 5 Anvil accounts for testing
+        uint256 mintAmount = 10_000 * 1e6;
         address[5] memory accounts = [
             0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266,
             0x70997970C51812dc3A010C7d01b50e0d17dc79C8,
@@ -42,8 +46,7 @@ contract DeployDukerRegistry is Script {
 
         vm.stopBroadcast();
 
-        // 5. Write addresses to file for frontend consumption
-        //    Frontend uses the PROXY address, not the implementation
+        // 4. Write addresses
         string memory json = string.concat(
             '{\n',
             '  "chainId": 31337,\n',
@@ -54,11 +57,10 @@ contract DeployDukerRegistry is Script {
         );
         vm.writeFile("deployments/local.json", json);
 
-        console.log("=== DukerNews Deployed (UUPS Proxy) ===");
-        console.log("MockUSDT:            ", address(usdt));
-        console.log("DukerNews (proxy):   ", address(proxy));
-        console.log("DukerNews (impl):    ", address(impl));
-        console.log("Treasury:             ", deployer);
-        console.log("Deployments written to deployments/local.json");
+        console.log("=== DukerNews Local Deploy ===");
+        console.log("MockUSDT:          ", address(usdt));
+        console.log("DukerNews (proxy): ", address(proxy));
+        console.log("DukerNews (impl):  ", address(impl));
+        console.log("Written to deployments/local.json");
     }
 }

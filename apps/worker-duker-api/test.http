@@ -1,0 +1,86 @@
+
+## ============================================
+## Bagua World Worker — API Test Suite
+## ============================================
+## Toggle between local and production:
+# @host = http://localhost:8787
+@host = https://api.app.bagua.world
+
+## ============================================
+## Auth
+## ============================================
+
+### Get Nonce
+POST {{host}}/open/nonce
+Content-Type: application/json
+
+###
+
+### Login (SIWE — requires valid wallet signature)
+POST {{host}}/open/login
+Content-Type: application/json
+
+{
+    "message": "YOUR_SIWE_MESSAGE",
+    "signature": "YOUR_WALLET_SIGNATURE"
+}
+
+###
+
+### Check Session
+POST {{host}}/open/me
+Content-Type: application/json
+
+###
+
+### Generate Transfer Token (QR login)
+POST {{host}}/open/me2
+Content-Type: application/json
+
+{
+    "ttlDays": 90
+}
+
+###
+
+### Logout
+POST {{host}}/open/logout
+Content-Type: application/json
+
+###
+
+## ============================================
+## Palace Service (gRPC/Connect)
+## ============================================
+
+### Palace Sync
+POST {{host}}/BaguaPalaceService/sync
+Content-Type: application/json
+
+{
+    "ego": "",
+    "clientNonce": ""
+}
+
+###
+
+### Palace Handle Command (example: save hook)
+POST {{host}}/BaguaPalaceService/handleCmd
+Content-Type: application/json
+
+{
+    "ego": "",
+    "clientNonce": "",
+    "cmdType": 1,
+    "cmdVersion": 1,
+    "data": {}
+}
+
+###
+
+## ============================================
+## Cache Management
+## ============================================
+
+### Delete Ego Cache
+DELETE {{host}}/api/cache/ego/0x2AE47ccC63878d892bf2675a9d3b497DDD9eb82F

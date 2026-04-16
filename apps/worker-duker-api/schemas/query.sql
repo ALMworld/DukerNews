@@ -1,0 +1,15 @@
+-- WHERE
+--     type = 'table';
+-- delete from transcripts
+-- where
+--     1 = 1;
+-- delete from user_events
+-- where
+--     1 = 1;
+-- delete from dao_events
+-- where
+--     1 = 1;
+-- delete from users
+-- where
+--     1 = 1;
+drop table users;

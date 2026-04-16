@@ -1,0 +1,43 @@
+{
+	"name": "bagua-world-worker",
+	"version": "0.1.4",
+	"private": true,
+	"sideEffects": false,
+	"type": "module",
+	"scripts": {
+		"build:wrangler": "run-wrangler-build",
+		"check:lint": "run-eslint",
+		"check:types": "run-tsc",
+		"deploy": "run-wrangler-deploy",
+		"dev": "run-wrangler-dev --port 8787 --ip 0.0.0.0",
+		"fix:workers-types": "run-wrangler-types",
+		"test": "run-vitest"
+	},
+	"dependencies": {
+		"@bufbuild/protobuf": "^2.7.0",
+		"@connectrpc/connect": "^2.1.0",
+		"@depot/connectrpc-workers": "^2.0.0",
+		"@reown/appkit-siwe": "^1.8.16",
+		"@reown/appkit-siwx": "^1.8.16",
+		"@walletconnect/utils": "^2.23.1",
+		"@repo/apidefs": "workspace:*",
+		"@repo/hono-helpers": "workspace:*",
+		"@variablesoftware/mock-d1": "^0.7.1",
+		"@wagmi/core": "^2.19.2",
+		"aws4fetch": "^1.0.20",
+		"hono": "4.10.7",
+		"viem": "^2.38.6",
+		"workers-tagged-logger": "0.13.3"
+	},
+	"devDependencies": {
+		"@cloudflare/vitest-pool-workers": "0.9.12",
+		"@cloudflare/workers-types": "^4",
+		"@repo/eslint-config": "workspace:*",
+		"@repo/tools": "workspace:*",
+		"@repo/typescript-config": "workspace:*",
+		"@types/node": "22.15.27",
+		"@wagmi/cli": "^2.5.1",
+		"vitest": "3.2.4",
+		"wrangler": "4.54.0"
+	}
+}

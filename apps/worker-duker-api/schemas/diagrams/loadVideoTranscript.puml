@@ -1,0 +1,52 @@
+
+@startuml loadVideoTranscript
+
+Actor client
+Participant "worker" 
+Participant "cache"
+Participant "d1"
+Participant "scraper"
+
+
+client -> worker: loadVideoTranscript(request)
+
+== Case 1: Happy Cache Path ==
+worker -> cache: getTranscriptCache(request.transcriptCacheKey)
+note right: transcriptCacheKey = {vid}_{lang}
+cache -> worker: cachedResp
+
+alt cachedResp found
+    note right: found in cache
+    worker --> client: cachedResp
+end
+
+
+== Case 2: Happy DB Path ==
+worker -> d1: loadTranscriptFromDb(request)
+note right: select * from transcripts where vid = request.vid and language = request.lang 
+d1 -> worker: dbTranscript
+
+alt dbTranscript found
+    note right: found in DB
+    worker -> cache: updateTranscriptCache(request.transcriptCacheKey, dbTranscript)
+    worker --> client: dbTranscript
+end
+
+
+== Case 3: Scrape Path ==
+' targetTranscript not found
+worker -> scraper: scrapeVideoTranscript(request)
+scraper -> worker: scrapedTranscript 
+
+alt scrapedTranscript found
+== Case 3.1: Happy Path ==
+    worker -> d1: saveTranscript(scrapedTranscript)
+    worker -> cache: updateTranscriptCache(request.transcriptCacheKey, scrapedTranscript)
+    worker --> client: scrapedTranscript
+else
+== Case 3.2: UnHappy  Path ==
+    worker --> client: errorResponse
+    worker -> cache: logTranscriptScrapeFailure(request)
+end
+
+@enduml

@@ -8,7 +8,7 @@ import { ERC721 } from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { Strings } from "@openzeppelin/contracts/utils/Strings.sol";
 
-import { DukerIdentity } from "./interfaces/IDukerRegistryTypes.sol";
+
 import { IDukerRegistryEvents } from "./interfaces/IDukerRegistryEvents.sol";
 import { IDukerRegistryErrors } from "./interfaces/IDukerRegistryErrors.sol";
 import { DukerRegistryTokenId } from "./libraries/DukerRegistryTokenId.sol";
@@ -17,9 +17,9 @@ import { DukerNameValidator } from "./libraries/DukerNameValidator.sol";
 /// @title DukerRegistry
 /// @notice Cross-chain universal identity layer for all Duker dApps.
 //
-//          Identity model (email-style):
-//            displayName = "alice"              (unique per origin chain)
-//            fullId      = "alice[at]30184"     (globally unique)
+//          Identity model (using "." separator):
+//            displayName = "alice"              (user-chosen, unique per origin chain)
+//            username    = "alice.30184"         (globally unique, stored as identity)
 //            tokenId     = 30184<<224 | seq     (on-chain unique ID)
 //
 //          The NFT is SOULBOUND (non-transferable). Users can:
@@ -28,7 +28,7 @@ import { DukerNameValidator } from "./libraries/DukerNameValidator.sol";
 //            - burn()           → deactivate identity on this chain
 //
 //          The same identity can exist on MULTIPLE chains simultaneously.
-//          The at-sign is forbidden in displayName — reserved as delimiter.
+//          Dot and at-sign are forbidden in displayName — reserved as delimiters.
 contract DukerRegistry is OApp, ERC721, IDukerRegistryEvents, IDukerRegistryErrors {
     using Strings for uint256;
     using OptionsBuilder for bytes;
@@ -46,8 +46,11 @@ contract DukerRegistry is OApp, ERC721, IDukerRegistryEvents, IDukerRegistryErro
     /// @notice Auto-incrementing local sequence (lower 224 bits of tokenId)
     uint224 private _nextLocalSeq;
 
-    /// @notice tokenId → identity record
-    mapping(uint256 => DukerIdentity) private _identities;
+    /// @notice Global event sequence counter (monotonic)
+    uint64 private _evtSeq;
+
+    /// @notice tokenId → username (e.g. "alice.30184")
+    mapping(uint256 => string) private _usernames;
 
     /// @notice displayName → tokenId (uniqueness per origin chain, only checked at mint)
     mapping(string => uint256) public nameToId;
@@ -61,8 +64,7 @@ contract DukerRegistry is OApp, ERC721, IDukerRegistryEvents, IDukerRegistryErro
     struct PendingReplica {
         address toAddress;
         uint256 tokenId;
-        string displayName;
-        uint32 originChainEid;
+        string username;
     }
     mapping(bytes32 => PendingReplica) public pendingReplicas;
 
@@ -99,7 +101,8 @@ contract DukerRegistry is OApp, ERC721, IDukerRegistryEvents, IDukerRegistryErro
     // ══════════════════════════════════════════════════════════════════════════
 
     /// @notice Mint a unique username identity NFT on this chain.
-    //          displayName must be unique on this chain. The at-sign is forbidden.
+    //          displayName must be unique on this chain. Dot and at-sign are forbidden.
+    //          username = displayName.originChainEid (e.g., "alice.30184")
     /// @param displayName Desired display name (e.g., "alice").
     function mintUsername(string calldata displayName) external {
         if (ownerToTokenId[msg.sender] != 0) revert AlreadyHasIdentity();
@@ -109,17 +112,17 @@ contract DukerRegistry is OApp, ERC721, IDukerRegistryEvents, IDukerRegistryErro
         uint224 seq = ++_nextLocalSeq;
         uint256 tokenId = DukerRegistryTokenId.make(localChainEid, seq);
 
+        // Concatenate username: "alice" + "." + "30184"
+        string memory username = string.concat(displayName, ".", uint256(localChainEid).toString());
+
         _mint(msg.sender, tokenId);
 
         nameToId[displayName] = tokenId;
         ownerToTokenId[msg.sender] = tokenId;
 
-        _identities[tokenId] = DukerIdentity({
-            displayName: displayName,
-            originChainEid: localChainEid
-        });
+        _usernames[tokenId] = username;
 
-        emit UserMinted(msg.sender, tokenId, displayName, localChainEid);
+        _emitEvent(tokenId, DukerEventType.USER_MINTED, msg.sender, username, "");
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -162,7 +165,9 @@ contract DukerRegistry is OApp, ERC721, IDukerRegistryEvents, IDukerRegistryErro
 
         _lzSend(dstEid, payload, options, MessagingFee(msg.value, 0), payable(msg.sender));
 
-        emit IdentityReplicateSent(msg.sender, tokenId, dstEid);
+        string memory username = _usernames[tokenId];
+        _emitEvent(tokenId, DukerEventType.IDENTITY_REPLICATE_SENT, msg.sender, username,
+            abi.encode(IdentityReplicateSentData({ dstChainEid: dstEid })));
     }
 
     /// @dev Shared implementation for both quoteReplicate overloads.
@@ -178,10 +183,9 @@ contract DukerRegistry is OApp, ERC721, IDukerRegistryEvents, IDukerRegistryErro
     }
 
     /// @dev Encode identity payload for cross-chain replication.
-    ///      Includes sender so destination can distinguish self-replicate from cross-address.
+    ///      Sends the pre-concatenated username (e.g. "alice.30184").
     function _buildReplicatePayload(bytes32 sender, bytes32 toAddress, uint256 tokenId) internal view returns (bytes memory) {
-        DukerIdentity storage id = _identities[tokenId];
-        return abi.encode(sender, toAddress, tokenId, id.displayName, id.originChainEid);
+        return abi.encode(sender, toAddress, tokenId, _usernames[tokenId]);
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -202,23 +206,34 @@ contract DukerRegistry is OApp, ERC721, IDukerRegistryEvents, IDukerRegistryErro
             bytes32 senderBytes,
             bytes32 toAddressBytes,
             uint256 tokenId,
-            string memory displayName,
-            uint32 originChainEid
-        ) = abi.decode(_message, (bytes32, bytes32, uint256, string, uint32));
+            string memory username
+        ) = abi.decode(_message, (bytes32, bytes32, uint256, string));
 
         address toAddress = address(uint160(uint256(toAddressBytes)));
 
-        // Only accept if not already on this chain
-        if (_ownerOf(tokenId) != address(0)) revert AlreadyReplicatedHere(tokenId);
+        // Reject if token already exists on this chain
+        if (_ownerOf(tokenId) != address(0)) {
+            _emitEvent(tokenId, DukerEventType.IDENTITY_REPLICATE_RECEIVED_REJECTED, toAddress, username,
+                abi.encode(ReplicaRejectedData({ reason: RejectReason.ALREADY_REPLICATED })));
+            return;
+        }
+
+        // Reject if recipient already has an identity (one address = one identity)
+        if (ownerToTokenId[toAddress] != 0) {
+            _emitEvent(tokenId, DukerEventType.IDENTITY_REPLICATE_RECEIVED_REJECTED, toAddress, username,
+                abi.encode(ReplicaRejectedData({ reason: RejectReason.ALREADY_HAS_IDENTITY })));
+            return;
+        }
 
         if (senderBytes == toAddressBytes) {
             // Same person → auto-mint instantly
-            _mintReplica(toAddress, tokenId, displayName, originChainEid);
+            _mintReplica(toAddress, tokenId, username);
         } else {
             // Different address → store as pending, recipient must claim
             bytes32 key = keccak256(abi.encodePacked(toAddress, tokenId));
-            pendingReplicas[key] = PendingReplica(toAddress, tokenId, displayName, originChainEid);
-            emit ReplicaPending(toAddress, tokenId, displayName, originChainEid);
+            pendingReplicas[key] = PendingReplica(toAddress, tokenId, username);
+
+            _emitEvent(tokenId, DukerEventType.IDENTITY_REPLICATE_RECEIVED_PENDING, toAddress, username, "");
         }
     }
 
@@ -234,33 +249,33 @@ contract DukerRegistry is OApp, ERC721, IDukerRegistryEvents, IDukerRegistryErro
         if (ownerToTokenId[msg.sender] != 0) revert AlreadyHasIdentity();
 
         delete pendingReplicas[key];
-        _mintReplica(msg.sender, tokenId, pending.displayName, pending.originChainEid);
+        _mintReplica(msg.sender, tokenId, pending.username);
     }
 
     /// @notice Reject a pending replica (anyone can clean up their own pending).
     function rejectReplica(uint256 tokenId) external {
         bytes32 key = keccak256(abi.encodePacked(msg.sender, tokenId));
-        if (pendingReplicas[key].toAddress == address(0)) revert NoPendingReplica(tokenId);
+        PendingReplica storage pending = pendingReplicas[key];
+        if (pending.toAddress == address(0)) revert NoPendingReplica(tokenId);
+        string memory username = pending.username;
         delete pendingReplicas[key];
-        emit ReplicaRejected(msg.sender, tokenId);
+
+        _emitEvent(tokenId, DukerEventType.IDENTITY_REPLICATE_RECEIVED_REJECTED, msg.sender, username,
+            abi.encode(ReplicaRejectedData({ reason: RejectReason.USER_REJECTED })));
     }
 
     /// @dev Shared mint logic for replicas (used by auto-mint and claim).
     function _mintReplica(
         address toAddress,
         uint256 tokenId,
-        string memory displayName,
-        uint32 originChainEid
+        string memory username
     ) internal {
         _mint(toAddress, tokenId);
         ownerToTokenId[toAddress] = tokenId;
 
-        _identities[tokenId] = DukerIdentity({
-            displayName: displayName,
-            originChainEid: originChainEid
-        });
+        _usernames[tokenId] = username;
 
-        emit IdentityReplicateReceived(toAddress, tokenId, displayName, originChainEid);
+        _emitEvent(tokenId, DukerEventType.IDENTITY_REPLICATE_RECEIVED_CLAIMED, toAddress, username, "");
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -273,34 +288,29 @@ contract DukerRegistry is OApp, ERC721, IDukerRegistryEvents, IDukerRegistryErro
         uint256 tokenId = ownerToTokenId[msg.sender];
         if (tokenId == 0) revert NoIdentity();
 
+        string memory username = _usernames[tokenId];
+
         delete ownerToTokenId[msg.sender];
         _burn(tokenId);
 
-        emit IdentityBurned(msg.sender, tokenId, localChainEid);
+        _emitEvent(tokenId, DukerEventType.IDENTITY_BURNED, msg.sender, username,
+            abi.encode(IdentityBurnedData({ chainEid: localChainEid })));
     }
 
     // ══════════════════════════════════════════════════════════════════════════
     //  PUBLIC VIEW
     // ══════════════════════════════════════════════════════════════════════════
 
-    /// @notice Returns the full identity record for a tokenId.
-    function getIdentity(uint256 tokenId) external view returns (DukerIdentity memory) {
-        return _identities[tokenId];
+    /// @notice Returns the username for a tokenId.
+    function getUsername(uint256 tokenId) external view returns (string memory) {
+        return _usernames[tokenId];
     }
 
-    /// @notice Returns the display name for the given owner, or "" if none.
-    function displayNameOf(address owner) external view returns (string memory) {
+    /// @notice Returns the username (e.g. "alice.30184") for the given owner, or "" if none.
+    function usernameOf(address owner) external view returns (string memory) {
         uint256 tokenId = ownerToTokenId[owner];
         if (tokenId == 0) return "";
-        return _identities[tokenId].displayName;
-    }
-
-    /// @notice Returns "displayName[at]originChainEid" — the globally unique full ID.
-    function fullIdOf(address owner) external view returns (string memory) {
-        uint256 tokenId = ownerToTokenId[owner];
-        if (tokenId == 0) return "";
-        DukerIdentity storage id = _identities[tokenId];
-        return string.concat(id.displayName, "@", uint256(id.originChainEid).toString());
+        return _usernames[tokenId];
     }
 
     /// @notice Extract origin chain EID from a tokenId (upper 32 bits).
@@ -316,6 +326,27 @@ contract DukerRegistry is OApp, ERC721, IDukerRegistryEvents, IDukerRegistryErro
     /// @notice Returns the tokenId for the given owner, or 0 if none.
     function tokenOfOwner(address owner) external view returns (uint256) {
         return ownerToTokenId[owner];
+    }
+
+    /// @notice Current global event sequence number.
+    function worldEvtSeq() external view returns (uint64) {
+        return _evtSeq;
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  INTERNAL
+    // ══════════════════════════════════════════════════════════════════════════
+
+    /// @dev Emit the unified DukerEvent with auto-incrementing evtSeq.
+    function _emitEvent(
+        uint256 tokenId,
+        DukerEventType eventType,
+        address ego,
+        string memory username,
+        bytes memory eventData
+    ) internal {
+        uint64 seq = ++_evtSeq;
+        emit DukerEvent(tokenId, seq, eventType, ego, username, uint64(block.timestamp), eventData);
     }
 
 }

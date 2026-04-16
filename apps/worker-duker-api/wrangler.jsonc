@@ -1,0 +1,45 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "bagua-world-worker",
+	"main": "src/index.ts",
+	"compatibility_date": "2025-09-20",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"routes": [
+		{
+			"pattern": "api.app.bagua.world",
+			"custom_domain": true
+		}
+	],
+	"logpush": false,
+	"upload_source_maps": false,
+	"observability": {
+		"logs": {
+			"enabled": false,
+			"head_sampling_rate": 1 // 100%
+		}
+	},
+	"vars": {
+		"ENVIRONMENT": "production", // overridden during deployment
+		"SENTRY_RELEASE": "unknown", // overridden during deployment
+		"COOKIE_SECURE": "true",
+		"COOKIE_SAME_SITE": "Lax",
+		"ALLOWED_ORIGINS": "https://app.bagua.world,http://localhost:*,http://100.*,http://192.168.*,tauri://localhost",
+		"COOKIE_DOMAIN": ".app.bagua.world"
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "bagua_world",
+			"database_id": "b64d6cb9-097a-4d77-8ccb-c74583477ffc"
+		}
+	],
+	"r2_buckets": [
+		{
+			"binding": "R2_BUCKET",
+			"bucket_name": "bagua-world",
+			"preview_bucket_name": "bagua-world"
+		}
+	]
+}

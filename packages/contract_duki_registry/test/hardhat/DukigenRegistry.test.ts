@@ -38,7 +38,7 @@ describe('DukigenRegistry — ERC-8004 Compliant', function () {
 
     // ── Registration ──────────────────────────────────────────────────
 
-    it('register with name + bps → pay → verify split', async function () {
+    it('register with name + bps → payTo → verify split', async function () {
         await registry
             .connect(agentOwner)
             ['register(string,string,uint16,uint16,uint16)']('DukerNews', 'ipfs://QmTest', 5000, 5000, 9900)
@@ -52,8 +52,8 @@ describe('DukigenRegistry — ERC-8004 Compliant', function () {
         expect(agent.defaultDukiBps).to.equal(5000)
         expect(await registry.getAgentWallet(agentId)).to.equal(agentOwner.address)
 
-        // Pay 100 USDT (default 50%)
-        await registry.connect(payer)['pay(uint256,uint256)'](agentId, usdt6(100))
+        // Pay 100 USDT via payTo (default 50%)
+        await registry.connect(payer).payTo(agentId, usdt6(100), 5000, payer.address, usdt.address)
 
         expect(await usdt.balanceOf(minter.address)).to.eql(usdt6(50))
         expect(await usdt.balanceOf(agentOwner.address)).to.eql(usdt6(50))
@@ -80,30 +80,69 @@ describe('DukigenRegistry — ERC-8004 Compliant', function () {
         expect(await registry.tokenURI(agentId)).to.equal('')
     })
 
-    // ── Payment ──────────────────────────────────────────────────────
+    // ── Payment (payTo only) ────────────────────────────────────────
 
-    it('pay with custom dukiBps 70%', async function () {
+    it('payTo with custom dukiBps 70%', async function () {
         await registry
             .connect(agentOwner)
             ['register(string,string,uint16,uint16,uint16)']('TestAgent', 'ipfs://test', 5000, 5000, 9900)
 
-        await registry.connect(payer)['pay(uint256,uint256,uint16)'](1, usdt6(100), 7000)
+        await registry.connect(payer).payTo(1, usdt6(100), 7000, payer.address, usdt.address)
 
         expect(await usdt.balanceOf(minter.address)).to.eql(usdt6(70))
         expect(await usdt.balanceOf(agentOwner.address)).to.eql(usdt6(30))
     })
 
-    it('revert: dukiBps out of range', async function () {
+    it('payTo with out-of-range dukiBps → clamps to min/max', async function () {
         await registry
             .connect(agentOwner)
             ['register(string,string,uint16,uint16,uint16)']('TestAgent', 'ipfs://test', 5000, 5000, 9900)
 
-        try {
-            await registry.connect(payer)['pay(uint256,uint256,uint16)'](1, usdt6(100), 4000)
-            expect.fail('should have reverted')
-        } catch (e: any) {
-            expect(e.message).to.include('DukiBpsOutOfRange')
-        }
+        // userPreferDukiBps=4000 is below min=5000 → clamped to 5000
+        await registry.connect(payer).payTo(1, usdt6(100), 4000, payer.address, usdt.address)
+
+        // 50% to minter (clamped to min 5000), 50% to agent owner
+        expect(await usdt.balanceOf(minter.address)).to.eql(usdt6(50))
+        expect(await usdt.balanceOf(agentOwner.address)).to.eql(usdt6(50))
+    })
+
+    it('payTo: third party calls on behalf of payer', async function () {
+        await registry
+            .connect(agentOwner)
+            ['register(string,string,uint16,uint16,uint16)']('TestAgent', 'ipfs://test', 5000, 5000, 9900)
+
+        // Payer approves the REGISTRY (not the caller)
+        await usdt.connect(payer).approve(registry.address, usdt6(100))
+
+        // A different account (agentOwner) calls payTo on behalf of payer
+        await registry.connect(agentOwner).payTo(1, usdt6(100), 6000, payer.address, usdt.address)
+
+        // 60% to minter, 40% to agent owner
+        expect(await usdt.balanceOf(minter.address)).to.eql(usdt6(60))
+        expect(await usdt.balanceOf(agentOwner.address)).to.eql(usdt6(40))
+    })
+
+    it('payTo: with alternative stablecoin', async function () {
+        await registry
+            .connect(agentOwner)
+            ['register(string,string,uint16,uint16,uint16)']('TestAgent', 'ipfs://test', 5000, 5000, 9900)
+
+        // Deploy alternative stablecoin (USDC)
+        const MockERC20 = await ethers.getContractFactory('MockERC20')
+        const usdc = await MockERC20.deploy('Mock USDC', 'USDC', 6)
+        await usdc.mint(payer.address, usdt6(500))
+        await usdc.connect(payer).approve(registry.address, ethers.constants.MaxUint256)
+
+        // Owner must approve the new token for the minter
+        await registry.connect(owner).approveTokenForMinter(usdc.address)
+
+        // Pay with USDC instead of USDT
+        await registry.connect(payer).payTo(1, usdt6(100), 5000, payer.address, usdc.address)
+
+        expect(await usdc.balanceOf(minter.address)).to.eql(usdt6(50))
+        expect(await usdc.balanceOf(agentOwner.address)).to.eql(usdt6(50))
+        // USDT balance unchanged
+        expect(await usdt.balanceOf(payer.address)).to.eql(usdt6(1000))
     })
 
     // ── EIP-712 setAgentWallet ────────────────────────────────────────
