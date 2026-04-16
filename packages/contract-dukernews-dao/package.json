@@ -1,5 +1,5 @@
 {
-    "name": "@alm/duker-dao-contract",
+    "name": "@alm/dukernews-dao-contract",
     "version": "0.0.1",
     "type": "module",
     "main": "generated/index.ts",
