@@ -75,9 +75,10 @@ export const Route = createFileRoute('/rpc/$')({
                             )
                         }
 
-                        // Username required for NotifyTx (posting);
-                        // X402Handle allows mint (which creates the username)
-                        if (rpcPath !== '/duker.TxService/TxHandle') {
+                        // Username required for content creation, but not for:
+                        // - TxHandle (which creates the username via mint)
+                        // - NotifyTx (which just confirms an on-chain tx)
+                        if (rpcPath !== '/duker.TxService/TxHandle' && rpcPath !== '/duker.TxService/NotifyTx') {
                             if (!payload.username || payload.username.toLowerCase() === payload.ego.toLowerCase()) {
                                 return Response.json(
                                     { code: 'username_required', message: 'Please set a username before posting', ego: payload.ego },

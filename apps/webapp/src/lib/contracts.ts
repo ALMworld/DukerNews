@@ -136,8 +136,8 @@ export function getStablecoins(chainId: number): StablecoinMeta[] {
 }
 
 // ── ABIs ────────────────────────────────────────────────────────────────────
-// Re-export auto-generated ABIs from @alm/duker-dao-contract (wagmi CLI)
-export { dukerNewsAbi, mockUsdtAbi } from '@alm/duker-dao-contract'
+// Re-export auto-generated ABIs from @alm/dukernews-dao-contract (wagmi CLI)
+export { dukerNewsAbi, mockUsdtAbi } from '@alm/dukernews-dao-contract'
 
 // ERC20 minimal ABI (approve, allowance, balanceOf) — not contract-specific
 export const ERC20_ABI = [

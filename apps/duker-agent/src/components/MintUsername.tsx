@@ -10,7 +10,7 @@ import TextInput from 'ink-text-input'
 import { contractCall } from '../services/onchainos-cli-wrapper.js'
 import { config } from '../utils/config.js'
 import { encodeFunctionData, erc20Abi } from 'viem'
-import { dukerNewsAbi } from '@alm/duker-dao-contract'
+import { dukerNewsAbi } from '@alm/dukernews-dao-contract'
 
 interface MintUsernameProps {
     walletAddress: string | null

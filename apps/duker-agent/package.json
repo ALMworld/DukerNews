@@ -10,7 +10,7 @@
     "start": "tsx src/index.tsx"
   },
   "dependencies": {
-    "@alm/duker-dao-contract": "workspace:*",
+    "@alm/dukernews-dao-contract": "workspace:*",
     "@connectrpc/connect": "^2.1.1",
     "@connectrpc/connect-node": "^2.1.1",
     "@repo/apidefs": "workspace:*",

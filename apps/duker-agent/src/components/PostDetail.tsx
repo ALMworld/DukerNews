@@ -11,7 +11,7 @@ import { timeAgo, fmtUsdt, truncAddr, ellipsis } from '../utils/format.js'
 import { config } from '../utils/config.js'
 import type { PbPost, PbComment } from '@repo/apidefs'
 import { encodeFunctionData, keccak256, toHex, erc20Abi } from 'viem'
-import { dukerNewsAbi } from '@alm/duker-dao-contract'
+import { dukerNewsAbi } from '@alm/dukernews-dao-contract'
 
 interface PostDetailProps {
     postId: bigint

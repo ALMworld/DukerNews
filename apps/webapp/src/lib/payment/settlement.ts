@@ -11,7 +11,7 @@ import { PaymentScheme, type PaymentData } from '@repo/apidefs'
 import { x402Verify, x402Settle, type SettleResult } from './x402-payment'
 import { permitSettle } from './permit-payment'
 import { getDukerChainClients } from '../duker-chain'
-import { mockUsdtAbi } from '@alm/duker-dao-contract'
+import { mockUsdtAbi } from '@alm/dukernews-dao-contract'
 
 // Re-export for consumers
 export type { PaymentData, SettleResult }

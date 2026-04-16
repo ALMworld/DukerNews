@@ -2,7 +2,7 @@
  * POST /api/auth/login — Verify SIWE signature and issue JWT cookie.
  */
 import { createFileRoute } from '@tanstack/react-router'
-import { createPublicClient, http } from 'viem'
+import { createPublicClient, http, recoverMessageAddress } from 'viem'
 import { mainnet } from 'viem/chains'
 import { createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
@@ -44,17 +44,37 @@ export const Route = createFileRoute('/api/auth/login')({
                         return Response.json({ success: false, message: 'Invalid or expired nonce' })
                     }
 
-                    // Verify signature via viem
-                    const publicClient = createPublicClient({
-                        chain: mainnet,
-                        transport: http(),
-                    })
+                    // Verify signature — try fast local ecrecover first (EOA),
+                    // fall back to on-chain ERC-1271 only for contract wallets.
+                    let valid = false
+                    try {
+                        // Local ECDSA recovery — instant, no RPC needed
+                        const recovered = await recoverMessageAddress({
+                            message,
+                            signature: signature as `0x${string}`,
+                        })
+                        valid = recovered.toLowerCase() === address.toLowerCase()
+                    } catch {
+                        // ecrecover failed (e.g. non-standard sig) — ignore
+                    }
 
-                    const valid = await publicClient.verifyMessage({
-                        message,
-                        address: address as `0x${string}`,
-                        signature: signature as `0x${string}`,
-                    })
+                    if (!valid) {
+                        // Possibly a contract wallet (Safe, Argent, etc.)
+                        // Fall back to on-chain ERC-1271 verification
+                        try {
+                            const publicClient = createPublicClient({
+                                chain: mainnet,
+                                transport: http(),
+                            })
+                            valid = await publicClient.verifyMessage({
+                                message,
+                                address: address as `0x${string}`,
+                                signature: signature as `0x${string}`,
+                            })
+                        } catch (e) {
+                            console.warn('[auth/login] ERC-1271 fallback failed:', e)
+                        }
+                    }
 
                     if (!valid) {
                         return Response.json({ success: false, message: 'Signature verification failed' })

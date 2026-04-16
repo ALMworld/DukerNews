@@ -32,6 +32,7 @@ export interface DirectHandleResult {
 interface DirectHandleCtx {
     address: `0x${string}`
     writeContractAsync: (args: any) => Promise<`0x${string}`>
+    simulateContract: (args: any) => Promise<any>
     waitForReceipt: (hash: `0x${string}`) => Promise<void>
     readContract: (args: any) => Promise<any>
     onStep: (step: 'approving' | 'executing' | 'confirming') => void
@@ -77,16 +78,22 @@ export async function directHandle(
             // Approve stablecoin if needed
             await ensureAllowance(ctx, stablecoin.address, addrs.DukerNews, amountMicro)
 
-            // Call mintUsername
             ctx.onStep('executing')
-            const mintTx = await ctx.writeContractAsync({
+            const contractCall = {
                 address: addrs.DukerNews,
                 abi: dukerNewsAbi,
-                functionName: 'mintUsername',
+                functionName: 'mintUsername' as const,
                 args: [username, amountMicro, BigInt(dukiBps)],
-            })
-
-            return { txHash: mintTx }
+                account: ctx.address,
+            }
+            try {
+                const mintTx = await ctx.writeContractAsync(contractCall)
+                return { txHash: mintTx }
+            } catch (err) {
+                // Simulate to decode the actual revert reason (wallet errors are opaque)
+                await ctx.simulateContract(contractCall)
+                throw err // if simulate didn't throw, rethrow original
+            }
         }
 
         case EventType.POST_CREATED: {

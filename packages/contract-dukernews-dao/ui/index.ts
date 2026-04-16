@@ -1,5 +1,5 @@
 /**
- * @alm/duker-dao-contract - React UI components
+ * @alm/dukernews-dao-contract - React UI components
  *
  * Standalone Bagua DAO UI components for the DUKI in Action system.
  */

@@ -23,7 +23,7 @@
   },
   "dependencies": {
     "@alm/dao-bagua-diagram": "workspace:*",
-    "@alm/duker-dao-contract": "workspace:*",
+    "@alm/dukernews-dao-contract": "workspace:*",
     "@bufbuild/protobuf": "^2.11.0",
     "@connectrpc/connect": "^2.1.1",
     "@connectrpc/connect-web": "^2.1.1",

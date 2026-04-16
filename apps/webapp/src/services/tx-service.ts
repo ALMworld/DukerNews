@@ -19,7 +19,7 @@ import {
 } from '@repo/apidefs'
 import type { DukerTxReq } from '@repo/apidefs'
 import { getDukerChainClients } from '../lib/duker-chain'
-import { dukerNewsAbi } from '@alm/duker-dao-contract'
+import { dukerNewsAbi } from '@alm/dukernews-dao-contract'
 import { verifyPayment, settlePayment } from '../lib/payment'
 import { applyEvents } from './events-service'
 import { getEventsFromWebhookLogs } from './blockchain-service'

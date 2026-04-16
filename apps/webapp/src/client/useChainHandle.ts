@@ -50,6 +50,37 @@ function getPaymentAmount(txData: DukerTxReq): bigint {
         default: return 0n
     }
 }
+/**
+ * Extract a human-readable revert reason from a viem/wagmi error.
+ *
+ * With simulateContract() as a pre-check, viem decodes custom errors
+ * using the contract ABI (e.g. "NameTaken", "InvalidName").
+ * Without simulation, wallet errors are generic ("gas limit too high").
+ */
+function extractRevertReason(e: any): string {
+    // User rejected in wallet
+    if (e?.code === 4001 || e?.message?.includes('User rejected') || e?.message?.includes('user rejected')) {
+        return 'Transaction rejected by user'
+    }
+
+    // viem decoded error — best source (from simulateContract)
+    if (typeof e?.walk === 'function') {
+        const revertErr = e.walk((err: any) => err?.name === 'ContractFunctionRevertedError')
+        if (revertErr?.data?.errorName) {
+            const args = revertErr.data.args?.length ? `: ${revertErr.data.args.join(', ')}` : ''
+            return `${revertErr.data.errorName}${args}`
+        }
+        if (revertErr?.reason) return revertErr.reason
+    }
+
+    // shortMessage — filter out misleading gas errors
+    const short = e?.shortMessage || ''
+    if (short && !/gas limit|gas required/i.test(short)) {
+        return short.replace(/reverted with the following reason:\s*$/m, 'reverted').trim() || short
+    }
+
+    return e?.message?.split('\n')[0] || 'Transaction failed'
+}
 
 // ─── Hook ───────────────────────────────────────────────────
 
@@ -122,6 +153,7 @@ export function useChainHandle() {
             const result = await directHandle(txData, {
                 address: address as `0x${string}`,
                 writeContractAsync,
+                simulateContract: (args) => publicClient!.simulateContract(args),
                 waitForReceipt: async (hash) => {
                     const receipt = await publicClient!.waitForTransactionReceipt({ hash })
                     if (receipt.status === 'reverted') throw new Error('Transaction reverted')
@@ -154,7 +186,7 @@ export function useChainHandle() {
             setStep('done')
             return { ...result, events }
         } catch (e: any) {
-            const msg = e?.shortMessage || e?.message || 'Command failed'
+            const msg = extractRevertReason(e)
             setError(msg)
             setStep('idle')
             throw e
