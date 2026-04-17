@@ -1,0 +1,28 @@
+{
+	"name": "@repo/dukiregistry-apidefs",
+	"version": "0.1.0",
+	"private": true,
+	"sideEffects": false,
+	"type": "module",
+	"main": "src/index.ts",
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"scripts": {
+		"build": "buf generate",
+		"clean": "rm -rf src/gen",
+		"gen:sol-enums": "tsx scripts/gen-sol-enums.ts",
+		"check:types": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@bufbuild/protobuf": "2.11.0",
+		"@connectrpc/connect": "^2.0.1"
+	},
+	"devDependencies": {
+		"@bufbuild/buf": "^1.48.0",
+		"@bufbuild/protoc-gen-es": "^2.11.0",
+		"@types/node": "^22.0.0",
+		"tsx": "^4.0.0",
+		"typescript": "^5.0.0"
+	}
+}

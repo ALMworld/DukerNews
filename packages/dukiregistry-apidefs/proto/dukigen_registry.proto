@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package dukiregistry;
+
+// ── DukigenRegistry Event Types ─────────────────────────────────────────
+// SINGLE SOURCE OF TRUTH → Solidity enum generated via `pnpm gen:sol-enums`.
+enum DukigenEventType {
+  DUKIGEN_EVENT_TYPE_UNSPECIFIED = 0;
+  AGENT_REGISTERED        = 1;
+  AGENT_URI_UPDATED       = 2;
+  AGENT_DUKI_BPS_SET      = 3;
+  AGENT_WORKS_DATA_SET    = 4;
+  AGENT_METADATA_SET      = 5;
+  AGENT_WALLET_SET        = 6;
+  AGENT_WALLET_UNSET      = 7;
+  PAYMENT_PROCESSED       = 8;
+}
+
+// ── Indexed DukigenEvent row ────────────────────────────────────────────
+// Primary key: (chain_eid, evt_seq)
+message DukigenRegistryEvent {
+  uint32              chain_eid    = 1;  // PK part 1
+  uint64              evt_seq      = 2;  // PK part 2
+  uint64              agent_id     = 3;
+  DukigenEventType    event_type   = 4;
+  string              ego          = 5;
+  uint64              evt_time     = 6;
+  string              tx_hash      = 7;
+  uint64              block_number = 8;
+  bytes               event_data   = 9;
+}
+
+// ── Agent record (materialized view from events) ────────────────────────
+message DukigenAgent {
+  uint64          agent_id          = 1;
+  string          name              = 2;
+  string          agent_uri         = 3;
+  string          owner             = 4;
+  uint32          origin_chain_eid  = 5;
+  uint32          default_duki_bps  = 6;
+  uint32          min_duki_bps      = 7;
+  uint32          max_duki_bps      = 8;
+  uint32          product_type      = 9;
+  uint32          duki_type         = 10;
+  string          pledge_url        = 11;
+  repeated string tags              = 12;
+}

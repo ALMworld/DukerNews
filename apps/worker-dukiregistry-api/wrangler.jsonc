@@ -1,0 +1,29 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "duker-registry-worker",
+	"main": "src/index.ts",
+	"compatibility_date": "2025-09-20",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"logpush": false,
+	"upload_source_maps": false,
+	"observability": {
+		"logs": {
+			"enabled": false,
+			"head_sampling_rate": 1
+		}
+	},
+	"vars": {
+		"ENVIRONMENT": "production",
+		"NAME": "duker-registry-worker",
+		"ALLOWED_ORIGINS": "https://dukernews.com,https://app.dukernews.com,http://localhost:*,http://100.*,http://192.168.*,tauri://localhost"
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "duker_registry",
+			"database_id": "00000000-0000-0000-0000-000000000000"
+		}
+	]
+}

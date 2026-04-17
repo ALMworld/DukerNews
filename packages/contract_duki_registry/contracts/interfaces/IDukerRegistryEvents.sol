@@ -1,30 +1,14 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.22;
 
+import { IDukerRegistryEnums } from "./IDukerRegistryEnums.sol";
+
 /// @title IDukerRegistryEvents
 /// @notice Events emitted by DukerRegistry.
 ///         Uses a unified DukerEvent log (matching DukigenRegistry pattern)
 ///         with `username` as a common field on every event.
-interface IDukerRegistryEvents {
-
-    // ══════════════════════════════════════════════════════════════════════════
-    //  EVENT TYPE ENUM
-    // ══════════════════════════════════════════════════════════════════════════
-
-    enum DukerEventType {
-        USER_MINTED,                           // 0
-        IDENTITY_REPLICATE_SENT,               // 1
-        IDENTITY_BURNED,                       // 2
-        IDENTITY_REPLICATE_RECEIVED_PENDING,   // 3 — cross-address, needs manual claim
-        IDENTITY_REPLICATE_RECEIVED_CLAIMED,   // 4 — auto-minted (same addr) or manually claimed
-        IDENTITY_REPLICATE_RECEIVED_REJECTED   // 5 — conflict (see RejectReason)
-    }
-
-    enum RejectReason {
-        ALREADY_REPLICATED,           // 0 — token already exists on this chain
-        ALREADY_HAS_IDENTITY,         // 1 — recipient already owns a different identity
-        USER_REJECTED                 // 2 — recipient explicitly rejected via rejectReplica()
-    }
+///         Enums are inherited from IDukerRegistryEnums (auto-generated from proto).
+interface IDukerRegistryEvents is IDukerRegistryEnums {
 
     // ══════════════════════════════════════════════════════════════════════════
     //  UNIFIED EVENT LOG — DukerEvent (indexed by off-chain services)
@@ -54,27 +38,45 @@ interface IDukerRegistryEvents {
     //  EVENT DATA STRUCTS — ABI-encoded in DukerEvent.eventData
     // ══════════════════════════════════════════════════════════════════════════
 
-    /// @notice Data for IDENTITY_REPLICATE_SENT
+    /// @notice Data for USER_MINTED (eventType=1)
+    ///         Carries the user's initial preferences + optional payment info.
+    struct UserMintedData {
+        uint16 preferDukiBps;       // Preferred DUKI bps for DukerRegistry agent (0 = agent default)
+        uint256 dukigenTokenId;     // DukerRegistry's selfAgentId in DukigenRegistry
+        uint256 experienceAmount;   // Stablecoin amount paid (0 = free mint)
+        address stableCoinAddress;  // ERC-20 used for payment (address(0) = no payment)
+    }
+
+    /// @notice Data for IDENTITY_REPLICATE_SENT (eventType=2)
     struct IdentityReplicateSentData {
         uint32 dstChainEid;
     }
 
-    /// @notice Data for IDENTITY_BURNED
+    /// @notice Data for IDENTITY_BURNED (eventType=3)
     struct IdentityBurnedData {
         uint32 chainEid;
     }
 
-    /// @notice Data for REPLICA_REJECTED
+    /// @notice Data for REPLICA_REJECTED (eventType=6)
     struct ReplicaRejectedData {
         RejectReason reason;
     }
 
-    // Note: USER_MINTED, IDENTITY_REPLICATE_RECEIVED, REPLICA_PENDING,
-    //       REPLICA_CLAIMED carry no extra data beyond the common fields.
+    /// @notice Data for IDENTITY_PREFERENCES_SET (eventType=7)
+    ///         Emitted when user updates their per-agent DUKI bps preference.
+    struct PreferencesSetData {
+        uint256 dukigenAgentId;    // DukigenRegistry agent this preference is for
+        uint16 preferDukiBps;     // Updated DUKI distribution bps
+    }
+
+    // Note: IDENTITY_REPLICATE_RECEIVED_PENDING (4), IDENTITY_REPLICATE_RECEIVED_CLAIMED (5)
+    //       carry no extra data beyond the common event fields.
 
     // ── ABI Helpers — expose struct types for wagmi/viem codegen ─────────────
 
+    error _ABI_UserMintedData(UserMintedData data);
     error _ABI_IdentityReplicateSentData(IdentityReplicateSentData data);
     error _ABI_IdentityBurnedData(IdentityBurnedData data);
     error _ABI_ReplicaRejectedData(ReplicaRejectedData data);
+    error _ABI_PreferencesSetData(PreferencesSetData data);
 }

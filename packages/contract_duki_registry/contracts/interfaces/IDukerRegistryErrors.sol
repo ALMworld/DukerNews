@@ -14,4 +14,5 @@ interface IDukerRegistryErrors {
     error AlreadyHasIdentity();
     error AlreadyReplicatedHere(uint256 tokenId);
     error NoPendingReplica(uint256 tokenId);
+    error InvalidDukigenAgent(uint256 agentId);
 }

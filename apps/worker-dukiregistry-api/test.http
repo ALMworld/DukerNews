@@ -1,0 +1,123 @@
+
+## ============================================
+## DukerRegistry Worker — API Test Suite
+## ============================================
+## Toggle between local and production:
+@host = http://localhost:8788
+# @host = https://api.dukernews.com
+
+## ============================================
+## Health Check
+## ============================================
+
+### Health
+GET {{host}}/
+
+###
+
+### Dev: Inject chain config (for local testing with Anvil)
+# Run deploy-local.ts first, then paste addresses here
+POST {{host}}/_dev/config
+Content-Type: application/json
+
+{
+    "chainEid": 31337,
+    "dukerRegistryAddress": "0xREPLACE_WITH_PROXY_ADDRESS",
+    "dukigenRegistryAddress": "0x0000000000000000000000000000000000000000",
+    "rpcUrl": "http://127.0.0.1:8545"
+}
+
+###
+
+## ============================================
+## DukerRegistryService (ConnectRPC)
+## ============================================
+
+### GetUsername — by wallet address
+POST {{host}}/dukiregistry.DukerRegistryService/GetUsername
+Content-Type: application/json
+Connect-Protocol-Version: 1
+
+{
+    "address": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "chainEid": 31337
+}
+
+###
+
+### GetUsername — any chain (chainEid = 0)
+POST {{host}}/dukiregistry.DukerRegistryService/GetUsername
+Content-Type: application/json
+Connect-Protocol-Version: 1
+
+{
+    "address": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    "chainEid": 0
+}
+
+###
+
+### GetIdentitiesByToken — lookup by tokenId
+# tokenId format: (chainEid << 224) | seq
+# For local (31337 << 224 | 1) = very large number
+POST {{host}}/dukiregistry.DukerRegistryService/GetIdentitiesByToken
+Content-Type: application/json
+Connect-Protocol-Version: 1
+
+{
+    "tokenId": "4294998633"
+}
+
+###
+
+### NotifyDukerTx — index a DukerRegistry transaction
+# Replace tx_hash with actual tx hash from anvil
+POST {{host}}/dukiregistry.DukerRegistryService/NotifyDukerTx
+Content-Type: application/json
+Connect-Protocol-Version: 1
+
+{
+    "txHash": "0xREPLACE_WITH_ACTUAL_TX_HASH",
+    "chainEid": 31337
+}
+
+###
+
+## ============================================
+## DukigenRegistryService (ConnectRPC)
+## ============================================
+
+### GetAgent — by agentId
+POST {{host}}/dukiregistry.DukigenRegistryService/GetAgent
+Content-Type: application/json
+Connect-Protocol-Version: 1
+
+{
+    "agentId": "1"
+}
+
+###
+
+### GetAgents — paginated list
+POST {{host}}/dukiregistry.DukigenRegistryService/GetAgents
+Content-Type: application/json
+Connect-Protocol-Version: 1
+
+{
+    "page": 1,
+    "perPage": 20
+}
+
+###
+
+### NotifyDukigenTx — index a DukigenRegistry transaction
+POST {{host}}/dukiregistry.DukigenRegistryService/NotifyDukigenTx
+Content-Type: application/json
+Connect-Protocol-Version: 1
+
+{
+    "txHash": "0xREPLACE_WITH_ACTUAL_TX_HASH",
+    "chainEid": 31337
+}
+
+###

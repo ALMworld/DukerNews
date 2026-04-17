@@ -1,0 +1,59 @@
+syntax = "proto3";
+
+package dukiregistry;
+
+// ── DukerRegistry Event Types ──────────────────────────────────────────────
+// THIS IS THE SINGLE SOURCE OF TRUTH for DukerEventType.
+// Solidity enum is auto-generated from this via `pnpm gen:sol-enums`.
+// Both proto and Solidity use 0 = UNSPECIFIED convention.
+enum DukerEventType {
+  DUKER_EVENT_TYPE_UNSPECIFIED               = 0;
+  USER_MINTED                                = 1;
+  IDENTITY_REPLICATE_SENT                    = 2;
+  IDENTITY_BURNED                            = 3;
+  IDENTITY_REPLICATE_RECEIVED_PENDING        = 4;
+  IDENTITY_REPLICATE_RECEIVED_CLAIMED        = 5;
+  IDENTITY_REPLICATE_RECEIVED_REJECTED       = 6;
+  IDENTITY_PREFERENCES_SET                   = 7;
+}
+
+// ── Reject Reason (for IDENTITY_REPLICATE_RECEIVED_REJECTED) ────────────
+// SINGLE SOURCE OF TRUTH → Solidity enum generated via `pnpm gen:sol-enums`.
+enum RejectReason {
+  REJECT_REASON_UNSPECIFIED = 0;
+  ALREADY_REPLICATED        = 1;
+  ALREADY_HAS_IDENTITY      = 2;
+  USER_REJECTED             = 3;
+}
+
+// ── Indexed DukerEvent row ──────────────────────────────────────────────
+// Primary key: (chain_eid, evt_seq) — unique per chain.
+message DukerRegistryEvent {
+  uint32          chain_eid    = 1;  // PK part 1: which chain (LayerZero EID)
+  uint64          evt_seq      = 2;  // PK part 2: event sequence on that chain
+  string          token_id     = 3;  // uint256 as string (too large for uint64)
+  DukerEventType  event_type   = 4;
+  string          ego          = 5;  // Actor wallet address
+  string          username     = 6;  // e.g. "alice.30184"
+  uint64          evt_time     = 7;
+  string          tx_hash      = 8;
+  uint64          block_number = 9;
+  bytes           event_data   = 10; // Raw ABI-encoded event-specific data
+}
+
+// ── Per-agent preference pair ───────────────────────────────────────────
+message AgentPreference {
+  uint64 agent_id    = 1;  // DukigenRegistry agent token ID
+  uint32 prefer_bps  = 2;  // User's preferred DUKI bps for this agent (0 = agent default)
+}
+
+// ── Identity record (materialized view from events) ─────────────────────
+message DukerIdentity {
+  string          username           = 1;  // "alice.30184"
+  string          token_id           = 2;  // uint256 as string
+  string          owner              = 3;  // Wallet address on this chain
+  uint32          origin_eid         = 4;  // Origin chain where first minted
+  repeated uint32 present_on         = 5;  // All chain EIDs where replicated
+  repeated AgentPreference preferences = 6; // Per-agent DUKI bps preferences
+}
+

@@ -1,0 +1,87 @@
+syntax = "proto3";
+
+package dukiregistry;
+
+import "duker_registry.proto";
+import "dukigen_registry.proto";
+
+// ══════════════════════════════════════════════════════════════════════════
+//  DukerRegistry Query + Notify RPCs
+// ══════════════════════════════════════════════════════════════════════════
+
+message GetUsernameReq {
+  string address    = 1;  // Wallet address (case-insensitive)
+  uint32 chain_eid  = 2;  // Optional: 0 = any chain (returns first match)
+}
+
+message GetUsernameResp {
+  DukerIdentity identity = 1;  // null if not found
+}
+
+message GetIdentitiesByTokenReq {
+  string token_id = 1;  // uint256 as string
+}
+
+// ── Webhook / Notify ──
+
+message NotifyDukerTxReq {
+  string tx_hash   = 1;
+  uint32 chain_eid = 2;  // Which chain the tx is on
+}
+
+message NotifyDukerTxResp {
+  repeated DukerRegistryEvent events = 1;
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  DukigenRegistry Query + Notify RPCs
+// ══════════════════════════════════════════════════════════════════════════
+
+message GetAgentReq {
+  uint64 agent_id = 1;
+}
+
+message GetAgentsReq {
+  uint32 page     = 1;
+  uint32 per_page = 2;
+}
+
+message GetAgentsResp {
+  repeated DukigenAgent agents = 1;
+  uint32 total = 2;
+}
+
+message NotifyDukigenTxReq {
+  string tx_hash   = 1;
+  uint32 chain_eid = 2;
+}
+
+message NotifyDukigenTxResp {
+  repeated DukigenRegistryEvent events = 1;
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  Services
+// ══════════════════════════════════════════════════════════════════════════
+
+service DukerRegistryService {
+  // Query username by wallet address (+ optional chain filter)
+  rpc GetUsername(GetUsernameReq) returns (GetUsernameResp);
+
+  // Query all chain presences for a given token ID
+  rpc GetIdentitiesByToken(GetIdentitiesByTokenReq) returns (GetUsernameResp);
+
+  // Notify worker about a new DukerRegistry tx (pull + index)
+  rpc NotifyDukerTx(NotifyDukerTxReq) returns (NotifyDukerTxResp);
+}
+
+service DukigenRegistryService {
+  // Query agent by ID
+  rpc GetAgent(GetAgentReq) returns (DukigenAgent);
+
+  // List agents (paginated)
+  rpc GetAgents(GetAgentsReq) returns (GetAgentsResp);
+
+  // Notify worker about a new DukigenRegistry tx (pull + index)
+  rpc NotifyDukigenTx(NotifyDukigenTxReq) returns (NotifyDukigenTxResp);
+}

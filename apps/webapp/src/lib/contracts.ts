@@ -22,21 +22,24 @@ export const DEFAULT_CHAIN_ID: number =
 export const MIN_APPROVE_MICRO = BigInt(8_000_000)
 
 // ── Contract addresses (non-stablecoin) ──────────────────────────────────────
-export const ADDRESSES: Record<number, { DukerNews: Address; Treasury: Address; DukigenRegistry: Address }> = {
+export const ADDRESSES: Record<number, { DukerNews: Address; Treasury: Address; DukigenRegistry: Address; DukerRegistry: Address }> = {
     [LOCAL_CHAIN_ID]: {
         DukerNews: '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0',
         Treasury: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
         DukigenRegistry: '0x0000000000000000000000000000000000000000', // TODO: deploy
+        DukerRegistry: '0x0000000000000000000000000000000000000000',  // TODO: deploy
     },
     [SEPOLIA_CHAIN_ID]: {
         DukerNews: '0xEEfb66A4656fB695D6f718676A1D57aF023d1F6f',
         Treasury: '0xBB68A2363861d595cfF23abE0AC247fd36c0e7E7',
         DukigenRegistry: '0x0000000000000000000000000000000000000000', // TODO: deploy
+        DukerRegistry: '0x0000000000000000000000000000000000000000',  // TODO: deploy
     },
     [XLAYER_CHAIN_ID]: {
         DukerNews: '0x348C88cC171bffDB9128bc9DEcDa49c0820FB29F',
         Treasury: '0xfe0a6760458A1E75c284B9903ecc64D2B87c00a6',
         DukigenRegistry: '0x0000000000000000000000000000000000000000', // TODO: deploy
+        DukerRegistry: '0x0000000000000000000000000000000000000000',  // TODO: deploy
     },
 }
 
@@ -141,6 +144,68 @@ export function getStablecoins(chainId: number): StablecoinMeta[] {
 // ── ABIs ────────────────────────────────────────────────────────────────────
 // Re-export auto-generated ABIs from @alm/dukernews-dao-contract (wagmi CLI)
 export { dukerNewsAbi, mockUsdtAbi } from '@alm/dukernews-dao-contract'
+
+// DukerRegistry ABI — minimal subset for webapp interactions
+export const dukerRegistryAbi = [
+    {
+        type: 'function',
+        name: 'mintUsername',
+        inputs: [
+            { name: 'displayName', type: 'string', internalType: 'string' },
+            { name: 'preferDukiBps_', type: 'uint16', internalType: 'uint16' },
+            { name: 'experienceAmount', type: 'uint256', internalType: 'uint256' },
+            { name: 'stableCoinAddress', type: 'address', internalType: 'address' },
+        ],
+        outputs: [],
+        stateMutability: 'nonpayable',
+    },
+    {
+        type: 'function',
+        name: 'usernameOf',
+        inputs: [{ name: 'owner', type: 'address', internalType: 'address' }],
+        outputs: [{ name: '', type: 'string', internalType: 'string' }],
+        stateMutability: 'view',
+    },
+    {
+        type: 'function',
+        name: 'preferenceOf',
+        inputs: [
+            { name: 'owner', type: 'address', internalType: 'address' },
+            { name: 'dukigenAgentId', type: 'uint256', internalType: 'uint256' },
+        ],
+        outputs: [{ name: '', type: 'uint16', internalType: 'uint16' }],
+        stateMutability: 'view',
+    },
+    {
+        type: 'function',
+        name: 'setPreference',
+        inputs: [
+            { name: 'dukigenAgentId', type: 'uint256', internalType: 'uint256' },
+            { name: 'preferDukiBps_', type: 'uint16', internalType: 'uint16' },
+        ],
+        outputs: [],
+        stateMutability: 'nonpayable',
+    },
+    {
+        type: 'event',
+        name: 'DukerEvent',
+        inputs: [
+            { name: 'tokenId', type: 'uint256', indexed: true, internalType: 'uint256' },
+            { name: 'evtSeq', type: 'uint64', indexed: true, internalType: 'uint64' },
+            { name: 'eventType', type: 'uint8', indexed: false, internalType: 'enum IDukerRegistryEnums.DukerEventType' },
+            { name: 'ego', type: 'address', indexed: false, internalType: 'address' },
+            { name: 'username', type: 'string', indexed: false, internalType: 'string' },
+            { name: 'evtTime', type: 'uint64', indexed: false, internalType: 'uint64' },
+            { name: 'eventData', type: 'bytes', indexed: false, internalType: 'bytes' },
+        ],
+    },
+    // Errors for decoding reverts
+    { type: 'error', name: 'InvalidName', inputs: [] },
+    { type: 'error', name: 'NameTaken', inputs: [{ name: 'name', type: 'string', internalType: 'string' }] },
+    { type: 'error', name: 'NoIdentity', inputs: [] },
+    { type: 'error', name: 'AlreadyHasIdentity', inputs: [] },
+    { type: 'error', name: 'InvalidDukigenAgent', inputs: [{ name: 'agentId', type: 'uint256', internalType: 'uint256' }] },
+] as const
 
 // ERC20 minimal ABI (approve, allowance, balanceOf) — not contract-specific
 export const ERC20_ABI = [

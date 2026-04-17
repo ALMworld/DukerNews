@@ -22,20 +22,36 @@ const deploy: DeployFunction = async (hre) => {
     const localChainEid = networkConfig.eid
     assert(localChainEid, `Missing eid in network config for ${hre.network.name}`)
 
+    // DukigenRegistry must be deployed first (or use address(0) for tests)
+    const dukigenRegistryAddr = process.env.DUKIGEN_REGISTRY ?? '0x0000000000000000000000000000000000000000'
+
+    // Deploy via UUPS proxy:
+    //   - constructor arg: _lzEndpoint (immutable, set on implementation)
+    //   - initialize(): name, symbol, delegate, localChainEid, dukigenRegistry
     const { address } = await deploy(contractName, {
         from: deployer,
-        args: [
-            'Duker Identity', // name
-            'DUKR', // symbol
-            endpointV2Deployment.address, // LayerZero EndpointV2
-            deployer, // delegate/owner
-            localChainEid, // this chain's LZ EID
-        ],
+        args: [endpointV2Deployment.address], // constructor arg: _lzEndpoint
+        proxy: {
+            proxyContract: 'ERC1967Proxy',
+            proxyArgs: ['{implementation}', '{data}'],
+            execute: {
+                init: {
+                    methodName: 'initialize',
+                    args: [
+                        'Duker Naming System',       // name
+                        'DUKER',                 // symbol
+                        deployer,               // delegate/owner
+                        localChainEid,          // this chain's LZ EID
+                        dukigenRegistryAddr,     // DukigenRegistry address
+                    ],
+                },
+            },
+        },
         log: true,
         skipIfAlreadyDeployed: false,
     })
 
-    console.log(`Deployed contract: ${contractName}, network: ${hre.network.name}, address: ${address}`)
+    console.log(`Deployed contract (UUPS proxy): ${contractName}, network: ${hre.network.name}, address: ${address}`)
 }
 
 deploy.tags = [contractName]

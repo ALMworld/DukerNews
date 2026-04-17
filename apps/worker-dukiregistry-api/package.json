@@ -1,0 +1,36 @@
+{
+	"name": "duker-registry-worker",
+	"version": "0.2.0",
+	"private": true,
+	"sideEffects": false,
+	"type": "module",
+	"scripts": {
+		"build:wrangler": "run-wrangler-build",
+		"check:lint": "run-eslint",
+		"check:types": "run-tsc",
+		"deploy": "run-wrangler-deploy",
+		"dev": "run-wrangler-dev --port 8788 --ip 0.0.0.0",
+		"fix:workers-types": "run-wrangler-types",
+		"test": "run-vitest",
+		"test:deploy": "npx tsx scripts/deploy-local.ts",
+		"test:e2e": "npx tsx scripts/test-e2e.ts",
+		"test:schema": "npx wrangler d1 execute duker_registry --local --file=./schemas/001_duker_registry.sql"
+	},
+	"dependencies": {
+		"@bufbuild/protobuf": "^2.7.0",
+		"@connectrpc/connect": "^2.1.0",
+		"@repo/dukiregistry-apidefs": "workspace:*",
+		"hono": "4.10.7",
+		"viem": "^2.38.6"
+	},
+	"devDependencies": {
+		"@cloudflare/vitest-pool-workers": "0.9.12",
+		"@cloudflare/workers-types": "^4",
+		"@repo/eslint-config": "workspace:*",
+		"@repo/tools": "workspace:*",
+		"@repo/typescript-config": "workspace:*",
+		"@types/node": "22.15.27",
+		"vitest": "3.2.4",
+		"wrangler": "4.54.0"
+	}
+}

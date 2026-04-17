@@ -10,7 +10,7 @@
 import { toBinary } from '@bufbuild/protobuf'
 import { toHex } from 'viem'
 import { EventType, EventDataSchema, type DukerTxReq, deflateRaw } from '@repo/apidefs'
-import { ADDRESSES, dukerNewsAbi, ERC20_ABI, DEFAULT_CHAIN_ID, getDefaultStablecoin, MIN_APPROVE_MICRO } from '../lib/contracts'
+import { ADDRESSES, dukerNewsAbi, dukerRegistryAbi, ERC20_ABI, DEFAULT_CHAIN_ID, getDefaultStablecoin, MIN_APPROVE_MICRO } from '../lib/contracts'
 
 function maxBigInt(a: bigint, b: bigint): bigint { return a > b ? a : b }
 
@@ -75,15 +75,22 @@ export async function directHandle(
             const { username, mintAmount, dukiBps } = payload.value
             const amountMicro = BigInt(mintAmount)
 
-            // Approve stablecoin if needed
-            await ensureAllowance(ctx, stablecoin.address, addrs.DukerNews, amountMicro)
+            // If paying, approve DukerRegistry (it routes payment through DukigenRegistry.payTo)
+            if (amountMicro > 0n) {
+                await ensureAllowance(ctx, stablecoin.address, addrs.DukerRegistry, amountMicro)
+            }
 
             ctx.onStep('executing')
             const contractCall = {
-                address: addrs.DukerNews,
-                abi: dukerNewsAbi,
+                address: addrs.DukerRegistry,
+                abi: dukerRegistryAbi,
                 functionName: 'mintUsername' as const,
-                args: [username, amountMicro, BigInt(dukiBps)],
+                args: [
+                    username,                                          // displayName
+                    dukiBps,                                           // preferDukiBps_
+                    amountMicro,                                       // experienceAmount
+                    stablecoin.address
+                ],
                 account: ctx.address,
             }
             try {
