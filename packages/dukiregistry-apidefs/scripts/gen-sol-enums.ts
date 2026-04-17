@@ -30,19 +30,19 @@ const MAPPINGS: EnumMapping[] = [
     {
         protoEnum: 'DukerEventType',
         protoFile: 'duker_registry.proto',
-        solFile: 'packages/contract_duki_registry/contracts/interfaces/IDukerRegistryEnums.sol',
+        solFile: 'packages/contract_duki_alm_world/contracts/registry/libraries/IDukerRegistryEnums.sol',
         stripPrefix: 'DUKER_EVENT_TYPE_',
     },
     {
         protoEnum: 'RejectReason',
         protoFile: 'duker_registry.proto',
-        solFile: 'packages/contract_duki_registry/contracts/interfaces/IDukerRegistryEnums.sol',
+        solFile: 'packages/contract_duki_alm_world/contracts/registry/libraries/IDukerRegistryEnums.sol',
         stripPrefix: 'REJECT_REASON_',
     },
     {
         protoEnum: 'DukigenEventType',
         protoFile: 'dukigen_registry.proto',
-        solFile: 'packages/contract_duki_registry/contracts/interfaces/IDukigenRegistryEvents.sol',
+        solFile: 'packages/contract_duki_alm_world/contracts/registry/libraries/IDukigenRegistryEvents.sol',
         stripPrefix: 'DUKIGEN_EVENT_TYPE_',
     },
 ]
@@ -128,12 +128,23 @@ console.log('')
 
 // Apply to Solidity files
 for (const [solPath, enums] of byFile) {
-    if (!fs.existsSync(solPath)) {
-        console.warn(`  ⚠ Skipping ${path.basename(solPath)} — file not found`)
-        continue
-    }
+    let content: string
 
-    let content = fs.readFileSync(solPath, 'utf-8')
+    if (!fs.existsSync(solPath)) {
+        // Create a new Solidity file scaffold
+        const baseName = path.basename(solPath, '.sol')
+        content = [
+            '// SPDX-License-Identifier: MIT',
+            'pragma solidity ^0.8.22;',
+            '',
+            `interface ${baseName} {`,
+            '}',
+            '',
+        ].join('\n')
+        console.log(`  + Created ${path.basename(solPath)}`)
+    } else {
+        content = fs.readFileSync(solPath, 'utf-8')
+    }
 
     for (const { enumName, generated } of enums) {
         // Replace existing enum block (including any preceding comment lines with GENERATED)
@@ -146,10 +157,19 @@ for (const [solPath, enums] of byFile) {
             content = content.replace(enumRegex, generated)
             console.log(`  ✓ Updated ${enumName} in ${path.basename(solPath)}`)
         } else {
-            console.warn(`  ⚠ Could not find enum ${enumName} in ${path.basename(solPath)} — skipping`)
+            // Enum not found — insert before the last closing brace
+            const lastBrace = content.lastIndexOf('}')
+            if (lastBrace !== -1) {
+                content = content.slice(0, lastBrace) + '\n' + generated + '\n' + content.slice(lastBrace)
+                console.log(`  + Inserted ${enumName} into ${path.basename(solPath)}`)
+            } else {
+                console.warn(`  ⚠ Could not find insertion point in ${path.basename(solPath)} — skipping ${enumName}`)
+            }
         }
     }
 
+    // Ensure directory exists
+    fs.mkdirSync(path.dirname(solPath), { recursive: true })
     fs.writeFileSync(solPath, content, 'utf-8')
 }
 

@@ -16,7 +16,7 @@
 .PHONY: anvil worker deploy schema e2e test compile clean help
 
 WORKER_DIR := $(shell pwd)
-CONTRACT_DIR := $(WORKER_DIR)/../../packages/contract_duki_registry
+CONTRACT_DIR := $(WORKER_DIR)/../../packages/contract_duki_alm_world
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'

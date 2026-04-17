@@ -42,7 +42,7 @@ const publicClient = createPublicClient({
 // ── Helpers ────────────────────────────────────────────────────
 
 function loadArtifact(path: string): { abi: any[]; bytecode: `0x${string}` } {
-    const contractDir = resolve(__dirname, '../../../packages/contract_duki_registry')
+    const contractDir = resolve(__dirname, '../../../packages/contract_duki_alm_world')
     const json = JSON.parse(readFileSync(resolve(contractDir, path), 'utf-8'))
     const bc = typeof json.bytecode === 'string' ? json.bytecode : json.bytecode?.object
     return { abi: json.abi, bytecode: bc as `0x${string}` }
