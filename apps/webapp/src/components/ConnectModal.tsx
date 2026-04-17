@@ -11,7 +11,7 @@ import { SiweMessage } from 'siwe'
 import { useAuthStore } from '../lib/authStore'
 import { authApi } from '../lib/authService'
 import { queryKeys } from '../client'
-import { DEFAULT_CHAIN_ID } from '../lib/contracts'
+import { DEFAULT_CHAIN_ID, SUPPORTED_CHAINS } from '../lib/contracts'
 import * as m from '../paraglide/messages.js'
 import type { Connector } from 'wagmi'
 
@@ -71,6 +71,16 @@ function LogOutIcon({ className }: { className?: string }) {
     )
 }
 
+function CopyIcon({ className }: { className?: string }) {
+    return (
+        <svg className={className} width="14" height="14" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+        </svg>
+    )
+}
+
 function WalletConnectLogo({ className }: { className?: string }) {
     return (
         <svg className={className} width="24" height="24" viewBox="0 0 300 185" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -112,6 +122,8 @@ export function ConnectModal() {
     const [showMore, setShowMore] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [connectingId, setConnectingId] = useState<string | null>(null)
+    const [copied, setCopied] = useState(false)
+    const [chainDropdownOpen, setChainDropdownOpen] = useState(false)
 
     // Separate WalletConnect from detected wallets
     const { wcConnector, detectedWallets } = useMemo(() => {
@@ -236,6 +248,25 @@ export function ConnectModal() {
 
     const shortAddr = address ? `${address.slice(0, 6)}…${address.slice(-4)}` : ''
 
+    const handleCopyAddress = (e: React.MouseEvent) => {
+        e.stopPropagation()
+        if (!address) return
+        navigator.clipboard.writeText(address).then(() => {
+            setCopied(true)
+            setTimeout(() => setCopied(false), 1500)
+        })
+    }
+
+    const handleSwitchChain = async (cid: number) => {
+        if (cid === chainId) return
+        setChainDropdownOpen(false)
+        try {
+            await switchChainAsync({ chainId: cid })
+        } catch { /* user rejected */ }
+    }
+
+    const currentChainName = SUPPORTED_CHAINS.find(c => c.id === chainId)?.name ?? `Chain ${chainId}`
+
     return (
         <div
             className="fixed inset-0 z-50 flex items-center justify-center"
@@ -352,6 +383,109 @@ export function ConnectModal() {
                                     {isConnected ? shortAddr : 'Choose a wallet to connect'}
                                 </p>
                             </div>
+
+                            {/* Copy + Chain dropdown (when connected) */}
+                            {isConnected && address && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                                    {/* Copy address */}
+                                    <button
+                                        onClick={handleCopyAddress}
+                                        title={copied ? 'Copied!' : 'Copy full address'}
+                                        style={{
+                                            height: 28, borderRadius: 6, border: 'none',
+                                            padding: copied ? '0 8px' : '0 6px',
+                                            background: copied ? 'rgba(34,197,94,0.12)' : 'transparent',
+                                            cursor: 'pointer', transition: 'all 0.2s',
+                                            color: copied ? '#4ade80' : 'var(--muted-foreground)',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            gap: 3, fontSize: 11, fontWeight: 500,
+                                        }}
+                                    >
+                                        {copied
+                                            ? 'Copied!'
+                                            : <CopyIcon />}
+                                    </button>
+
+                                    {/* Chain dropdown */}
+                                    <div style={{ position: 'relative' }}>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                setChainDropdownOpen(v => !v)
+                                            }}
+                                            style={{
+                                                height: 28, padding: '0 8px', borderRadius: 6,
+                                                border: '1px solid var(--border)',
+                                                background: 'var(--muted)',
+                                                color: 'var(--muted-foreground)',
+                                                cursor: 'pointer', transition: 'all 0.15s',
+                                                display: 'flex', alignItems: 'center', gap: 4,
+                                                fontSize: 11, fontWeight: 500,
+                                            }}
+                                        >
+                                            {currentChainName}
+                                            <svg width="8" height="5" viewBox="0 0 8 5" fill="none"
+                                                style={{ opacity: 0.6, transform: chainDropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}>
+                                                <path d="M1 1l3 3 3-3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                            </svg>
+                                        </button>
+                                        {chainDropdownOpen && (
+                                            <>
+                                                {/* Backdrop to close */}
+                                                <div
+                                                    style={{ position: 'fixed', inset: 0, zIndex: 60 }}
+                                                    onClick={(e) => { e.stopPropagation(); setChainDropdownOpen(false) }}
+                                                />
+                                                {/* Dropdown menu */}
+                                                <div style={{
+                                                    position: 'absolute', top: '100%', right: 0, marginTop: 4,
+                                                    minWidth: 140, borderRadius: 10, zIndex: 61,
+                                                    border: '1px solid var(--border)',
+                                                    background: 'var(--card, #1a1c2e)',
+                                                    boxShadow: '0 8px 30px rgba(0,0,0,0.4)',
+                                                    padding: 4,
+                                                }}>
+                                                    {SUPPORTED_CHAINS.map(c => {
+                                                        const on = chainId === c.id
+                                                        return (
+                                                            <button key={c.id}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation()
+                                                                    handleSwitchChain(c.id)
+                                                                }}
+                                                                style={{
+                                                                    width: '100%', display: 'flex', alignItems: 'center',
+                                                                    gap: 8, padding: '8px 10px', borderRadius: 7,
+                                                                    border: 'none', textAlign: 'left',
+                                                                    background: on ? 'rgba(34,197,94,0.08)' : 'transparent',
+                                                                    color: on ? '#4ade80' : 'var(--foreground)',
+                                                                    cursor: on ? 'default' : 'pointer',
+                                                                    fontSize: 13, fontWeight: on ? 600 : 400,
+                                                                    transition: 'background 0.15s',
+                                                                }}
+                                                                onMouseEnter={(e) => {
+                                                                    if (!on) (e.currentTarget as HTMLElement).style.background = 'var(--muted)'
+                                                                }}
+                                                                onMouseLeave={(e) => {
+                                                                    if (!on) (e.currentTarget as HTMLElement).style.background = 'transparent'
+                                                                }}
+                                                            >
+                                                                <span style={{ flex: 1 }}>{c.name}</span>
+                                                                {on && (
+                                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                                                        stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                                                        <polyline points="20 6 9 17 4 12" />
+                                                                    </svg>
+                                                                )}
+                                                            </button>
+                                                        )
+                                                    })}
+                                                </div>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Wallet action buttons */}
                             {!isConnected && (

@@ -108,9 +108,10 @@ function MintPanel({ address }: { address: string }) {
         if (dukiBps < 5000 || dukiBps > 9900) return
         if (payment.amount < 0.01) return
 
-        if (chainId !== DEFAULT_CHAIN_ID) {
+        const targetChainId = payment.chainId || DEFAULT_CHAIN_ID
+        if (chainId !== targetChainId) {
             try {
-                await switchChainAsync({ chainId: DEFAULT_CHAIN_ID })
+                await switchChainAsync({ chainId: targetChainId })
             } catch {
                 return
             }

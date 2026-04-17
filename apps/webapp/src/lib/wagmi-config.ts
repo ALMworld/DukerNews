@@ -23,16 +23,12 @@ const projectId =
 
 export { projectId }
 
-// Chain list driven by VITE_DUKER_NEWS_CHAIN env:
-//   xlayer  → X Layer only (production)
-//   sepolia → Sepolia only (testnet)
-//   local   → Anvil + Sepolia (dev)
-// Only the DukerNews chain is registered in wagmi — cross-chain balance reads use
-// the DukiPayment UI fallback ('—') when a non-DukerNews chain is selected.
+// All supported chains are always registered so switchChainAsync works for any chain.
+// VITE_DUKER_NEWS_CHAIN only controls the default chain for the UI, not which chains are available.
 const chains =
-    chainEnv === 'xlayer' ? ([xLayer] as const)
-        : chainEnv === 'sepolia' ? ([sepolia] as const)
-            : ([anvil, sepolia] as const)
+    chainEnv === 'xlayer' ? ([xLayer, sepolia] as const)
+        : chainEnv === 'sepolia' ? ([sepolia, xLayer, anvil] as const)
+            : ([anvil, sepolia, xLayer] as const)
 
 export const wagmiConfig = createConfig({
     chains,
@@ -44,7 +40,7 @@ export const wagmiConfig = createConfig({
     transports: {
         [xLayer.id]: http(),
         [sepolia.id]: http('https://1rpc.io/sepolia'),
-        ...(chainEnv === 'local' ? { [anvil.id]: http('http://127.0.0.1:8545') } : {}),
+        [anvil.id]: http('http://127.0.0.1:8545'),
     } as any,
     ssr: true,
     storage: createStorage({ storage: cookieStorage }),

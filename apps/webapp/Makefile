@@ -30,7 +30,7 @@ DEPLOYER_XLAYER = 0xd495eb837423d8749aaed557550249542f749b3f
 RPC_XLAYER  ?= https://rpc.xlayer.tech
 RPC_SEPOLIA ?= https://1rpc.io/sepolia
 
-.PHONY: check-key dev-xlayer dev-sepolia dev-local test-okx-api
+.PHONY: check-key dev-xlayer dev-sepolia dev-local reset-db anvil-local deploy-local fund-local test-okx-api
 
 check-key:
 ifndef PRIVATE_KEY_PROD
@@ -74,6 +74,58 @@ dev-local:
 	CHAIN=local \
 	VITE_CHAIN=local \
 	pnpm dev
+
+# ── Database reset ────────────────────────────────────────────────────────────
+# Wipes the local D1 SQLite database used by wrangler dev.
+# Schema migrations re-run automatically on next request.
+
+reset-db:
+	@echo "=== Truncating local D1 tables ==="
+	pnpm wrangler d1 execute duker-news-db --local \
+		--command "DELETE FROM translations; DELETE FROM duker_payments; DELETE FROM user_interactions; DELETE FROM events; DELETE FROM comments; DELETE FROM posts; DELETE FROM users;"
+	@echo "✓ All table data cleared. Schema preserved."
+
+# ── Local Anvil deploy + fund ─────────────────────────────────────────────────
+# anvil-local:  Start Anvil with persistent state (survives restarts).
+# deploy-local: Deploys MockUSDT + DukerNews on Anvil.
+# fund-local:   Sends ETH + mints MockUSDT to FUND_TO.
+#
+# Workflow:
+#   1. make anvil-local     (in a separate terminal)
+#   2. make deploy-local    (once, after fresh anvil)
+#   3. make fund-local      (as needed)
+
+DAO_PKG         = ../../packages/contract-dukernews-dao
+ANVIL_RPC       = http://127.0.0.1:8545
+ANVIL_KEY_0     = 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
+ANVIL_STATE     = .anvil-state.json
+FUND_TO        ?= 0xBB68A2363861d595cfF23abE0AC247fd36c0e7E7
+FUND_ETH       ?= 10
+FUND_USDT      ?= 10000
+
+anvil-local:
+	@echo "=== Starting Anvil with persistent state ==="
+	anvil --dump-state $(ANVIL_STATE) $(if $(wildcard $(ANVIL_STATE)),--load-state $(ANVIL_STATE),)
+
+deploy-local:
+	@echo "=== Deploying MockUSDT + DukerNews on Anvil ==="
+	cd $(DAO_PKG) && \
+	forge script script/DeployDukerRegistry.s.sol \
+		--rpc-url $(ANVIL_RPC) --broadcast
+	@echo "✓ Deploy complete. Addresses:"
+	@cat $(DAO_PKG)/deployments/local.json
+
+fund-local:
+	@echo "=== Funding $(FUND_TO) on Anvil ==="
+	@USDT_ADDR=$$(python3 -c "import json; print(json.load(open('$(DAO_PKG)/deployments/local.json'))['MockUSDT'])") && \
+	echo "→ MockUSDT at $$USDT_ADDR" && \
+	echo "→ Sending $(FUND_ETH) ETH…" && \
+	cast send $(FUND_TO) --value $(FUND_ETH)ether \
+		--rpc-url $(ANVIL_RPC) --private-key $(ANVIL_KEY_0) && \
+	echo "→ Minting $(FUND_USDT) MockUSDT…" && \
+	cast send $$USDT_ADDR "mint(address,uint256)" $(FUND_TO) $$(echo "$(FUND_USDT) * 1000000" | bc) \
+		--rpc-url $(ANVIL_RPC) --private-key $(ANVIL_KEY_0) && \
+	echo "✓ Funded: $(FUND_ETH) ETH + $(FUND_USDT) USDT → $(FUND_TO)"
 
 # ── OKX API smoke test ────────────────────────────────────────────────────────
 #

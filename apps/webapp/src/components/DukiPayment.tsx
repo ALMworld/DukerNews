@@ -16,7 +16,7 @@
 import { useState, useCallback, useEffect } from 'react'
 import { cn } from '@/lib/utils'
 import { Wallet, Zap, ExternalLink, Copy, Check, AlertTriangle } from 'lucide-react'
-import { useAccount, useReadContract, useBalance } from 'wagmi'
+import { useAccount, useChainId, useSwitchChain, useReadContract, useBalance } from 'wagmi'
 import {
     ADDRESSES, LOCAL_CHAIN_ID, DEFAULT_CHAIN_ID, SUPPORTED_CHAINS,
     ERC20_ABI, getDefaultStablecoin, getStablecoins,
@@ -155,9 +155,9 @@ export function DukiPayment({
     // Use wagmi address if available, otherwise fall back to prop
     const address = (wagmiAddress ?? walletAddress) as `0x${string}` | undefined
 
-    // ── Chain selector state ──
-    // Default to DEFAULT_CHAIN_ID (from env), user can switch within SUPPORTED_CHAINS
-    const [selectedChainId, setSelectedChainId] = useState(DEFAULT_CHAIN_ID)
+    // ── Chain state — sourced from wagmi (single source of truth) ──
+    const selectedChainId = useChainId() ?? DEFAULT_CHAIN_ID
+    const { switchChainAsync } = useSwitchChain()
     const selectedMeta = getChainMeta(selectedChainId)
     const isHomeChain = selectedMeta?.isHome ?? false
 
@@ -212,10 +212,14 @@ export function DukiPayment({
         emitChange(currentAmount, method)
     }, [effectiveBalance, currentAmount, method])
 
-    // ── Chain switch handler ──
-    const handleChainSwitch = (cid: number) => {
-        if (disabled) return
-        setSelectedChainId(cid)
+    // ── Chain switch handler — calls wagmi switchChainAsync (global state) ──
+    const handleChainSwitch = async (cid: number) => {
+        if (disabled || cid === selectedChainId) return
+        try {
+            await switchChainAsync({ chainId: cid })
+        } catch {
+            return // user rejected or switch failed
+        }
         const meta = getChainMeta(cid)
         // Non-DukerNews chains: force x402
         const m = (meta?.isHome ?? false) ? method : 'x402'

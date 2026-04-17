@@ -24,7 +24,7 @@ export const MIN_APPROVE_MICRO = BigInt(8_000_000)
 // ── Contract addresses (non-stablecoin) ──────────────────────────────────────
 export const ADDRESSES: Record<number, { DukerNews: Address; Treasury: Address; DukigenRegistry: Address; DukerRegistry: Address }> = {
     [LOCAL_CHAIN_ID]: {
-        DukerNews: '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0',
+        DukerNews: '0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e',
         Treasury: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
         DukigenRegistry: '0x0000000000000000000000000000000000000000', // TODO: deploy
         DukerRegistry: '0x0000000000000000000000000000000000000000',  // TODO: deploy
@@ -109,8 +109,8 @@ export const SUPPORTED_CHAINS: ChainMeta[] = [
         id: LOCAL_CHAIN_ID,
         name: 'Anvil',
         stablecoins: [
-            { symbol: 'USDT (Mock)', name: 'Mock USDT', address: '0x5FbDB2315678afecb367f032d93F642f64180aa3' as Address, decimals: 6 },
-            { symbol: 'USDC (Mock)', name: 'Mock USDC', address: '0x5FbDB2315678afecb367f032d93F642f64180aa3' as Address, decimals: 6 },
+            { symbol: 'USDT (Mock)', name: 'Mock USDT', address: '0x8A791620dd6260079BF849Dc5567aDC3F2FdC318' as Address, decimals: 6 },
+            { symbol: 'USDC (Mock)', name: 'Mock USDC', address: '0x8A791620dd6260079BF849Dc5567aDC3F2FdC318' as Address, decimals: 6 },
         ],
         explorerUrl: '',
         isHome: DEFAULT_CHAIN_ID === LOCAL_CHAIN_ID,
@@ -121,7 +121,7 @@ export const SUPPORTED_CHAINS: ChainMeta[] = [
     const addrs = ADDRESSES[c.id]
     if (!addrs || addrs.DukerNews === '0x0000000000000000000000000000000000000000') return false
     // DEMO_MODE: only show the active chain
-    if (DEMO_MODE || true) return c.id === DEFAULT_CHAIN_ID
+    if (DEMO_MODE) return c.id === DEFAULT_CHAIN_ID
     return true
 })
 
@@ -145,67 +145,8 @@ export function getStablecoins(chainId: number): StablecoinMeta[] {
 // Re-export auto-generated ABIs from @alm/dukernews-dao-contract (wagmi CLI)
 export { dukerNewsAbi, mockUsdtAbi } from '@alm/dukernews-dao-contract'
 
-// DukerRegistry ABI — minimal subset for webapp interactions
-export const dukerRegistryAbi = [
-    {
-        type: 'function',
-        name: 'mintUsername',
-        inputs: [
-            { name: 'displayName', type: 'string', internalType: 'string' },
-            { name: 'preferDukiBps_', type: 'uint16', internalType: 'uint16' },
-            { name: 'experienceAmount', type: 'uint256', internalType: 'uint256' },
-            { name: 'stableCoinAddress', type: 'address', internalType: 'address' },
-        ],
-        outputs: [],
-        stateMutability: 'nonpayable',
-    },
-    {
-        type: 'function',
-        name: 'usernameOf',
-        inputs: [{ name: 'owner', type: 'address', internalType: 'address' }],
-        outputs: [{ name: '', type: 'string', internalType: 'string' }],
-        stateMutability: 'view',
-    },
-    {
-        type: 'function',
-        name: 'preferenceOf',
-        inputs: [
-            { name: 'owner', type: 'address', internalType: 'address' },
-            { name: 'dukigenAgentId', type: 'uint256', internalType: 'uint256' },
-        ],
-        outputs: [{ name: '', type: 'uint16', internalType: 'uint16' }],
-        stateMutability: 'view',
-    },
-    {
-        type: 'function',
-        name: 'setPreference',
-        inputs: [
-            { name: 'dukigenAgentId', type: 'uint256', internalType: 'uint256' },
-            { name: 'preferDukiBps_', type: 'uint16', internalType: 'uint16' },
-        ],
-        outputs: [],
-        stateMutability: 'nonpayable',
-    },
-    {
-        type: 'event',
-        name: 'DukerEvent',
-        inputs: [
-            { name: 'tokenId', type: 'uint256', indexed: true, internalType: 'uint256' },
-            { name: 'evtSeq', type: 'uint64', indexed: true, internalType: 'uint64' },
-            { name: 'eventType', type: 'uint8', indexed: false, internalType: 'enum IDukerRegistryEnums.DukerEventType' },
-            { name: 'ego', type: 'address', indexed: false, internalType: 'address' },
-            { name: 'username', type: 'string', indexed: false, internalType: 'string' },
-            { name: 'evtTime', type: 'uint64', indexed: false, internalType: 'uint64' },
-            { name: 'eventData', type: 'bytes', indexed: false, internalType: 'bytes' },
-        ],
-    },
-    // Errors for decoding reverts
-    { type: 'error', name: 'InvalidName', inputs: [] },
-    { type: 'error', name: 'NameTaken', inputs: [{ name: 'name', type: 'string', internalType: 'string' }] },
-    { type: 'error', name: 'NoIdentity', inputs: [] },
-    { type: 'error', name: 'AlreadyHasIdentity', inputs: [] },
-    { type: 'error', name: 'InvalidDukigenAgent', inputs: [{ name: 'agentId', type: 'uint256', internalType: 'uint256' }] },
-] as const
+// Re-export auto-generated ABIs from contract_duki_alm_world (wagmi CLI)
+export { dukerRegistryAbi, dukigenRegistryAbi } from 'contract-duki-alm-world'
 
 // ERC20 minimal ABI (approve, allowance, balanceOf) — not contract-specific
 export const ERC20_ABI = [
@@ -238,45 +179,3 @@ export const ERC20_ABI = [
     },
 ] as const
 
-// ── DukigenRegistry ABI (minimal — functions + errors needed by webapp) ──────
-export const dukigenRegistryAbi = [
-	{ type: 'error', inputs: [{ name: 'name', type: 'string' }], name: 'AgentNameTaken' },
-	{ type: 'error', inputs: [{ name: 'agentId', type: 'uint256' }], name: 'AgentNotFound' },
-	{ type: 'error', inputs: [], name: 'InvalidAgentName' },
-	{ type: 'error', inputs: [{ name: 'min', type: 'uint16' }, { name: 'max', type: 'uint16' }, { name: 'defaultBps', type: 'uint16' }], name: 'InvalidDukiBpsConfig' },
-	{ type: 'error', inputs: [{ name: 'agentId', type: 'uint256' }], name: 'NotAgentOwner' },
-	{ type: 'function', name: 'getAgent', stateMutability: 'view',
-		inputs: [{ name: 'agentId', type: 'uint256' }],
-		outputs: [{ name: '', type: 'tuple', components: [
-			{ name: 'name', type: 'string' }, { name: 'agentURI', type: 'string' },
-			{ name: 'originChainEid', type: 'uint32' }, { name: 'defaultDukiBps', type: 'uint16' },
-			{ name: 'minDukiBps', type: 'uint16' }, { name: 'maxDukiBps', type: 'uint16' },
-			{ name: 'productType', type: 'uint8' }, { name: 'dukiType', type: 'uint8' },
-			{ name: 'pledgeUrl', type: 'string' }, { name: 'tags', type: 'string[]' },
-		] }],
-	},
-	{ type: 'function', name: 'isRegistered', stateMutability: 'view',
-		inputs: [{ name: 'agentId', type: 'uint256' }], outputs: [{ name: '', type: 'bool' }] },
-	{ type: 'function', name: 'totalAgents', stateMutability: 'view',
-		inputs: [], outputs: [{ name: '', type: 'uint256' }] },
-	{ type: 'function', name: 'nameToAgentId', stateMutability: 'view',
-		inputs: [{ name: '', type: 'string' }], outputs: [{ name: '', type: 'uint256' }] },
-	{ type: 'function', name: 'ownerOf', stateMutability: 'view',
-		inputs: [{ name: 'tokenId', type: 'uint256' }], outputs: [{ name: '', type: 'address' }] },
-	{ type: 'function', name: 'balanceOf', stateMutability: 'view',
-		inputs: [{ name: 'owner', type: 'address' }], outputs: [{ name: '', type: 'uint256' }] },
-	{ type: 'function', name: 'register', stateMutability: 'nonpayable',
-		inputs: [
-			{ name: 'agentName', type: 'string' }, { name: '_agentURI', type: 'string' },
-			{ name: 'defaultDukiBps', type: 'uint16' }, { name: 'minDukiBps', type: 'uint16' },
-			{ name: 'maxDukiBps', type: 'uint16' }, { name: 'productType', type: 'uint8' },
-			{ name: 'dukiType', type: 'uint8' }, { name: 'pledgeUrl', type: 'string' },
-			{ name: 'tags', type: 'string[]' },
-		], outputs: [{ name: 'agentId', type: 'uint256' }] },
-	{ type: 'function', name: 'setWorksData', stateMutability: 'nonpayable',
-		inputs: [
-			{ name: 'agentId', type: 'uint256' }, { name: 'productType', type: 'uint8' },
-			{ name: 'dukiType', type: 'uint8' }, { name: 'pledgeUrl', type: 'string' },
-			{ name: 'tags', type: 'string[]' },
-		], outputs: [] },
-] as const
