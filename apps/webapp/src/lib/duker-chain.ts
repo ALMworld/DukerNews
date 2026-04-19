@@ -15,7 +15,7 @@
  */
 
 import { ADDRESSES, SUPPORTED_CHAINS, LOCAL_CHAIN_ID, SEPOLIA_CHAIN_ID, XLAYER_CHAIN_ID } from './contracts'
-import { createPublicClient, createWalletClient, http, type Address } from 'viem'
+import { createPublicClient, createWalletClient, http } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 
 // Anvil account #0 — local dev fallback only
@@ -43,7 +43,7 @@ export function getDukerChain() {
         case 'sepolia':
             return {
                 chainId: SEPOLIA_CHAIN_ID,
-                addrs: ADDRESSES[SEPOLIA_CHAIN_ID] as { DukerNews: Address; Treasury: Address },
+                addrs: ADDRESSES[SEPOLIA_CHAIN_ID],
                 deployBlock: 10_536_920n,  // DukerNews proxy deploy block (2026-03-28 fresh deploy)
                 viemChain: {
                     id: SEPOLIA_CHAIN_ID,

@@ -75,9 +75,9 @@ export async function directHandle(
             const { username, mintAmount, dukiBps } = payload.value
             const amountMicro = BigInt(mintAmount)
 
-            // If paying, approve DukerRegistry (it routes payment through DukigenRegistry.payTo)
+            // If paying, approve DukigenRegistry (it calls transferFrom in payTo)
             if (amountMicro > 0n) {
-                await ensureAllowance(ctx, stablecoin.address, addrs.DukerRegistry, amountMicro)
+                await ensureAllowance(ctx, stablecoin.address, addrs.DukigenRegistry, amountMicro)
             }
 
             ctx.onStep('executing')

@@ -42,39 +42,14 @@ export async function materializeIdentity(db: D1Database, evt: PulledDukerEvent)
 
             await db.prepare(`
                 INSERT OR REPLACE INTO duker_users
-                (chain_eid, token_id, owner, username, display_name, origin_eid, status, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?)
+                (token_id, username, chain_eid, ego, display_name, status, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, 'active', ?, ?)
             `).bind(
-                evt.chainEid,
                 evt.tokenId.toString(),
-                evt.ego,
                 evt.username,
-                displayName,
-                evt.chainEid, // origin = this chain for mints
-                Number(evt.evtTime),
-                now,
-            ).run()
-            break
-        }
-
-        case DukerEventType.IDENTITY_REPLICATE_RECEIVED_CLAIMED: {
-            // Replica arrived on this chain — insert new user row
-            const dotIdx = evt.username.lastIndexOf('.')
-            const displayName = dotIdx > 0 ? evt.username.substring(0, dotIdx) : evt.username
-            // Extract origin EID from username suffix
-            const originEid = dotIdx > 0 ? parseInt(evt.username.substring(dotIdx + 1), 10) : evt.chainEid
-
-            await db.prepare(`
-                INSERT OR REPLACE INTO duker_users
-                (chain_eid, token_id, owner, username, display_name, origin_eid, status, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?)
-            `).bind(
                 evt.chainEid,
-                evt.tokenId.toString(),
                 evt.ego,
-                evt.username,
                 displayName,
-                originEid,
                 Number(evt.evtTime),
                 now,
             ).run()
@@ -84,8 +59,8 @@ export async function materializeIdentity(db: D1Database, evt: PulledDukerEvent)
         case DukerEventType.IDENTITY_BURNED: {
             await db.prepare(`
                 UPDATE duker_users SET status = 'burned', updated_at = ?
-                WHERE chain_eid = ? AND token_id = ?
-            `).bind(now, evt.chainEid, evt.tokenId.toString()).run()
+                WHERE token_id = ?
+            `).bind(now, evt.tokenId.toString()).run()
             break
         }
 
@@ -96,8 +71,17 @@ export async function materializeIdentity(db: D1Database, evt: PulledDukerEvent)
             break
         }
 
+        case DukerEventType.PROFILE_UPDATED: {
+            // eventData contains (bio, website) — ABI-encoded
+            // TODO: decode ABI and update bio/website columns
+            await db.prepare(`
+                UPDATE duker_users SET updated_at = ?
+                WHERE token_id = ?
+            `).bind(now, evt.tokenId.toString()).run()
+            break
+        }
+
         default:
-            // REPLICATE_SENT, REPLICATE_RECEIVED_PENDING, REJECTED — log only
             break
     }
 }

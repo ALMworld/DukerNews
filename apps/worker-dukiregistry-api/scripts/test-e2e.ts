@@ -32,7 +32,7 @@ try {
 }
 
 const RPC_URL = deployInfo.rpcUrl
-const WORKER_URL = 'http://localhost:8788'
+const WORKER_URL = 'http://localhost:8787'
 const CHAIN_EID = deployInfo.chainEid
 
 const account = privateKeyToAccount(deployInfo.deployerPrivateKey)
@@ -171,8 +171,8 @@ async function main() {
         `Worker returned username: "${getUserResp.identity?.username}"`
     )
     assert(
-        getUserResp.identity?.owner?.toLowerCase() === account.address.toLowerCase(),
-        `Owner matches: ${getUserResp.identity?.owner}`
+        getUserResp.identity?.ego?.toLowerCase() === account.address.toLowerCase(),
+        `Ego matches: ${getUserResp.identity?.ego}`
     )
 
     // ── 6. Query GetIdentitiesByToken ────────────────────────

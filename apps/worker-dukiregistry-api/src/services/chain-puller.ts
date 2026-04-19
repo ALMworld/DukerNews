@@ -2,7 +2,7 @@
  * chain-puller.ts — Fetch tx receipts from chain and extract registry events.
  */
 
-import { createPublicClient, http, type Log } from 'viem'
+import { createPublicClient, http, decodeEventLog, type Log } from 'viem'
 import { getChainConfig, DUKER_EVENT_ABI, DUKIGEN_EVENT_ABI } from '../config'
 
 export interface PulledDukerEvent {
@@ -77,9 +77,7 @@ function parseDukerLog(log: Log, chainEid: number, txHash: string, blockNumber: 
     if (!log.topics[0] || !log.topics[1] || !log.topics[2]) return null
 
     // Check event signature matches
-    const expectedSig = '0x' // Will be computed from ABI
     // Use viem's decodeEventLog for proper parsing
-    const { decodeEventLog } = require('viem') as typeof import('viem')
     try {
         const decoded = decodeEventLog({
             abi: DUKER_EVENT_ABI,
@@ -105,7 +103,6 @@ function parseDukerLog(log: Log, chainEid: number, txHash: string, blockNumber: 
 }
 
 function parseDukigenLog(log: Log, chainEid: number, txHash: string, blockNumber: bigint): PulledDukigenEvent | null {
-    const { decodeEventLog } = require('viem') as typeof import('viem')
     try {
         const decoded = decodeEventLog({
             abi: DUKIGEN_EVENT_ABI,

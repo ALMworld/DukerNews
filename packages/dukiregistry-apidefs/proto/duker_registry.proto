@@ -9,21 +9,9 @@ package dukiregistry;
 enum DukerEventType {
   DUKER_EVENT_TYPE_UNSPECIFIED               = 0;
   USER_MINTED                                = 1;
-  IDENTITY_REPLICATE_SENT                    = 2;
-  IDENTITY_BURNED                            = 3;
-  IDENTITY_REPLICATE_RECEIVED_PENDING        = 4;
-  IDENTITY_REPLICATE_RECEIVED_CLAIMED        = 5;
-  IDENTITY_REPLICATE_RECEIVED_REJECTED       = 6;
-  IDENTITY_PREFERENCES_SET                   = 7;
-}
-
-// ── Reject Reason (for IDENTITY_REPLICATE_RECEIVED_REJECTED) ────────────
-// SINGLE SOURCE OF TRUTH → Solidity enum generated via `pnpm gen:sol-enums`.
-enum RejectReason {
-  REJECT_REASON_UNSPECIFIED = 0;
-  ALREADY_REPLICATED        = 1;
-  ALREADY_HAS_IDENTITY      = 2;
-  USER_REJECTED             = 3;
+  IDENTITY_BURNED                            = 2;
+  IDENTITY_PREFERENCES_SET                   = 3;
+  PROFILE_UPDATED                            = 4;
 }
 
 // ── Indexed DukerEvent row ──────────────────────────────────────────────
@@ -49,11 +37,11 @@ message AgentPreference {
 
 // ── Identity record (materialized view from events) ─────────────────────
 message DukerIdentity {
-  string          username           = 1;  // "alice.30184"
-  string          token_id           = 2;  // uint256 as string
-  string          owner              = 3;  // Wallet address on this chain
-  uint32          origin_eid         = 4;  // Origin chain where first minted
-  repeated uint32 present_on         = 5;  // All chain EIDs where replicated
-  repeated AgentPreference preferences = 6; // Per-agent DUKI bps preferences
+  string          username           = 1;  // "alice.30184" (PK, encodes origin chain)
+  uint32          chain_eid          = 2;  // Chain where this identity lives
+  string          token_id           = 3;  // On-chain uint256 as string
+  string          ego                = 4;  // Wallet address (case-insensitive)
+  repeated AgentPreference preferences = 5; // Per-agent DUKI bps preferences
+  string          bio                = 6;  // Short biography (max 480 bytes ≈ 160 CJK chars)
+  string          website            = 7;  // Personal/project URL
 }
-

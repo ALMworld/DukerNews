@@ -64,11 +64,13 @@ function MintPanel({ address }: { address: string }) {
     // ── Debounced username availability check (3s after typing stops) ────
     const [nameTaken, setNameTaken] = useState(false)
     const [nameChecking, setNameChecking] = useState(false)
+    const [nameChecked, setNameChecked] = useState(false)
     const checkTimer = useRef<ReturnType<typeof setTimeout>>(null)
 
     useEffect(() => {
         const name = username.trim()
         setNameTaken(false)
+        setNameChecked(false)
 
         if (!name || alreadyMinted || validateName(name)) {
             setNameChecking(false)
@@ -84,6 +86,7 @@ function MintPanel({ address }: { address: string }) {
                 // Only update if name hasn't changed during the request
                 if (username.trim() === name) {
                     setNameTaken(!data.available)
+                    setNameChecked(true)
                 }
             } catch { /* ignore */ }
             setNameChecking(false)
@@ -228,6 +231,9 @@ function MintPanel({ address }: { address: string }) {
                     )}
                     {!nameError && !nameTaken && nameChecking && (
                         <p className="text-xs text-muted-foreground mt-1.5">Checking availability…</p>
+                    )}
+                    {!nameError && !nameTaken && !nameChecking && nameChecked && (
+                        <p className="text-xs mt-1.5" style={{ color: '#22c55e' }}>✓ @{username.trim()} is available</p>
                     )}
                 </div>
 

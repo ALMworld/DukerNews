@@ -22,24 +22,37 @@ export const DEFAULT_CHAIN_ID: number =
 export const MIN_APPROVE_MICRO = BigInt(8_000_000)
 
 // ── Contract addresses (non-stablecoin) ──────────────────────────────────────
-export const ADDRESSES: Record<number, { DukerNews: Address; Treasury: Address; DukigenRegistry: Address; DukerRegistry: Address }> = {
+export const ADDRESSES: Record<number, {
+    DukerNews: Address; Treasury: Address;
+    DukigenRegistry: Address; DukerRegistry: Address;
+    DUKIToken: Address; ALMToken: Address; AlmWorldDukiMinter: Address;
+}> = {
     [LOCAL_CHAIN_ID]: {
-        DukerNews: '0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e',
+        DukerNews: '0xc6e7DF5E7b4f2A278906862b61205850344D4e7d',
         Treasury: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
-        DukigenRegistry: '0x0000000000000000000000000000000000000000', // TODO: deploy
-        DukerRegistry: '0x0000000000000000000000000000000000000000',  // TODO: deploy
+        DukigenRegistry: '0x2279B7A0a67DB372996a5FaB50D91eAA73d2eBe6',
+        DukerRegistry: '0x610178dA211FEF7D417bC0e6FeD39F05609AD788',
+        DUKIToken: '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0',
+        ALMToken: '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9',
+        AlmWorldDukiMinter: '0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9',
     },
     [SEPOLIA_CHAIN_ID]: {
         DukerNews: '0xEEfb66A4656fB695D6f718676A1D57aF023d1F6f',
         Treasury: '0xBB68A2363861d595cfF23abE0AC247fd36c0e7E7',
         DukigenRegistry: '0x0000000000000000000000000000000000000000', // TODO: deploy
         DukerRegistry: '0x0000000000000000000000000000000000000000',  // TODO: deploy
+        DUKIToken: '0x0000000000000000000000000000000000000000',      // TODO: deploy
+        ALMToken: '0x0000000000000000000000000000000000000000',       // TODO: deploy
+        AlmWorldDukiMinter: '0x0000000000000000000000000000000000000000', // TODO: deploy
     },
     [XLAYER_CHAIN_ID]: {
         DukerNews: '0x348C88cC171bffDB9128bc9DEcDa49c0820FB29F',
         Treasury: '0xfe0a6760458A1E75c284B9903ecc64D2B87c00a6',
         DukigenRegistry: '0x0000000000000000000000000000000000000000', // TODO: deploy
         DukerRegistry: '0x0000000000000000000000000000000000000000',  // TODO: deploy
+        DUKIToken: '0x0000000000000000000000000000000000000000',      // TODO: deploy
+        ALMToken: '0x0000000000000000000000000000000000000000',       // TODO: deploy
+        AlmWorldDukiMinter: '0x0000000000000000000000000000000000000000', // TODO: deploy
     },
 }
 
@@ -109,8 +122,7 @@ export const SUPPORTED_CHAINS: ChainMeta[] = [
         id: LOCAL_CHAIN_ID,
         name: 'Anvil',
         stablecoins: [
-            { symbol: 'USDT (Mock)', name: 'Mock USDT', address: '0x8A791620dd6260079BF849Dc5567aDC3F2FdC318' as Address, decimals: 6 },
-            { symbol: 'USDC (Mock)', name: 'Mock USDC', address: '0x8A791620dd6260079BF849Dc5567aDC3F2FdC318' as Address, decimals: 6 },
+            { symbol: 'USDT (Mock)', name: 'Mock USDT', address: '0x5FbDB2315678afecb367f032d93F642f64180aa3' as Address, decimals: 6 },
         ],
         explorerUrl: '',
         isHome: DEFAULT_CHAIN_ID === LOCAL_CHAIN_ID,

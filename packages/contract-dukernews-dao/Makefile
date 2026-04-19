@@ -84,12 +84,11 @@ upgrade-xlayer: check-key
 		--broadcast \
 		-vvv
 
-deploy-local:
+ALM_LOCAL_JSON = ../contract_duki_alm_world/scripts/.deploy-local.json
+
+deploy-local: build
 	@echo "=== Deploying DukerNews + MockUSDT to local Anvil ==="
-	forge script script/DeployDukerRegistry.s.sol:DeployDukerRegistry \
-		--rpc-url http://127.0.0.1:8545 \
-		--broadcast \
-		-vvv
+	pnpm exec tsx scripts/deploy-local.ts
 
 # ═══════════════════════════════════════════════════
 #  OWNERSHIP

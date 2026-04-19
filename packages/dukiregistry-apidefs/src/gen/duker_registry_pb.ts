@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file duker_registry.proto.
  */
 export const file_duker_registry: GenFile = /*@__PURE__*/
-  fileDesc("ChRkdWtlcl9yZWdpc3RyeS5wcm90bxIMZHVraXJlZ2lzdHJ5IugBChJEdWtlclJlZ2lzdHJ5RXZlbnQSEQoJY2hhaW5fZWlkGAEgASgNEg8KB2V2dF9zZXEYAiABKAQSEAoIdG9rZW5faWQYAyABKAkSMAoKZXZlbnRfdHlwZRgEIAEoDjIcLmR1a2lyZWdpc3RyeS5EdWtlckV2ZW50VHlwZRILCgNlZ28YBSABKAkSEAoIdXNlcm5hbWUYBiABKAkSEAoIZXZ0X3RpbWUYByABKAQSDwoHdHhfaGFzaBgIIAEoCRIUCgxibG9ja19udW1iZXIYCSABKAQSEgoKZXZlbnRfZGF0YRgKIAEoDCI3Cg9BZ2VudFByZWZlcmVuY2USEAoIYWdlbnRfaWQYASABKAQSEgoKcHJlZmVyX2JwcxgCIAEoDSKeAQoNRHVrZXJJZGVudGl0eRIQCgh1c2VybmFtZRgBIAEoCRIQCgh0b2tlbl9pZBgCIAEoCRINCgVvd25lchgDIAEoCRISCgpvcmlnaW5fZWlkGAQgASgNEhIKCnByZXNlbnRfb24YBSADKA0SMgoLcHJlZmVyZW5jZXMYBiADKAsyHS5kdWtpcmVnaXN0cnkuQWdlbnRQcmVmZXJlbmNlKo8CCg5EdWtlckV2ZW50VHlwZRIgChxEVUtFUl9FVkVOVF9UWVBFX1VOU1BFQ0lGSUVEEAASDwoLVVNFUl9NSU5URUQQARIbChdJREVOVElUWV9SRVBMSUNBVEVfU0VOVBACEhMKD0lERU5USVRZX0JVUk5FRBADEicKI0lERU5USVRZX1JFUExJQ0FURV9SRUNFSVZFRF9QRU5ESU5HEAQSJwojSURFTlRJVFlfUkVQTElDQVRFX1JFQ0VJVkVEX0NMQUlNRUQQBRIoCiRJREVOVElUWV9SRVBMSUNBVEVfUkVDRUlWRURfUkVKRUNURUQQBhIcChhJREVOVElUWV9QUkVGRVJFTkNFU19TRVQQBypyCgxSZWplY3RSZWFzb24SHQoZUkVKRUNUX1JFQVNPTl9VTlNQRUNJRklFRBAAEhYKEkFMUkVBRFlfUkVQTElDQVRFRBABEhgKFEFMUkVBRFlfSEFTX0lERU5USVRZEAISEQoNVVNFUl9SRUpFQ1RFRBADYgZwcm90bzM");
+  fileDesc("ChRkdWtlcl9yZWdpc3RyeS5wcm90bxIMZHVraXJlZ2lzdHJ5IugBChJEdWtlclJlZ2lzdHJ5RXZlbnQSEQoJY2hhaW5fZWlkGAEgASgNEg8KB2V2dF9zZXEYAiABKAQSEAoIdG9rZW5faWQYAyABKAkSMAoKZXZlbnRfdHlwZRgEIAEoDjIcLmR1a2lyZWdpc3RyeS5EdWtlckV2ZW50VHlwZRILCgNlZ28YBSABKAkSEAoIdXNlcm5hbWUYBiABKAkSEAoIZXZ0X3RpbWUYByABKAQSDwoHdHhfaGFzaBgIIAEoCRIUCgxibG9ja19udW1iZXIYCSABKAQSEgoKZXZlbnRfZGF0YRgKIAEoDCI3Cg9BZ2VudFByZWZlcmVuY2USEAoIYWdlbnRfaWQYASABKAQSEgoKcHJlZmVyX2JwcxgCIAEoDSKlAQoNRHVrZXJJZGVudGl0eRIQCgh1c2VybmFtZRgBIAEoCRIRCgljaGFpbl9laWQYAiABKA0SEAoIdG9rZW5faWQYAyABKAkSCwoDZWdvGAQgASgJEjIKC3ByZWZlcmVuY2VzGAUgAygLMh0uZHVraXJlZ2lzdHJ5LkFnZW50UHJlZmVyZW5jZRILCgNiaW8YBiABKAkSDwoHd2Vic2l0ZRgHIAEoCSqLAQoORHVrZXJFdmVudFR5cGUSIAocRFVLRVJfRVZFTlRfVFlQRV9VTlNQRUNJRklFRBAAEg8KC1VTRVJfTUlOVEVEEAESEwoPSURFTlRJVFlfQlVSTkVEEAISHAoYSURFTlRJVFlfUFJFRkVSRU5DRVNfU0VUEAMSEwoPUFJPRklMRV9VUERBVEVEEARiBnByb3RvMw");
 
 /**
  * ── Indexed DukerEvent row ──────────────────────────────────────────────
@@ -124,46 +124,53 @@ export const AgentPreferenceSchema: GenMessage<AgentPreference> = /*@__PURE__*/
  */
 export type DukerIdentity = Message<"dukiregistry.DukerIdentity"> & {
   /**
-   * "alice.30184"
+   * "alice.30184" (PK, encodes origin chain)
    *
    * @generated from field: string username = 1;
    */
   username: string;
 
   /**
-   * uint256 as string
+   * Chain where this identity lives
    *
-   * @generated from field: string token_id = 2;
+   * @generated from field: uint32 chain_eid = 2;
+   */
+  chainEid: number;
+
+  /**
+   * On-chain uint256 as string
+   *
+   * @generated from field: string token_id = 3;
    */
   tokenId: string;
 
   /**
-   * Wallet address on this chain
+   * Wallet address (case-insensitive)
    *
-   * @generated from field: string owner = 3;
+   * @generated from field: string ego = 4;
    */
-  owner: string;
-
-  /**
-   * Origin chain where first minted
-   *
-   * @generated from field: uint32 origin_eid = 4;
-   */
-  originEid: number;
-
-  /**
-   * All chain EIDs where replicated
-   *
-   * @generated from field: repeated uint32 present_on = 5;
-   */
-  presentOn: number[];
+  ego: string;
 
   /**
    * Per-agent DUKI bps preferences
    *
-   * @generated from field: repeated dukiregistry.AgentPreference preferences = 6;
+   * @generated from field: repeated dukiregistry.AgentPreference preferences = 5;
    */
   preferences: AgentPreference[];
+
+  /**
+   * Short biography (max 480 bytes ≈ 160 CJK chars)
+   *
+   * @generated from field: string bio = 6;
+   */
+  bio: string;
+
+  /**
+   * Personal/project URL
+   *
+   * @generated from field: string website = 7;
+   */
+  website: string;
 };
 
 /**
@@ -193,34 +200,19 @@ export enum DukerEventType {
   USER_MINTED = 1,
 
   /**
-   * @generated from enum value: IDENTITY_REPLICATE_SENT = 2;
+   * @generated from enum value: IDENTITY_BURNED = 2;
    */
-  IDENTITY_REPLICATE_SENT = 2,
+  IDENTITY_BURNED = 2,
 
   /**
-   * @generated from enum value: IDENTITY_BURNED = 3;
+   * @generated from enum value: IDENTITY_PREFERENCES_SET = 3;
    */
-  IDENTITY_BURNED = 3,
+  IDENTITY_PREFERENCES_SET = 3,
 
   /**
-   * @generated from enum value: IDENTITY_REPLICATE_RECEIVED_PENDING = 4;
+   * @generated from enum value: PROFILE_UPDATED = 4;
    */
-  IDENTITY_REPLICATE_RECEIVED_PENDING = 4,
-
-  /**
-   * @generated from enum value: IDENTITY_REPLICATE_RECEIVED_CLAIMED = 5;
-   */
-  IDENTITY_REPLICATE_RECEIVED_CLAIMED = 5,
-
-  /**
-   * @generated from enum value: IDENTITY_REPLICATE_RECEIVED_REJECTED = 6;
-   */
-  IDENTITY_REPLICATE_RECEIVED_REJECTED = 6,
-
-  /**
-   * @generated from enum value: IDENTITY_PREFERENCES_SET = 7;
-   */
-  IDENTITY_PREFERENCES_SET = 7,
+  PROFILE_UPDATED = 4,
 }
 
 /**
@@ -228,38 +220,4 @@ export enum DukerEventType {
  */
 export const DukerEventTypeSchema: GenEnum<DukerEventType> = /*@__PURE__*/
   enumDesc(file_duker_registry, 0);
-
-/**
- * ── Reject Reason (for IDENTITY_REPLICATE_RECEIVED_REJECTED) ────────────
- * SINGLE SOURCE OF TRUTH → Solidity enum generated via `pnpm gen:sol-enums`.
- *
- * @generated from enum dukiregistry.RejectReason
- */
-export enum RejectReason {
-  /**
-   * @generated from enum value: REJECT_REASON_UNSPECIFIED = 0;
-   */
-  REJECT_REASON_UNSPECIFIED = 0,
-
-  /**
-   * @generated from enum value: ALREADY_REPLICATED = 1;
-   */
-  ALREADY_REPLICATED = 1,
-
-  /**
-   * @generated from enum value: ALREADY_HAS_IDENTITY = 2;
-   */
-  ALREADY_HAS_IDENTITY = 2,
-
-  /**
-   * @generated from enum value: USER_REJECTED = 3;
-   */
-  USER_REJECTED = 3,
-}
-
-/**
- * Describes the enum dukiregistry.RejectReason.
- */
-export const RejectReasonSchema: GenEnum<RejectReason> = /*@__PURE__*/
-  enumDesc(file_duker_registry, 1);
 

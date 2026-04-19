@@ -69,3 +69,7 @@ onchainos-skills/
 
 # webapp secrets
 apps/webapp/.env
+
+# Local Anvil state & deploy artifacts
+.anvil-state.json
+**/.deploy-local.json

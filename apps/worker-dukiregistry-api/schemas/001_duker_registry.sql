@@ -5,22 +5,22 @@
 --  DUKER REGISTRY — Identity events
 -- ═══════════════════════════════════════════════════════════
 
--- Materialized identity view (one row per user per chain)
+-- Materialized identity view (one row per user)
 CREATE TABLE IF NOT EXISTS duker_users (
-    chain_eid       INTEGER NOT NULL,
-    token_id        TEXT    NOT NULL,   -- uint256 as text
-    owner           TEXT    NOT NULL,   -- wallet address (lower-case)
-    username        TEXT    NOT NULL,   -- "alice.30184"
-    display_name    TEXT    NOT NULL,   -- "alice"
-    origin_eid      INTEGER NOT NULL,
+    token_id        TEXT    NOT NULL PRIMARY KEY,  -- EID-encoded uint256 (globally unique across chains)
+    username        TEXT    NOT NULL UNIQUE,        -- "alice.30184" (globally unique, encodes origin chain)
+    chain_eid       INTEGER NOT NULL,              -- chain where this identity lives
+    ego             TEXT    NOT NULL COLLATE NOCASE, -- wallet address (case-insensitive)
+    display_name    TEXT    NOT NULL,               -- "alice"
     status          TEXT    NOT NULL DEFAULT 'active', -- active | burned
+    bio             TEXT    NOT NULL DEFAULT '',
+    website         TEXT    NOT NULL DEFAULT '',
     created_at      INTEGER NOT NULL,
-    updated_at      INTEGER NOT NULL,
-    PRIMARY KEY (chain_eid, token_id)
+    updated_at      INTEGER NOT NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_duker_users_owner ON duker_users(owner);
-CREATE INDEX IF NOT EXISTS idx_duker_users_username ON duker_users(username);
+CREATE INDEX IF NOT EXISTS idx_duker_users_ego ON duker_users(ego);
+CREATE INDEX IF NOT EXISTS idx_duker_users_chain ON duker_users(chain_eid);
 
 -- Per-agent DUKI bps preferences
 CREATE TABLE IF NOT EXISTS duker_preferences (

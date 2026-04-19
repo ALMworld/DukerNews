@@ -34,16 +34,22 @@ const MAPPINGS: EnumMapping[] = [
         stripPrefix: 'DUKER_EVENT_TYPE_',
     },
     {
-        protoEnum: 'RejectReason',
-        protoFile: 'duker_registry.proto',
-        solFile: 'packages/contract_duki_alm_world/contracts/registry/libraries/IDukerRegistryEnums.sol',
-        stripPrefix: 'REJECT_REASON_',
-    },
-    {
         protoEnum: 'DukigenEventType',
         protoFile: 'dukigen_registry.proto',
-        solFile: 'packages/contract_duki_alm_world/contracts/registry/libraries/IDukigenRegistryEvents.sol',
+        solFile: 'packages/contract_duki_alm_world/contracts/registry/libraries/IDukigenRegistryEnums.sol',
         stripPrefix: 'DUKIGEN_EVENT_TYPE_',
+    },
+    {
+        protoEnum: 'ProductType',
+        protoFile: 'dukigen_registry.proto',
+        solFile: 'packages/contract_duki_alm_world/contracts/registry/libraries/IDukigenRegistryEnums.sol',
+        stripPrefix: 'PRODUCT_TYPE_',
+    },
+    {
+        protoEnum: 'DukiType',
+        protoFile: 'dukigen_registry.proto',
+        solFile: 'packages/contract_duki_alm_world/contracts/registry/libraries/IDukigenRegistryEnums.sol',
+        stripPrefix: 'DUKI_TYPE_',
     },
 ]
 

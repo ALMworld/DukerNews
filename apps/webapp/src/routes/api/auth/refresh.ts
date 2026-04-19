@@ -1,16 +1,6 @@
-/**
- * POST /api/auth/refresh — Verify on-chain username, persist to DB, re-issue JWT.
- *
- * Called once after minting a username on-chain.
- * Flow:
- *   1. Read JWT → get address (guard: only when username is empty)
- *   2. Read on-chain: DukerNews.usernameOf(address)
- *   3. If found → GoAPI MINT_USER to persist to DB
- *   4. Re-issue JWT with verified username + Set-Cookie
- */
 import { createFileRoute } from '@tanstack/react-router'
 import { createPublicClient, http } from 'viem'
-import { dukerNewsAbi } from '../../../lib/contracts'
+import { dukerRegistryAbi } from '../../../lib/contracts'
 import { getDukerChain } from '../../../lib/duker-chain'
 import {
     verifyJwt,
@@ -57,7 +47,7 @@ export const Route = createFileRoute('/api/auth/refresh')({
 
                 const address = payload.ego
 
-                // Step 1: Read on-chain username from DukerNews
+                // Step 1: Read on-chain username from DukerRegistry
                 const { addrs, viemChain, rpcUrl } = getDukerChain()
                 const publicClient = createPublicClient({
                     chain: viemChain as any,
@@ -76,8 +66,8 @@ export const Route = createFileRoute('/api/auth/refresh')({
                 let onChainUsername: string
                 try {
                     onChainUsername = await publicClient.readContract({
-                        address: addrs.DukerNews,
-                        abi: dukerNewsAbi,
+                        address: addrs.DukerRegistry,
+                        abi: dukerRegistryAbi,
                         functionName: 'usernameOf',
                         args: [address as `0x${string}`],
                     }) as string

@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file dukigen_registry.proto.
  */
 export const file_dukigen_registry: GenFile = /*@__PURE__*/
-  fileDesc("ChZkdWtpZ2VuX3JlZ2lzdHJ5LnByb3RvEgxkdWtpcmVnaXN0cnki2gEKFER1a2lnZW5SZWdpc3RyeUV2ZW50EhEKCWNoYWluX2VpZBgBIAEoDRIPCgdldnRfc2VxGAIgASgEEhAKCGFnZW50X2lkGAMgASgEEjIKCmV2ZW50X3R5cGUYBCABKA4yHi5kdWtpcmVnaXN0cnkuRHVraWdlbkV2ZW50VHlwZRILCgNlZ28YBSABKAkSEAoIZXZ0X3RpbWUYBiABKAQSDwoHdHhfaGFzaBgHIAEoCRIUCgxibG9ja19udW1iZXIYCCABKAQSEgoKZXZlbnRfZGF0YRgJIAEoDCL7AQoMRHVraWdlbkFnZW50EhAKCGFnZW50X2lkGAEgASgEEgwKBG5hbWUYAiABKAkSEQoJYWdlbnRfdXJpGAMgASgJEg0KBW93bmVyGAQgASgJEhgKEG9yaWdpbl9jaGFpbl9laWQYBSABKA0SGAoQZGVmYXVsdF9kdWtpX2JwcxgGIAEoDRIUCgxtaW5fZHVraV9icHMYByABKA0SFAoMbWF4X2R1a2lfYnBzGAggASgNEhQKDHByb2R1Y3RfdHlwZRgJIAEoDRIRCglkdWtpX3R5cGUYCiABKA0SEgoKcGxlZGdlX3VybBgLIAEoCRIMCgR0YWdzGAwgAygJKvIBChBEdWtpZ2VuRXZlbnRUeXBlEiIKHkRVS0lHRU5fRVZFTlRfVFlQRV9VTlNQRUNJRklFRBAAEhQKEEFHRU5UX1JFR0lTVEVSRUQQARIVChFBR0VOVF9VUklfVVBEQVRFRBACEhYKEkFHRU5UX0RVS0lfQlBTX1NFVBADEhgKFEFHRU5UX1dPUktTX0RBVEFfU0VUEAQSFgoSQUdFTlRfTUVUQURBVEFfU0VUEAUSFAoQQUdFTlRfV0FMTEVUX1NFVBAGEhYKEkFHRU5UX1dBTExFVF9VTlNFVBAHEhUKEVBBWU1FTlRfUFJPQ0VTU0VEEAhiBnByb3RvMw");
+  fileDesc("ChZkdWtpZ2VuX3JlZ2lzdHJ5LnByb3RvEgxkdWtpcmVnaXN0cnki2gEKFER1a2lnZW5SZWdpc3RyeUV2ZW50EhEKCWNoYWluX2VpZBgBIAEoDRIPCgdldnRfc2VxGAIgASgEEhAKCGFnZW50X2lkGAMgASgEEjIKCmV2ZW50X3R5cGUYBCABKA4yHi5kdWtpcmVnaXN0cnkuRHVraWdlbkV2ZW50VHlwZRILCgNlZ28YBSABKAkSEAoIZXZ0X3RpbWUYBiABKAQSDwoHdHhfaGFzaBgHIAEoCRIUCgxibG9ja19udW1iZXIYCCABKAQSEgoKZXZlbnRfZGF0YRgJIAEoDCL7AQoMRHVraWdlbkFnZW50EhAKCGFnZW50X2lkGAEgASgEEgwKBG5hbWUYAiABKAkSEQoJYWdlbnRfdXJpGAMgASgJEg0KBW93bmVyGAQgASgJEhgKEG9yaWdpbl9jaGFpbl9laWQYBSABKA0SGAoQZGVmYXVsdF9kdWtpX2JwcxgGIAEoDRIUCgxtaW5fZHVraV9icHMYByABKA0SFAoMbWF4X2R1a2lfYnBzGAggASgNEhQKDHByb2R1Y3RfdHlwZRgJIAEoDRIRCglkdWtpX3R5cGUYCiABKA0SEgoKcGxlZGdlX3VybBgLIAEoCRIMCgR0YWdzGAwgAygJKvIBChBEdWtpZ2VuRXZlbnRUeXBlEiIKHkRVS0lHRU5fRVZFTlRfVFlQRV9VTlNQRUNJRklFRBAAEhQKEEFHRU5UX1JFR0lTVEVSRUQQARIVChFBR0VOVF9VUklfVVBEQVRFRBACEhYKEkFHRU5UX0RVS0lfQlBTX1NFVBADEhgKFEFHRU5UX1dPUktTX0RBVEFfU0VUEAQSFgoSQUdFTlRfTUVUQURBVEFfU0VUEAUSFAoQQUdFTlRfV0FMTEVUX1NFVBAGEhYKEkFHRU5UX1dBTExFVF9VTlNFVBAHEhUKEVBBWU1FTlRfUFJPQ0VTU0VEEAgqegoLUHJvZHVjdFR5cGUSHAoYUFJPRFVDVF9UWVBFX1VOU1BFQ0lGSUVEEAASGAoUUFJPRFVDVF9UWVBFX0RJR0lUQUwQARIZChVQUk9EVUNUX1RZUEVfUEhZU0lDQUwQAhIYChRQUk9EVUNUX1RZUEVfU0VSVklDRRADKl4KCER1a2lUeXBlEhkKFURVS0lfVFlQRV9VTlNQRUNJRklFRBAAEhsKF0RVS0lfVFlQRV9SRVZFTlVFX1NIQVJFEAESGgoWRFVLSV9UWVBFX1BST0ZJVF9TSEFSRRACYgZwcm90bzM");
 
 /**
  * ── Indexed DukigenEvent row ────────────────────────────────────────────
@@ -208,4 +208,77 @@ export enum DukigenEventType {
  */
 export const DukigenEventTypeSchema: GenEnum<DukigenEventType> = /*@__PURE__*/
   enumDesc(file_dukigen_registry, 0);
+
+/**
+ * ── Product category for DUKIGEN agents ─────────────────────────────────
+ * SINGLE SOURCE OF TRUTH → Solidity enum generated via `pnpm gen:sol-enums`.
+ *
+ * @generated from enum dukiregistry.ProductType
+ */
+export enum ProductType {
+  /**
+   * @generated from enum value: PRODUCT_TYPE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * Apps, software, SaaS, digital goods
+   *
+   * @generated from enum value: PRODUCT_TYPE_DIGITAL = 1;
+   */
+  DIGITAL = 1,
+
+  /**
+   * Hardware, manufactured goods
+   *
+   * @generated from enum value: PRODUCT_TYPE_PHYSICAL = 2;
+   */
+  PHYSICAL = 2,
+
+  /**
+   * Consulting, professional services
+   *
+   * @generated from enum value: PRODUCT_TYPE_SERVICE = 3;
+   */
+  SERVICE = 3,
+}
+
+/**
+ * Describes the enum dukiregistry.ProductType.
+ */
+export const ProductTypeSchema: GenEnum<ProductType> = /*@__PURE__*/
+  enumDesc(file_dukigen_registry, 1);
+
+/**
+ * ── DUKI contribution model ─────────────────────────────────────────────
+ * SINGLE SOURCE OF TRUTH → Solidity enum generated via `pnpm gen:sol-enums`.
+ *
+ * @generated from enum dukiregistry.DukiType
+ */
+export enum DukiType {
+  /**
+   * @generated from enum value: DUKI_TYPE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * real-time DUKI minting on each payment
+   *
+   * @generated from enum value: DUKI_TYPE_REVENUE_SHARE = 1;
+   */
+  REVENUE_SHARE = 1,
+
+  /**
+   * profit-share pledge, contributed separately
+   *
+   * @generated from enum value: DUKI_TYPE_PROFIT_SHARE = 2;
+   */
+  PROFIT_SHARE = 2,
+}
+
+/**
+ * Describes the enum dukiregistry.DukiType.
+ */
+export const DukiTypeSchema: GenEnum<DukiType> = /*@__PURE__*/
+  enumDesc(file_dukigen_registry, 2);
 

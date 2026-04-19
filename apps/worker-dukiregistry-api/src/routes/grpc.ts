@@ -50,7 +50,7 @@ export function registerGrpcRoutes(router: ConnectRouter) {
         async getUsername(req) {
             const resp = create(GetUsernameRespSchema, {})
 
-            let query = 'SELECT * FROM duker_users WHERE LOWER(owner) = LOWER(?) AND status = ?'
+            let query = 'SELECT * FROM duker_users WHERE ego = ? COLLATE NOCASE AND status = ?'
             const params: any[] = [req.address, 'active']
 
             if (req.chainEid > 0) {
@@ -64,10 +64,12 @@ export function registerGrpcRoutes(router: ConnectRouter) {
                 const prefs = await loadPreferences(row.chain_eid, row.token_id)
                 resp.identity = create(DukerIdentitySchema, {
                     username: row.username,
+                    chainEid: row.chain_eid,
                     tokenId: row.token_id,
-                    owner: row.owner,
-                    originEid: row.origin_eid,
+                    ego: row.ego,
                     preferences: prefs,
+                    bio: row.bio ?? '',
+                    website: row.website ?? '',
                 })
             }
             return resp
@@ -81,17 +83,13 @@ export function registerGrpcRoutes(router: ConnectRouter) {
             ).bind(req.tokenId, 'active').first<any>()
 
             if (row) {
-                // Get all chains this token exists on
-                const chains = await _db.prepare(
-                    'SELECT chain_eid FROM duker_users WHERE token_id = ? AND status = ?'
-                ).bind(req.tokenId, 'active').all<any>()
-
                 resp.identity = create(DukerIdentitySchema, {
                     username: row.username,
+                    chainEid: row.chain_eid,
                     tokenId: row.token_id,
-                    owner: row.owner,
-                    originEid: row.origin_eid,
-                    presentOn: chains.results?.map((r: any) => r.chain_eid) ?? [],
+                    ego: row.ego,
+                    bio: row.bio ?? '',
+                    website: row.website ?? '',
                 })
             }
             return resp

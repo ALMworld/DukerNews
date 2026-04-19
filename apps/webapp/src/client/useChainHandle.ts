@@ -22,6 +22,7 @@ import { directHandle } from './directHandle'
 import type { DirectHandleResult } from './directHandle'
 import { getDefaultStablecoin, ADDRESSES, DEFAULT_CHAIN_ID } from '../lib/contracts'
 import { signPayment } from './signPayment'
+import { notifyRegistryWorker } from './registry-api'
 
 // ConnectRPC client for x402 + notifyTx
 const cmdTransport = createConnectTransport({ baseUrl: '/rpc' })
@@ -172,6 +173,11 @@ export function useChainHandle() {
                 const resp = await txClient.notifyTx({ txHash: result.txHash })
                 events = resp.events
             } catch { /* best-effort — webhook will catch up */ }
+
+            // Fire-and-forget: sync to registry worker API
+            if (txData.evtType === EventType.USER_MINTED) {
+                notifyRegistryWorker(result.txHash, DEFAULT_CHAIN_ID).catch(() => {})
+            }
 
             // If USER_MINTED, also refresh auth to get JWT cookie
             if (txData.evtType === EventType.USER_MINTED) {
