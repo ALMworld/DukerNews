@@ -69,6 +69,9 @@ export function getDukerChain() {
             }
 
         default: // 'local'
+            // In dev, workerd may need RPC_URL_LOCAL set to a reachable address.
+            // Set in .dev.vars, e.g.: RPC_URL_LOCAL=http://192.168.x.x:8545
+            const localRpc = process.env.RPC_URL_LOCAL || 'http://127.0.0.1:8545'
             return {
                 chainId: LOCAL_CHAIN_ID,
                 addrs: ADDRESSES[LOCAL_CHAIN_ID],
@@ -77,9 +80,9 @@ export function getDukerChain() {
                     id: LOCAL_CHAIN_ID,
                     name: 'Anvil',
                     nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-                    rpcUrls: { default: { http: ['http://127.0.0.1:8545'] } },
+                    rpcUrls: { default: { http: [localRpc] } },
                 } as const,
-                rpcUrl: 'http://127.0.0.1:8545',
+                rpcUrl: localRpc,
             }
     }
 }

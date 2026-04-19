@@ -3,14 +3,7 @@
  */
 
 import type { PulledDukigenEvent } from './chain-puller'
-
-// DukigenEventType constants (matching Solidity)
-const EVT_AGENT_REGISTERED     = 1
-const EVT_AGENT_URI_UPDATED    = 2
-const EVT_AGENT_DUKI_BPS_SET   = 3
-const EVT_AGENT_WORKS_DATA_SET = 4
-const EVT_AGENT_WALLET_SET     = 6
-const EVT_PAYMENT_PROCESSED    = 8
+import { DukigenEventType } from '@repo/dukiregistry-apidefs'
 
 /**
  * Persist a raw DukigenEvent to the dukigen_registry_events table.
@@ -40,7 +33,7 @@ export async function materializeAgent(db: D1Database, evt: PulledDukigenEvent):
     const now = Math.floor(Date.now() / 1000)
 
     switch (evt.eventType) {
-        case EVT_AGENT_REGISTERED: {
+        case DukigenEventType.AGENT_REGISTERED: {
             await db.prepare(`
                 INSERT OR REPLACE INTO dukigen_agents
                 (agent_id, owner, origin_chain_eid, created_at, updated_at)
@@ -55,7 +48,7 @@ export async function materializeAgent(db: D1Database, evt: PulledDukigenEvent):
             break
         }
 
-        case EVT_AGENT_URI_UPDATED: {
+        case DukigenEventType.AGENT_URI_UPDATED: {
             await db.prepare(`
                 UPDATE dukigen_agents SET agent_uri = '', updated_at = ?
                 WHERE agent_id = ?
@@ -64,7 +57,7 @@ export async function materializeAgent(db: D1Database, evt: PulledDukigenEvent):
             break
         }
 
-        case EVT_AGENT_DUKI_BPS_SET: {
+        case DukigenEventType.AGENT_DUKI_BPS_SET: {
             // TODO: decode ABI to get defaultDukiBps, minDukiBps, maxDukiBps
             await db.prepare(`
                 UPDATE dukigen_agents SET updated_at = ?
@@ -73,7 +66,7 @@ export async function materializeAgent(db: D1Database, evt: PulledDukigenEvent):
             break
         }
 
-        case EVT_AGENT_WALLET_SET: {
+        case DukigenEventType.AGENT_WALLET_SET: {
             // TODO: decode ABI to get newWallet
             await db.prepare(`
                 UPDATE dukigen_agents SET updated_at = ?

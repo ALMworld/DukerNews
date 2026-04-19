@@ -20,6 +20,7 @@
 		"@bufbuild/protobuf": "^2.7.0",
 		"@connectrpc/connect": "^2.1.0",
 		"@repo/dukiregistry-apidefs": "workspace:*",
+		"contract-duki-alm-world": "workspace:*",
 		"hono": "4.10.7",
 		"viem": "^2.38.6"
 	},

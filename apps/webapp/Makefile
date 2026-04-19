@@ -88,31 +88,27 @@ reset-db:
 # ── Local Anvil deploy + fund ─────────────────────────────────────────────────
 # deploy-local:  Deploys ALM stack + DukerNews DAO → patches contracts.ts.
 #                Requires a FRESH Anvil running on port 8545.
-#                Start manually:  anvil --chain-id 31337 --code-size-limit 100000
+#                Start manually:  anvil --chain-id 31337 --code-size-limit 100000 --host 0.0.0.0
+#                (--host 0.0.0.0 is needed so workerd SSR can reach Anvil via LAN IP)
 # fund-local:    Sends ETH + transfers MockUSDT to FUND_TO.
 
 ALM_PKG         = ../../packages/contract_duki_alm_world
 DAO_PKG         = ../../packages/contract-dukernews-dao
-ALM_DEPLOY_JSON = $(ALM_PKG)/scripts/.deploy-local.json
-DAO_DEPLOY_JSON = $(DAO_PKG)/deployments/local.json
-CONTRACTS_TS    = src/lib/contracts.ts
 ANVIL_RPC       = http://127.0.0.1:8545
 ANVIL_KEY_0     = 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80
 FUND_TO        ?= 0xBB68A2363861d595cfF23abE0AC247fd36c0e7E7
 FUND_ETH       ?= 10
 FUND_USDT      ?= 10000
 
-deploy-local: ## Deploy ALM stack + DukerNews DAO to fresh Anvil, then patch contracts.ts
+deploy-local: ## Deploy ALM stack + DukerNews DAO to fresh Anvil
 	@echo "=== Phase 1: Deploying ALM stack (contract_duki_alm_world) ==="
 	cd $(ALM_PKG) && make deploy-local
 	@echo ""
 	@echo "=== Phase 2: Deploying DukerNews DAO (contract-dukernews-dao) ==="
 	cd $(DAO_PKG) && make deploy-local
 	@echo ""
-	@echo "=== Phase 3: Patching contracts.ts ==="
-	@python3 scripts/patch-contracts.py $(ALM_DEPLOY_JSON) $(DAO_DEPLOY_JSON) $(CONTRACTS_TS)
-	@echo ""
-	@echo "✅ All contracts deployed and contracts.ts patched!"
+	@echo "✅ All contracts deployed!"
+	@echo "   Addresses are in the contract package deployments/index.ts files."
 	@echo "   Run 'pnpm dev' to start the webapp."
 
 fund-local:

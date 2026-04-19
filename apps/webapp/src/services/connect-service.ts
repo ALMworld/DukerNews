@@ -66,25 +66,38 @@ export function registerServices(router: ConnectRouter) {
 
         async notifyTx(req: NotifyTxReq) {
             const { txHash } = req
+            console.log('[notifyTx] ▶ called with txHash:', txHash)
             if (!txHash) throw new Error('tx_hash is required')
 
-            // 1. Check DB first — webhook may have already indexed this tx
-            const dbEvents = await getEventsByTxHash(txHash)
-            if (dbEvents.length > 0) {
-                return create(PbDeltaEventsRespSchema, { events: dbEvents })
+            try {
+                // 1. Check DB first — webhook may have already indexed this tx
+                console.log('[notifyTx] Step 1: checking DB for existing events...')
+                const dbEvents = await getEventsByTxHash(txHash)
+                if (dbEvents.length > 0) {
+                    console.log(`[notifyTx] ✓ Found ${dbEvents.length} events in DB, returning cached`)
+                    return create(PbDeltaEventsRespSchema, { events: dbEvents })
+                }
+                console.log('[notifyTx] DB miss — no cached events')
+
+                // 2. DB miss — pull + parse events from chain via RPC
+                console.log('[notifyTx] Step 2: pulling events from chain via RPC...')
+                const events = await getEventsFromTx(txHash)
+                console.log(`[notifyTx] ✓ Got ${events.length} events from chain`)
+                if (events.length === 0) {
+                    return create(PbDeltaEventsRespSchema, { events: [] })
+                }
+
+                // 3. Apply events to DB
+                console.log('[notifyTx] Step 3: applying events to DB...')
+                await applyEvents(events)
+                console.log('[notifyTx] ✓ Events applied successfully')
+
+                // 4. Return on-chain events
+                return create(PbDeltaEventsRespSchema, { events })
+            } catch (err) {
+                console.error('[notifyTx] ✗ Error:', err)
+                throw err
             }
-
-            // 2. DB miss — pull + parse events from chain via RPC
-            const events = await getEventsFromTx(txHash)
-            if (events.length === 0) {
-                return create(PbDeltaEventsRespSchema, { events: [] })
-            }
-
-            // 3. Apply events to DB
-            await applyEvents(events)
-
-            // 4. Return on-chain events
-            return create(PbDeltaEventsRespSchema, { events })
         },
     })
 

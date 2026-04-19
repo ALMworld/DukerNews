@@ -5,6 +5,7 @@
     "main": "generated/index.ts",
     "exports": {
         ".": "./generated/index.ts",
+        "./deployments": "./deployments/index.ts",
         "./ui": "./ui/index.ts"
     },
     "scripts": {

@@ -1,8 +1,12 @@
 /**
  * config.ts — Multi-chain configuration for DukerRegistry + DukigenRegistry indexer.
+ *
+ * Addresses come from the canonical deployment module in contract_duki_alm_world.
+ * RPC URLs come from environment variables (.dev.vars).
  */
 
 import { parseAbi } from 'viem'
+import { almDeployments, type AlmDeployment } from 'contract-duki-alm-world/deployments'
 
 // ── Chain config ──────────────────────────────────────────────
 
@@ -12,30 +16,24 @@ export interface ChainConfig {
     dukigenRegistryAddress: `0x${string}`
 }
 
-/** Map of LayerZero EID → chain configuration. */
-const CHAIN_CONFIGS: Record<number, ChainConfig> = {
-    // Anvil / local dev (EID 31337)
-    31337: {
-        rpcUrl: 'http://127.0.0.1:8545',
-        dukerRegistryAddress: '0x0000000000000000000000000000000000000000',
-        dukigenRegistryAddress: '0x0000000000000000000000000000000000000000',
-    },
-    // Amoy testnet (EID 40267)
-    40267: {
-        rpcUrl: 'https://rpc-amoy.polygon.technology',
-        dukerRegistryAddress: '0x0000000000000000000000000000000000000000',
-        dukigenRegistryAddress: '0x0000000000000000000000000000000000000000',
-    },
+/**
+ * Build ChainConfig from the canonical almDeployments.
+ * RPC URL defaults to the deployment's rpcUrl (if set), otherwise empty.
+ */
+function buildChainConfigs(): Record<number, ChainConfig> {
+    const configs: Record<number, ChainConfig> = {}
+    for (const [eidStr, d] of Object.entries(almDeployments) as [string, AlmDeployment][]) {
+        const eid = Number(eidStr)
+        configs[eid] = {
+            rpcUrl: d.rpcUrl ?? '',
+            dukerRegistryAddress: d.dukerRegistry,
+            dukigenRegistryAddress: d.dukigenRegistry,
+        }
+    }
+    return configs
 }
 
-/**
- * Override chain config at runtime (used by integration tests to inject
- * deployed addresses from anvil without editing source).
- */
-export function setChainConfig(chainEid: number, patch: Partial<ChainConfig>): void {
-    const existing = CHAIN_CONFIGS[chainEid] ?? { rpcUrl: '', dukerRegistryAddress: '0x0', dukigenRegistryAddress: '0x0' } as ChainConfig
-    CHAIN_CONFIGS[chainEid] = { ...existing, ...patch } as ChainConfig
-}
+const CHAIN_CONFIGS = buildChainConfigs()
 
 export function getChainConfig(chainEid: number): ChainConfig {
     const cfg = CHAIN_CONFIGS[chainEid]

@@ -42,19 +42,6 @@ app.use('*', async (c, next) => {
 // ── Health check ────────────────────────────────────────────
 app.get('/', (c) => c.json({ ok: true, service: 'duker-registry-worker' }))
 
-// ── Dev: inject chain config at runtime (for integration tests) ──
-app.post('/_dev/config', async (c) => {
-    if (c.env.ENVIRONMENT === 'production') return c.json({ error: 'Not available in production' }, 403)
-    const { setChainConfig } = await import('./config')
-    const body = await c.req.json() as { chainEid: number; dukerRegistryAddress?: string; dukigenRegistryAddress?: string; rpcUrl?: string }
-    setChainConfig(body.chainEid, {
-        ...(body.rpcUrl && { rpcUrl: body.rpcUrl }),
-        ...(body.dukerRegistryAddress && { dukerRegistryAddress: body.dukerRegistryAddress as `0x${string}` }),
-        ...(body.dukigenRegistryAddress && { dukigenRegistryAddress: body.dukigenRegistryAddress as `0x${string}` }),
-    })
-    return c.json({ ok: true, chainEid: body.chainEid })
-})
-
 // ── ConnectRPC router ───────────────────────────────────────
 const grpcRouter = createConnectRouter({
     connect: true,
