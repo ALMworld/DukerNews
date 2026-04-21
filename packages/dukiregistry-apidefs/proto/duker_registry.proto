@@ -10,7 +10,7 @@ enum DukerEventType {
   DUKER_EVENT_TYPE_UNSPECIFIED               = 0;
   USER_MINTED                                = 1;
   IDENTITY_BURNED                            = 2;
-  IDENTITY_PREFERENCES_SET                   = 3;
+  DEAL_DUKI_BPS_SET                          = 3;
   PROFILE_UPDATED                            = 4;
 }
 
@@ -29,10 +29,10 @@ message DukerRegistryEvent {
   bytes           event_data   = 10; // Raw ABI-encoded event-specific data
 }
 
-// ── Per-agent preference pair ───────────────────────────────────────────
-message AgentPreference {
-  uint64 agent_id    = 1;  // DukigenRegistry agent token ID
-  uint32 prefer_bps  = 2;  // User's preferred DUKI bps for this agent (0 = agent default)
+// ── Per-agent deal DUKI bps pair ────────────────────────────────────────
+message AgentDealDukiBps {
+  string agent_id      = 1;  // DukigenRegistry agent token ID (uint256 as string)
+  uint32 deal_duki_bps = 2;  // User's deal DUKI bps for this agent (0 = agent default)
 }
 
 // ── Identity record (materialized view from events) ─────────────────────
@@ -41,7 +41,7 @@ message DukerIdentity {
   uint32          chain_eid          = 2;  // Chain where this identity lives
   string          token_id           = 3;  // On-chain uint256 as string
   string          ego                = 4;  // Wallet address (case-insensitive)
-  repeated AgentPreference preferences = 5; // Per-agent DUKI bps preferences
+  repeated AgentDealDukiBps deal_duki_bps_list = 5; // Per-agent DUKI bps deals
   string          bio                = 6;  // Short biography (max 480 bytes ≈ 160 CJK chars)
   string          website            = 7;  // Personal/project URL
 }

@@ -4,18 +4,18 @@
  *
  * Lives in: packages/contract-dukernews-dao/scripts/
  *
- * Reads registry addresses from contract_duki_alm_world/scripts/.deploy-local.json
- * if available, otherwise uses zero addresses.
+ * Reads registry addresses from contract_duki_alm_world/deployments/index.ts.
  *
- * Output: deployments/local.json
+ * Output: patches deployments/index.ts (LOCAL block)
  */
 
 import { createWalletClient, createPublicClient, http, encodeFunctionData, getAddress } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
 import { foundry } from 'viem/chains'
-import { readFileSync, writeFileSync, existsSync } from 'fs'
+import { readFileSync, writeFileSync } from 'fs'
 import { resolve, dirname } from 'path'
 import { fileURLToPath } from 'url'
+import { almDeployments } from 'contract-duki-alm-world/deployments'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -56,17 +56,16 @@ async function deploy(abi: any[], bytecode: `0x${string}`, args: any[] = []): Pr
 async function main() {
     console.log('🔧 Deploying DukerNews DAO to local Anvil...\n')
 
-    // Read ALM stack addresses if available
-    const almJsonPath = resolve(__dirname, '../../contract_duki_alm_world/scripts/.deploy-local.json')
+    // Read ALM stack addresses from canonical source
+    const alm = almDeployments[31337]
     let dukerRegistryAddr = '0x0000000000000000000000000000000000000000' as `0x${string}`
     let dukigenRegistryAddr = '0x0000000000000000000000000000000000000000' as `0x${string}`
     let agentId = 0n
 
-    if (existsSync(almJsonPath)) {
-        const alm = JSON.parse(readFileSync(almJsonPath, 'utf-8'))
-        dukerRegistryAddr = alm.dukerRegistry as `0x${string}`
-        dukigenRegistryAddr = alm.dukigenRegistry as `0x${string}`
-        agentId = (1n << 32n) | BigInt(alm.chainEid)
+    if (alm) {
+        dukerRegistryAddr = alm.dukerRegistry
+        dukigenRegistryAddr = alm.dukigenRegistry
+        agentId = (1n << 32n) | BigInt(31337)
         console.log(`  Using ALM stack addresses:`)
         console.log(`    DukerRegistry:   ${dukerRegistryAddr}`)
         console.log(`    DukigenRegistry: ${dukigenRegistryAddr}`)
@@ -78,13 +77,15 @@ async function main() {
     // 1. MockUSDT — reuse ALM stack's if available, otherwise deploy a new one
     const mockUsdtArtifact = loadArtifact('out/MockUSDT.sol/MockUSDT.json')
     let mockUsdtAddr: `0x${string}`
-    if (existsSync(almJsonPath)) {
-        const alm = JSON.parse(readFileSync(almJsonPath, 'utf-8'))
-        mockUsdtAddr = alm.mockUsdt as `0x${string}`
+    let usdtMethod: string
+    if (alm?.mockUsdt) {
+        mockUsdtAddr = alm.mockUsdt
+        usdtMethod = 'transfer'
         console.log(`  [1/3] Reusing ALM stack MockUSDT: ${mockUsdtAddr}`)
     } else {
         console.log('  [1/3] Deploying MockUSDT...')
         mockUsdtAddr = await deploy(mockUsdtArtifact.abi, mockUsdtArtifact.bytecode, [])
+        usdtMethod = 'mint'
         console.log(`        ✓ MockUSDT: ${mockUsdtAddr}`)
     }
 
@@ -116,8 +117,6 @@ async function main() {
         '0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65',
         '0xBB68A2363861d595cfF23abE0AC247fd36c0e7E7', // dev wallet
     ] as const
-    // ALM MockUSDT has no mint() — use transfer from deployer; standalone MockUSDT has mint()
-    const usdtMethod = existsSync(almJsonPath) ? 'transfer' : 'mint'
     for (const account of testAccounts) {
         const hash = await walletClient.writeContract({
             address: mockUsdtAddr,
@@ -140,21 +139,28 @@ async function main() {
     }
     console.log(`        ✓ Funded ${externalAccounts.length} external accounts with 100 ETH`)
 
-    // 5. Write output
-    const result = {
-        chainId: 31337,
-        MockUSDT: mockUsdtAddr,
-        DukerNews: proxyAddr,
-        DukerNewsImpl: implAddr,
-    }
-    const outPath = resolve(__dirname, '../deployments/local.json')
-    writeFileSync(outPath, JSON.stringify(result, null, 2))
+    // 5. Patch deployments/index.ts
+    const deploymentsPath = resolve(__dirname, '../deployments/index.ts')
+    let deploymentsContent = readFileSync(deploymentsPath, 'utf-8')
 
-    console.log(`\n✅ DukerNews DAO deployed!`)
+    const localBlock = `const LOCAL: DaoDeployment = {
+    dukerNews: '${proxyAddr}',
+    dukerNewsImpl: '${implAddr}',
+    treasury: '${ANVIL_ACCOUNT.address}',
+    stablecoin: '${mockUsdtAddr}',
+    mockUsdt: '${mockUsdtAddr}',
+}`
+
+    deploymentsContent = deploymentsContent.replace(
+        /const LOCAL: DaoDeployment = \{[^}]+\}/s,
+        localBlock,
+    )
+    writeFileSync(deploymentsPath, deploymentsContent)
+
+    console.log(`\n✅ DukerNews DAO deployed! Addresses patched in deployments/index.ts`)
     console.log(`  MockUSDT:          ${mockUsdtAddr}`)
     console.log(`  DukerNews (proxy): ${proxyAddr}`)
     console.log(`  DukerNews (impl):  ${implAddr}`)
-    console.log(`  Written to: deployments/local.json`)
 }
 
 main().catch((err) => {

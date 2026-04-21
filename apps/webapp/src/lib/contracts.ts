@@ -126,9 +126,9 @@ export const SUPPORTED_CHAINS: ChainMeta[] = [
     {
         id: LOCAL_CHAIN_ID,
         name: 'Anvil',
-        stablecoins: [
-            { symbol: 'USDT (Mock)', name: 'Mock USDT', address: '0x5FbDB2315678afecb367f032d93F642f64180aa3' as Address, decimals: 6 },
-        ],
+        stablecoins: almDeployments[CHAIN_ID_TO_EID[LOCAL_CHAIN_ID] ?? LOCAL_CHAIN_ID]?.mockUsdt
+            ? [{ symbol: 'USDT (Mock)', name: 'Mock USDT', address: almDeployments[CHAIN_ID_TO_EID[LOCAL_CHAIN_ID] ?? LOCAL_CHAIN_ID].mockUsdt! as Address, decimals: 6 }]
+            : [],
         explorerUrl: '',
         isHome: DEFAULT_CHAIN_ID === LOCAL_CHAIN_ID,
         nativeCurrency: { symbol: 'ETH', decimals: 18 },

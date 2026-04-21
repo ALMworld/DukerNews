@@ -33,6 +33,20 @@ message NotifyDukerTxResp {
   repeated DukerRegistryEvent events = 1;
 }
 
+// ── Sync Events (catch-up from on-chain checkpoints) ──
+
+message SyncEventsReq {
+  uint32 chain_eid       = 1;  // Which chain to sync
+  uint64 last_evt_seq    = 2;  // Worker's last indexed evtSeq (0 = full sync)
+  uint64 max_block_range = 3;  // Max blocks per eth_getLogs call (0 = use server default)
+}
+
+message SyncEventsResp {
+  uint64 synced_up_to    = 1;  // Highest evtSeq after sync
+  uint32 events_indexed  = 2;  // Number of new events indexed
+  uint64 chain_evt_seq   = 3;  // Contract's current worldEvtSeq
+}
+
 // ══════════════════════════════════════════════════════════════════════════
 //  DukigenRegistry Query + Notify RPCs
 // ══════════════════════════════════════════════════════════════════════════
@@ -73,6 +87,9 @@ service DukerRegistryService {
 
   // Notify worker about a new DukerRegistry tx (pull + index)
   rpc NotifyDukerTx(NotifyDukerTxReq) returns (NotifyDukerTxResp);
+
+  // Catch up on missed events using on-chain block checkpoints
+  rpc SyncDukerEvents(SyncEventsReq) returns (SyncEventsResp);
 }
 
 service DukigenRegistryService {
@@ -84,4 +101,7 @@ service DukigenRegistryService {
 
   // Notify worker about a new DukigenRegistry tx (pull + index)
   rpc NotifyDukigenTx(NotifyDukigenTxReq) returns (NotifyDukigenTxResp);
+
+  // Catch up on missed events using on-chain block checkpoints
+  rpc SyncDukigenEvents(SyncEventsReq) returns (SyncEventsResp);
 }

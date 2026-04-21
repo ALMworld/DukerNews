@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file dukiregistry_services.proto.
  */
 export const file_dukiregistry_services: GenFile = /*@__PURE__*/
-  fileDesc("ChtkdWtpcmVnaXN0cnlfc2VydmljZXMucHJvdG8SDGR1a2lyZWdpc3RyeSI0Cg5HZXRVc2VybmFtZVJlcRIPCgdhZGRyZXNzGAEgASgJEhEKCWNoYWluX2VpZBgCIAEoDSJACg9HZXRVc2VybmFtZVJlc3ASLQoIaWRlbnRpdHkYASABKAsyGy5kdWtpcmVnaXN0cnkuRHVrZXJJZGVudGl0eSIrChdHZXRJZGVudGl0aWVzQnlUb2tlblJlcRIQCgh0b2tlbl9pZBgBIAEoCSI2ChBOb3RpZnlEdWtlclR4UmVxEg8KB3R4X2hhc2gYASABKAkSEQoJY2hhaW5fZWlkGAIgASgNIkUKEU5vdGlmeUR1a2VyVHhSZXNwEjAKBmV2ZW50cxgBIAMoCzIgLmR1a2lyZWdpc3RyeS5EdWtlclJlZ2lzdHJ5RXZlbnQiHwoLR2V0QWdlbnRSZXESEAoIYWdlbnRfaWQYASABKAQiLgoMR2V0QWdlbnRzUmVxEgwKBHBhZ2UYASABKA0SEAoIcGVyX3BhZ2UYAiABKA0iSgoNR2V0QWdlbnRzUmVzcBIqCgZhZ2VudHMYASADKAsyGi5kdWtpcmVnaXN0cnkuRHVraWdlbkFnZW50Eg0KBXRvdGFsGAIgASgNIjgKEk5vdGlmeUR1a2lnZW5UeFJlcRIPCgd0eF9oYXNoGAEgASgJEhEKCWNoYWluX2VpZBgCIAEoDSJJChNOb3RpZnlEdWtpZ2VuVHhSZXNwEjIKBmV2ZW50cxgBIAMoCzIiLmR1a2lyZWdpc3RyeS5EdWtpZ2VuUmVnaXN0cnlFdmVudDKSAgoURHVrZXJSZWdpc3RyeVNlcnZpY2USSgoLR2V0VXNlcm5hbWUSHC5kdWtpcmVnaXN0cnkuR2V0VXNlcm5hbWVSZXEaHS5kdWtpcmVnaXN0cnkuR2V0VXNlcm5hbWVSZXNwElwKFEdldElkZW50aXRpZXNCeVRva2VuEiUuZHVraXJlZ2lzdHJ5LkdldElkZW50aXRpZXNCeVRva2VuUmVxGh0uZHVraXJlZ2lzdHJ5LkdldFVzZXJuYW1lUmVzcBJQCg1Ob3RpZnlEdWtlclR4Eh4uZHVraXJlZ2lzdHJ5Lk5vdGlmeUR1a2VyVHhSZXEaHy5kdWtpcmVnaXN0cnkuTm90aWZ5RHVrZXJUeFJlc3Ay+QEKFkR1a2lnZW5SZWdpc3RyeVNlcnZpY2USQQoIR2V0QWdlbnQSGS5kdWtpcmVnaXN0cnkuR2V0QWdlbnRSZXEaGi5kdWtpcmVnaXN0cnkuRHVraWdlbkFnZW50EkQKCUdldEFnZW50cxIaLmR1a2lyZWdpc3RyeS5HZXRBZ2VudHNSZXEaGy5kdWtpcmVnaXN0cnkuR2V0QWdlbnRzUmVzcBJWCg9Ob3RpZnlEdWtpZ2VuVHgSIC5kdWtpcmVnaXN0cnkuTm90aWZ5RHVraWdlblR4UmVxGiEuZHVraXJlZ2lzdHJ5Lk5vdGlmeUR1a2lnZW5UeFJlc3BiBnByb3RvMw", [file_duker_registry, file_dukigen_registry]);
+  fileDesc("ChtkdWtpcmVnaXN0cnlfc2VydmljZXMucHJvdG8SDGR1a2lyZWdpc3RyeSI0Cg5HZXRVc2VybmFtZVJlcRIPCgdhZGRyZXNzGAEgASgJEhEKCWNoYWluX2VpZBgCIAEoDSJACg9HZXRVc2VybmFtZVJlc3ASLQoIaWRlbnRpdHkYASABKAsyGy5kdWtpcmVnaXN0cnkuRHVrZXJJZGVudGl0eSIrChdHZXRJZGVudGl0aWVzQnlUb2tlblJlcRIQCgh0b2tlbl9pZBgBIAEoCSI2ChBOb3RpZnlEdWtlclR4UmVxEg8KB3R4X2hhc2gYASABKAkSEQoJY2hhaW5fZWlkGAIgASgNIkUKEU5vdGlmeUR1a2VyVHhSZXNwEjAKBmV2ZW50cxgBIAMoCzIgLmR1a2lyZWdpc3RyeS5EdWtlclJlZ2lzdHJ5RXZlbnQiUQoNU3luY0V2ZW50c1JlcRIRCgljaGFpbl9laWQYASABKA0SFAoMbGFzdF9ldnRfc2VxGAIgASgEEhcKD21heF9ibG9ja19yYW5nZRgDIAEoBCJVCg5TeW5jRXZlbnRzUmVzcBIUCgxzeW5jZWRfdXBfdG8YASABKAQSFgoOZXZlbnRzX2luZGV4ZWQYAiABKA0SFQoNY2hhaW5fZXZ0X3NlcRgDIAEoBCIfCgtHZXRBZ2VudFJlcRIQCghhZ2VudF9pZBgBIAEoBCIuCgxHZXRBZ2VudHNSZXESDAoEcGFnZRgBIAEoDRIQCghwZXJfcGFnZRgCIAEoDSJKCg1HZXRBZ2VudHNSZXNwEioKBmFnZW50cxgBIAMoCzIaLmR1a2lyZWdpc3RyeS5EdWtpZ2VuQWdlbnQSDQoFdG90YWwYAiABKA0iOAoSTm90aWZ5RHVraWdlblR4UmVxEg8KB3R4X2hhc2gYASABKAkSEQoJY2hhaW5fZWlkGAIgASgNIkkKE05vdGlmeUR1a2lnZW5UeFJlc3ASMgoGZXZlbnRzGAEgAygLMiIuZHVraXJlZ2lzdHJ5LkR1a2lnZW5SZWdpc3RyeUV2ZW50MuACChREdWtlclJlZ2lzdHJ5U2VydmljZRJKCgtHZXRVc2VybmFtZRIcLmR1a2lyZWdpc3RyeS5HZXRVc2VybmFtZVJlcRodLmR1a2lyZWdpc3RyeS5HZXRVc2VybmFtZVJlc3ASXAoUR2V0SWRlbnRpdGllc0J5VG9rZW4SJS5kdWtpcmVnaXN0cnkuR2V0SWRlbnRpdGllc0J5VG9rZW5SZXEaHS5kdWtpcmVnaXN0cnkuR2V0VXNlcm5hbWVSZXNwElAKDU5vdGlmeUR1a2VyVHgSHi5kdWtpcmVnaXN0cnkuTm90aWZ5RHVrZXJUeFJlcRofLmR1a2lyZWdpc3RyeS5Ob3RpZnlEdWtlclR4UmVzcBJMCg9TeW5jRHVrZXJFdmVudHMSGy5kdWtpcmVnaXN0cnkuU3luY0V2ZW50c1JlcRocLmR1a2lyZWdpc3RyeS5TeW5jRXZlbnRzUmVzcDLJAgoWRHVraWdlblJlZ2lzdHJ5U2VydmljZRJBCghHZXRBZ2VudBIZLmR1a2lyZWdpc3RyeS5HZXRBZ2VudFJlcRoaLmR1a2lyZWdpc3RyeS5EdWtpZ2VuQWdlbnQSRAoJR2V0QWdlbnRzEhouZHVraXJlZ2lzdHJ5LkdldEFnZW50c1JlcRobLmR1a2lyZWdpc3RyeS5HZXRBZ2VudHNSZXNwElYKD05vdGlmeUR1a2lnZW5UeBIgLmR1a2lyZWdpc3RyeS5Ob3RpZnlEdWtpZ2VuVHhSZXEaIS5kdWtpcmVnaXN0cnkuTm90aWZ5RHVraWdlblR4UmVzcBJOChFTeW5jRHVraWdlbkV2ZW50cxIbLmR1a2lyZWdpc3RyeS5TeW5jRXZlbnRzUmVxGhwuZHVraXJlZ2lzdHJ5LlN5bmNFdmVudHNSZXNwYgZwcm90bzM", [file_duker_registry, file_dukigen_registry]);
 
 /**
  * @generated from message dukiregistry.GetUsernameReq
@@ -122,6 +122,72 @@ export const NotifyDukerTxRespSchema: GenMessage<NotifyDukerTxResp> = /*@__PURE_
   messageDesc(file_dukiregistry_services, 4);
 
 /**
+ * @generated from message dukiregistry.SyncEventsReq
+ */
+export type SyncEventsReq = Message<"dukiregistry.SyncEventsReq"> & {
+  /**
+   * Which chain to sync
+   *
+   * @generated from field: uint32 chain_eid = 1;
+   */
+  chainEid: number;
+
+  /**
+   * Worker's last indexed evtSeq (0 = full sync)
+   *
+   * @generated from field: uint64 last_evt_seq = 2;
+   */
+  lastEvtSeq: bigint;
+
+  /**
+   * Max blocks per eth_getLogs call (0 = use server default)
+   *
+   * @generated from field: uint64 max_block_range = 3;
+   */
+  maxBlockRange: bigint;
+};
+
+/**
+ * Describes the message dukiregistry.SyncEventsReq.
+ * Use `create(SyncEventsReqSchema)` to create a new message.
+ */
+export const SyncEventsReqSchema: GenMessage<SyncEventsReq> = /*@__PURE__*/
+  messageDesc(file_dukiregistry_services, 5);
+
+/**
+ * @generated from message dukiregistry.SyncEventsResp
+ */
+export type SyncEventsResp = Message<"dukiregistry.SyncEventsResp"> & {
+  /**
+   * Highest evtSeq after sync
+   *
+   * @generated from field: uint64 synced_up_to = 1;
+   */
+  syncedUpTo: bigint;
+
+  /**
+   * Number of new events indexed
+   *
+   * @generated from field: uint32 events_indexed = 2;
+   */
+  eventsIndexed: number;
+
+  /**
+   * Contract's current worldEvtSeq
+   *
+   * @generated from field: uint64 chain_evt_seq = 3;
+   */
+  chainEvtSeq: bigint;
+};
+
+/**
+ * Describes the message dukiregistry.SyncEventsResp.
+ * Use `create(SyncEventsRespSchema)` to create a new message.
+ */
+export const SyncEventsRespSchema: GenMessage<SyncEventsResp> = /*@__PURE__*/
+  messageDesc(file_dukiregistry_services, 6);
+
+/**
  * @generated from message dukiregistry.GetAgentReq
  */
 export type GetAgentReq = Message<"dukiregistry.GetAgentReq"> & {
@@ -136,7 +202,7 @@ export type GetAgentReq = Message<"dukiregistry.GetAgentReq"> & {
  * Use `create(GetAgentReqSchema)` to create a new message.
  */
 export const GetAgentReqSchema: GenMessage<GetAgentReq> = /*@__PURE__*/
-  messageDesc(file_dukiregistry_services, 5);
+  messageDesc(file_dukiregistry_services, 7);
 
 /**
  * @generated from message dukiregistry.GetAgentsReq
@@ -158,7 +224,7 @@ export type GetAgentsReq = Message<"dukiregistry.GetAgentsReq"> & {
  * Use `create(GetAgentsReqSchema)` to create a new message.
  */
 export const GetAgentsReqSchema: GenMessage<GetAgentsReq> = /*@__PURE__*/
-  messageDesc(file_dukiregistry_services, 6);
+  messageDesc(file_dukiregistry_services, 8);
 
 /**
  * @generated from message dukiregistry.GetAgentsResp
@@ -180,7 +246,7 @@ export type GetAgentsResp = Message<"dukiregistry.GetAgentsResp"> & {
  * Use `create(GetAgentsRespSchema)` to create a new message.
  */
 export const GetAgentsRespSchema: GenMessage<GetAgentsResp> = /*@__PURE__*/
-  messageDesc(file_dukiregistry_services, 7);
+  messageDesc(file_dukiregistry_services, 9);
 
 /**
  * @generated from message dukiregistry.NotifyDukigenTxReq
@@ -202,7 +268,7 @@ export type NotifyDukigenTxReq = Message<"dukiregistry.NotifyDukigenTxReq"> & {
  * Use `create(NotifyDukigenTxReqSchema)` to create a new message.
  */
 export const NotifyDukigenTxReqSchema: GenMessage<NotifyDukigenTxReq> = /*@__PURE__*/
-  messageDesc(file_dukiregistry_services, 8);
+  messageDesc(file_dukiregistry_services, 10);
 
 /**
  * @generated from message dukiregistry.NotifyDukigenTxResp
@@ -219,7 +285,7 @@ export type NotifyDukigenTxResp = Message<"dukiregistry.NotifyDukigenTxResp"> & 
  * Use `create(NotifyDukigenTxRespSchema)` to create a new message.
  */
 export const NotifyDukigenTxRespSchema: GenMessage<NotifyDukigenTxResp> = /*@__PURE__*/
-  messageDesc(file_dukiregistry_services, 9);
+  messageDesc(file_dukiregistry_services, 11);
 
 /**
  * @generated from service dukiregistry.DukerRegistryService
@@ -254,6 +320,16 @@ export const DukerRegistryService: GenService<{
     methodKind: "unary";
     input: typeof NotifyDukerTxReqSchema;
     output: typeof NotifyDukerTxRespSchema;
+  },
+  /**
+   * Catch up on missed events using on-chain block checkpoints
+   *
+   * @generated from rpc dukiregistry.DukerRegistryService.SyncDukerEvents
+   */
+  syncDukerEvents: {
+    methodKind: "unary";
+    input: typeof SyncEventsReqSchema;
+    output: typeof SyncEventsRespSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_dukiregistry_services, 0);
@@ -291,6 +367,16 @@ export const DukigenRegistryService: GenService<{
     methodKind: "unary";
     input: typeof NotifyDukigenTxReqSchema;
     output: typeof NotifyDukigenTxRespSchema;
+  },
+  /**
+   * Catch up on missed events using on-chain block checkpoints
+   *
+   * @generated from rpc dukiregistry.DukigenRegistryService.SyncDukigenEvents
+   */
+  syncDukigenEvents: {
+    methodKind: "unary";
+    input: typeof SyncEventsReqSchema;
+    output: typeof SyncEventsRespSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_dukiregistry_services, 1);

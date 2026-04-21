@@ -13,15 +13,19 @@ import {
     GetAgentsRespSchema,
     DukerRegistryEventSchema,
     DukigenRegistryEventSchema,
+    SyncEventsRespSchema,
 } from '@repo/dukiregistry-apidefs'
 import {
     DukerIdentitySchema,
     DukigenAgentSchema,
-    AgentPreferenceSchema,
+    AgentDealDukiBpsSchema,
 } from '@repo/dukiregistry-apidefs'
-import { pullTxReceipt } from '../services/chain-puller'
+import { pullTxReceipt, pullDukerEventsByBlockRange, pullDukigenEventsByBlockRange } from '../services/chain-puller'
 import { processDukerEvents } from '../services/duker-event-service'
 import { processDukigenEvents } from '../services/dukigen-event-service'
+import { createPublicClient, http } from 'viem'
+import { getChainConfig } from '../config'
+import { dukerRegistryAbi, dukigenRegistryAbi } from 'contract-duki-alm-world'
 
 // Store reference for context access — set from index.ts
 let _db: D1Database
@@ -33,12 +37,12 @@ export function setDb(db: D1Database) {
 /** Load per-agent preferences from D1 for a given identity. */
 async function loadPreferences(chainEid: number, tokenId: string) {
     const rows = await _db.prepare(
-        'SELECT agent_id, prefer_bps FROM duker_preferences WHERE chain_eid = ? AND token_id = ?'
+        'SELECT agent_id, deal_duki_bps FROM duker_preferences WHERE chain_eid = ? AND token_id = ?'
     ).bind(chainEid, tokenId).all<any>()
     return (rows.results ?? []).map((r: any) =>
-        create(AgentPreferenceSchema, {
-            agentId: BigInt(r.agent_id),
-            preferBps: r.prefer_bps,
+        create(AgentDealDukiBpsSchema, {
+            agentId: r.agent_id,
+            dealDukiBps: r.deal_duki_bps,
         })
     )
 }
@@ -67,7 +71,7 @@ export function registerGrpcRoutes(router: ConnectRouter) {
                     chainEid: row.chain_eid,
                     tokenId: row.token_id,
                     ego: row.ego,
-                    preferences: prefs,
+                    dealDukiBpsList: prefs,
                     bio: row.bio ?? '',
                     website: row.website ?? '',
                 })
@@ -116,6 +120,49 @@ export function registerGrpcRoutes(router: ConnectRouter) {
                 })
             )
             return resp
+        },
+
+        async syncDukerEvents(req) {
+            const DEFAULT_MAX_BLOCK_RANGE = 10000n
+            const maxRange = req.maxBlockRange > 0n ? req.maxBlockRange : DEFAULT_MAX_BLOCK_RANGE
+            const cfg = getChainConfig(req.chainEid)
+            const client = createPublicClient({ transport: http(cfg.rpcUrl) })
+
+            // Read on-chain state in one call: evtSeq + all 4 block checkpoints
+            const [chainEvtSeq, checkpoints] = await client.readContract({
+                address: cfg.dukerRegistryAddress,
+                abi: dukerRegistryAbi,
+                functionName: 'eventState',
+            })
+
+            if (Number(chainEvtSeq) === 0 || Number(chainEvtSeq) <= Number(req.lastEvtSeq)) {
+                return create(SyncEventsRespSchema, {
+                    syncedUpTo: chainEvtSeq as bigint,
+                    eventsIndexed: 0,
+                    chainEvtSeq: chainEvtSeq as bigint,
+                })
+            }
+
+            // Find best fromBlock from checkpoints
+            const fromBlock = findBestCheckpoint(checkpoints, Number(req.lastEvtSeq))
+            const latestBlock = await client.getBlockNumber()
+            const toBlock = fromBlock + maxRange < latestBlock ? fromBlock + maxRange : latestBlock
+
+            // Pull and index events
+            const events = await pullDukerEventsByBlockRange(req.chainEid, fromBlock, toBlock)
+            // Filter to only events after lastEvtSeq
+            const newEvents = events.filter(e => Number(e.evtSeq) > Number(req.lastEvtSeq))
+            await processDukerEvents(_db, newEvents)
+
+            const syncedUpTo = newEvents.length > 0
+                ? BigInt(newEvents[newEvents.length - 1].evtSeq)
+                : req.lastEvtSeq
+
+            return create(SyncEventsRespSchema, {
+                syncedUpTo,
+                eventsIndexed: newEvents.length,
+                chainEvtSeq: chainEvtSeq as bigint,
+            })
         },
     })
 
@@ -196,5 +243,69 @@ export function registerGrpcRoutes(router: ConnectRouter) {
             )
             return resp
         },
+
+        async syncDukigenEvents(req) {
+            const DEFAULT_MAX_BLOCK_RANGE = 10000n
+            const maxRange = req.maxBlockRange > 0n ? req.maxBlockRange : DEFAULT_MAX_BLOCK_RANGE
+            const cfg = getChainConfig(req.chainEid)
+            const client = createPublicClient({ transport: http(cfg.rpcUrl) })
+
+            // Read on-chain state in one call: evtSeq + all 4 block checkpoints
+            const [chainEvtSeq, checkpoints] = await client.readContract({
+                address: cfg.dukigenRegistryAddress,
+                abi: dukigenRegistryAbi,
+                functionName: 'eventState',
+            })
+
+            if (Number(chainEvtSeq) === 0 || Number(chainEvtSeq) <= Number(req.lastEvtSeq)) {
+                return create(SyncEventsRespSchema, {
+                    syncedUpTo: chainEvtSeq as bigint,
+                    eventsIndexed: 0,
+                    chainEvtSeq: chainEvtSeq as bigint,
+                })
+            }
+
+            // Find best fromBlock from checkpoints
+            const fromBlock = findBestCheckpoint(checkpoints, Number(req.lastEvtSeq))
+            const latestBlock = await client.getBlockNumber()
+            const toBlock = fromBlock + maxRange < latestBlock ? fromBlock + maxRange : latestBlock
+
+            // Pull and index events
+            const events = await pullDukigenEventsByBlockRange(req.chainEid, fromBlock, toBlock)
+            const newEvents = events.filter(e => Number(e.evtSeq) > Number(req.lastEvtSeq))
+            await processDukigenEvents(_db, newEvents)
+
+            const syncedUpTo = newEvents.length > 0
+                ? BigInt(newEvents[newEvents.length - 1].evtSeq)
+                : req.lastEvtSeq
+
+            return create(SyncEventsRespSchema, {
+                syncedUpTo,
+                eventsIndexed: newEvents.length,
+                chainEvtSeq: chainEvtSeq as bigint,
+            })
+        },
     })
+}
+
+// ── Helpers ──────────────────────────────────────────────────
+
+/**
+ * Find the best (lowest) block number from checkpoints that covers
+ * events after lastEvtSeq. Falls back to the earliest non-zero checkpoint.
+ */
+function findBestCheckpoint(checkpoints: bigint[], lastEvtSeq: number): bigint {
+    // The checkpoint at slot i covers events starting at evtSeq = i*64 + 1
+    // Find the slot that contains lastEvtSeq
+    const targetSlot = lastEvtSeq > 0 ? Math.floor((lastEvtSeq - 1) / 64) % 4 : 0
+
+    // Try the target slot's checkpoint first
+    if (checkpoints[targetSlot] > 0n) return checkpoints[targetSlot]
+
+    // Fallback: use the earliest non-zero checkpoint
+    let earliest = 0n
+    for (const cp of checkpoints) {
+        if (cp > 0n && (earliest === 0n || cp < earliest)) earliest = cp
+    }
+    return earliest > 0n ? earliest : 0n
 }

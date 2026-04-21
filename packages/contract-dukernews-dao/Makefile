@@ -84,7 +84,6 @@ upgrade-xlayer: check-key
 		--broadcast \
 		-vvv
 
-ALM_LOCAL_JSON = ../contract_duki_alm_world/scripts/.deploy-local.json
 
 deploy-local: build
 	@echo "=== Deploying DukerNews + MockUSDT to local Anvil ==="

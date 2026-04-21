@@ -125,3 +125,58 @@ function parseDukigenLog(log: Log, chainEid: number, txHash: string, blockNumber
         return null
     }
 }
+
+// ── Block range log pulling (for SyncEvents catch-up) ────────────────
+
+/**
+ * Pull DukerEvent logs from a block range using eth_getLogs.
+ */
+export async function pullDukerEventsByBlockRange(
+    chainEid: number,
+    fromBlock: bigint,
+    toBlock: bigint,
+): Promise<PulledDukerEvent[]> {
+    const cfg = getChainConfig(chainEid)
+    const client = createPublicClient({ transport: http(cfg.rpcUrl) })
+
+    const logs = await client.getLogs({
+        address: cfg.dukerRegistryAddress,
+        events: DUKER_EVENT_ABI,
+        fromBlock,
+        toBlock,
+    })
+
+    const events: PulledDukerEvent[] = []
+    for (const log of logs) {
+        const parsed = parseDukerLog(log as any, chainEid, log.transactionHash ?? '', log.blockNumber ?? 0n)
+        if (parsed) events.push(parsed)
+    }
+    return events
+}
+
+/**
+ * Pull DukigenEvent logs from a block range using eth_getLogs.
+ */
+export async function pullDukigenEventsByBlockRange(
+    chainEid: number,
+    fromBlock: bigint,
+    toBlock: bigint,
+): Promise<PulledDukigenEvent[]> {
+    const cfg = getChainConfig(chainEid)
+    const client = createPublicClient({ transport: http(cfg.rpcUrl) })
+
+    const logs = await client.getLogs({
+        address: cfg.dukigenRegistryAddress,
+        events: DUKIGEN_EVENT_ABI,
+        fromBlock,
+        toBlock,
+    })
+
+    const events: PulledDukigenEvent[] = []
+    for (const log of logs) {
+        const parsed = parseDukigenLog(log as any, chainEid, log.transactionHash ?? '', log.blockNumber ?? 0n)
+        if (parsed) events.push(parsed)
+    }
+    return events
+}
+

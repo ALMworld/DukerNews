@@ -22,12 +22,12 @@ CREATE TABLE IF NOT EXISTS duker_users (
 CREATE INDEX IF NOT EXISTS idx_duker_users_ego ON duker_users(ego);
 CREATE INDEX IF NOT EXISTS idx_duker_users_chain ON duker_users(chain_eid);
 
--- Per-agent DUKI bps preferences
+-- Per-agent deal DUKI bps
 CREATE TABLE IF NOT EXISTS duker_preferences (
     chain_eid       INTEGER NOT NULL,
     token_id        TEXT    NOT NULL,   -- identity token
     agent_id        TEXT    NOT NULL,   -- dukigen agent token id
-    prefer_bps      INTEGER NOT NULL DEFAULT 0,
+    deal_duki_bps   INTEGER NOT NULL DEFAULT 0,
     updated_at      INTEGER NOT NULL,
     PRIMARY KEY (chain_eid, token_id, agent_id)
 );
