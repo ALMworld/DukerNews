@@ -1,6 +1,7 @@
 /**
  * GET /api/users/check-name?name=xxx
- * Returns { available: boolean } — checks D1 users table.
+ * Returns { available: boolean } — checks local D1 users table.
+ * TODO: Add a CheckUsername RPC to the registry worker for authoritative check.
  */
 import { createFileRoute } from '@tanstack/react-router'
 import { getKysely } from '../../../lib/db'
@@ -32,3 +33,4 @@ export const Route = createFileRoute('/api/users/check-name')({
         },
     },
 })
+

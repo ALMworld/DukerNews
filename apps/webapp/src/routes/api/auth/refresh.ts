@@ -1,7 +1,4 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { createPublicClient, http } from 'viem'
-import { dukerRegistryAbi } from '../../../lib/contracts'
-import { getDukerChain } from '../../../lib/duker-chain'
 import {
     verifyJwt,
     signJwt,
@@ -11,6 +8,15 @@ import {
     COOKIE_NAME,
     type JWTPayload,
 } from '../../../server/auth-utils'
+import { getRegistryIdentity } from '../../../server/registry-worker-client'
+import { DEFAULT_CHAIN_ID } from '../../../lib/contracts'
+import { getKysely } from '../../../lib/db'
+
+const CHAIN_ID_TO_EID: Record<number, number> = {
+    31337: 31337,
+    196: 30274,
+    11155111: 11155111,
+}
 
 export const Route = createFileRoute('/api/auth/refresh')({
     server: {
@@ -36,70 +42,54 @@ export const Route = createFileRoute('/api/auth/refresh')({
 
                 // Read dukiBps and txHash from request body
                 let dukiBps: number | undefined
-                let txHash: string | undefined
                 try {
-                    const body = await request.json() as { dukiBps?: number; txHash?: string }
+                    const body = await request.json() as { dukiBps?: number }
                     dukiBps = body.dukiBps
-                    txHash = body.txHash
                 } catch {
                     // body is optional — defaults to undefined
                 }
 
                 const address = payload.ego
+                const chainEid = CHAIN_ID_TO_EID[DEFAULT_CHAIN_ID] ?? DEFAULT_CHAIN_ID
 
-                // Step 1: Read on-chain username from DukerRegistry
-                const { addrs, viemChain, rpcUrl } = getDukerChain()
-                const publicClient = createPublicClient({
-                    chain: viemChain as any,
-                    transport: http(rpcUrl),
-                })
-
-                // If txHash provided, wait for confirmation before reading
-                if (txHash) {
-                    try {
-                        await publicClient.waitForTransactionReceipt({ hash: txHash as `0x${string}` })
-                    } catch (e: any) {
-                        return Response.json({ success: false, message: `Tx not confirmed: ${e?.message}` })
-                    }
+                // Query registry worker for on-chain username (avoids workerd outbound restriction)
+                const identity = await getRegistryIdentity(address, chainEid)
+                if (!identity?.username) {
+                    return Response.json({ success: false, message: 'No username found — registry worker may not have indexed yet' })
                 }
 
-                let onChainUsername: string
+                // Persist to webapp D1 so login can find it next time
                 try {
-                    onChainUsername = await publicClient.readContract({
-                        address: addrs.DukerRegistry,
-                        abi: dukerRegistryAbi,
-                        functionName: 'usernameOf',
-                        args: [address as `0x${string}`],
-                    }) as string
-                } catch (e: any) {
-                    return Response.json({ success: false, message: `Failed to read on-chain username: ${e?.message}` })
+                    const db = getKysely()
+                    if (db) {
+                        const now = Math.floor(Date.now() / 1000)
+                        await db
+                            .insertInto('users')
+                            .values({
+                                address: address.toLowerCase(),
+                                username: identity.username,
+                                duki_bps: dukiBps ?? 0,
+                                karma: 1,
+                                created_at: now,
+                                updated_at: now,
+                            })
+                            .onConflict((oc) =>
+                                oc.column('address').doUpdateSet({
+                                    username: identity.username,
+                                    duki_bps: dukiBps ?? 0,
+                                    updated_at: now,
+                                })
+                            )
+                            .execute()
+                    }
+                } catch (e) {
+                    console.warn('[auth/refresh] D1 upsert failed (non-blocking):', e)
                 }
 
-                if (!onChainUsername) {
-                    return Response.json({ success: false, message: 'No username found on-chain for this address' })
-                }
-
-                // Step 2: Persist to DB via GoAPI MINT_USER
-                // if (MIGRATED) {
-                //     try {
-                //         const cmdClient = createClient(CmdService, getGoApiTransport())
-                //         await cmdClient.handleCmd(create(CmdSchema, {
-                //             address,
-                //             cmdType: CmdType.MINT_USER,
-                //             data: create(CmdDataSchema, {
-                //                 payload: { case: 'mintUser', value: { address, username: onChainUsername } },
-                //             }),
-                //         }))
-                //     } catch (e: any) {
-                //         // If MINT_USER fails (e.g. already minted), that's OK — DB may already have it
-                //         console.warn('[auth/refresh] MINT_USER:', e?.message)
-                //     }
-                // }
-
-                // Step 3: Re-issue JWT with verified on-chain username
+                // Re-issue JWT with verified on-chain username
                 const newPayload: JWTPayload = {
                     ...payload,
-                    username: onChainUsername,
+                    username: identity.username,
                     dukiBps: dukiBps ?? 0,
                     expireAt: Math.floor(Date.now() / 1000) + getJwtExpirySecs(),
                 }
@@ -120,3 +110,4 @@ export const Route = createFileRoute('/api/auth/refresh')({
         },
     },
 })
+

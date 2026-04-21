@@ -74,6 +74,16 @@ message NotifyDukigenTxResp {
   repeated DukigenRegistryEvent events = 1;
 }
 
+message CheckUsernameReq {
+  string username   = 1;  // Username to check availability
+  uint32 chain_eid  = 2;  // Optional: 0 = any chain
+}
+
+message CheckUsernameResp {
+  bool available       = 1;  // true if the username is not taken
+  DukerIdentity owner  = 2;  // set if the username is taken (who owns it)
+}
+
 // ══════════════════════════════════════════════════════════════════════════
 //  Services
 // ══════════════════════════════════════════════════════════════════════════
@@ -81,6 +91,9 @@ message NotifyDukigenTxResp {
 service DukerRegistryService {
   // Query username by wallet address (+ optional chain filter)
   rpc GetUsername(GetUsernameReq) returns (GetUsernameResp);
+
+  // Check if a username is available
+  rpc CheckUsername(CheckUsernameReq) returns (CheckUsernameResp);
 
   // Query all chain presences for a given token ID
   rpc GetIdentitiesByToken(GetIdentitiesByTokenReq) returns (GetUsernameResp);

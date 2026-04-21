@@ -9,6 +9,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { DEFAULT_CHAIN_ID } from '../lib/contracts'
 import { queryKeys } from '../client'
 import { useChainHandle } from '../client/useChainHandle'
+import { checkUsernameAvailability } from '../client/registry-api'
 import { create } from '@bufbuild/protobuf'
 import { AggType, EventType, DukerTxReqSchema, EventDataSchema, UserMintedPayloadSchema } from '@repo/apidefs'
 import { DukiPayment, type DukiPaymentValue } from '../components/DukiPayment'
@@ -81,11 +82,10 @@ function MintPanel({ address }: { address: string }) {
         if (checkTimer.current) clearTimeout(checkTimer.current)
         checkTimer.current = setTimeout(async () => {
             try {
-                const res = await fetch(`/api/users/check-name?name=${encodeURIComponent(name)}`)
-                const data = await res.json() as { available: boolean }
+                const { available } = await checkUsernameAvailability(name, DEFAULT_CHAIN_ID)
                 // Only update if name hasn't changed during the request
                 if (username.trim() === name) {
-                    setNameTaken(!data.available)
+                    setNameTaken(!available)
                     setNameChecked(true)
                 }
             } catch { /* ignore */ }
@@ -227,13 +227,18 @@ function MintPanel({ address }: { address: string }) {
                         <p className="text-xs text-destructive mt-1.5">{nameError}</p>
                     )}
                     {!nameError && nameTaken && (
-                        <p className="text-xs text-destructive mt-1.5">@{username.trim()} is already taken</p>
+                        <p className="text-xs text-destructive mt-1.5">@{username.trim()}.{DEFAULT_CHAIN_ID} is already taken</p>
                     )}
                     {!nameError && !nameTaken && nameChecking && (
                         <p className="text-xs text-muted-foreground mt-1.5">Checking availability…</p>
                     )}
                     {!nameError && !nameTaken && !nameChecking && nameChecked && (
-                        <p className="text-xs mt-1.5" style={{ color: '#22c55e' }}>✓ @{username.trim()} is available</p>
+                        <>
+                            <p className="text-xs mt-1.5" style={{ color: '#22c55e' }}>✓ @{username.trim()}.{DEFAULT_CHAIN_ID} is available</p>
+                            <p className="text-xs mt-0.5 text-muted-foreground" style={{ opacity: 0.7 }}>
+                                <span style={{ fontWeight: 500 }}>{username.trim()}</span> is your display name, <span style={{ fontWeight: 500 }}>.{DEFAULT_CHAIN_ID}</span> is the chain identifier
+                            </p>
+                        </>
                     )}
                 </div>
 
@@ -359,15 +364,7 @@ function MintPanel({ address }: { address: string }) {
 function WelcomePage() {
     const { me, setConnectModalOpen } = useAuthStore()
     const { status: accountStatus } = useAccount()
-    const navigate = useNavigate()
     const address = me?.ego ?? ''
-
-    // Already has username → redirect to home
-    useEffect(() => {
-        if (me?.username) {
-            navigate({ to: '/' })
-        }
-    }, [me?.username, navigate])
 
     // Auto-open ConnectModal when authenticated but wallet truly disconnected
     // (wait for wagmi to finish reconnecting before deciding — avoids modal flash)

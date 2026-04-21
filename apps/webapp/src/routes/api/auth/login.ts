@@ -92,9 +92,7 @@ export const Route = createFileRoute('/api/auth/login')({
                             .where('address', '=', address.toLowerCase())
                             .executeTakeFirst()
 
-                        if (!existingUser) {
-                            // No insert here — user row is created lazily on MINT_NAME
-                        } else {
+                        if (existingUser) {
                             username = existingUser.username || ''
                         }
                     } else if (MIGRATED) {
@@ -112,6 +110,7 @@ export const Route = createFileRoute('/api/auth/login')({
                             // User not found — username stays '' and onboarding handles it
                         }
                     }
+
 
                     // Issue JWT
                     const payload: JWTPayload = {

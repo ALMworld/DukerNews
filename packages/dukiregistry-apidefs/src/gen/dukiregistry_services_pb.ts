@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file dukiregistry_services.proto.
  */
 export const file_dukiregistry_services: GenFile = /*@__PURE__*/
-  fileDesc("ChtkdWtpcmVnaXN0cnlfc2VydmljZXMucHJvdG8SDGR1a2lyZWdpc3RyeSI0Cg5HZXRVc2VybmFtZVJlcRIPCgdhZGRyZXNzGAEgASgJEhEKCWNoYWluX2VpZBgCIAEoDSJACg9HZXRVc2VybmFtZVJlc3ASLQoIaWRlbnRpdHkYASABKAsyGy5kdWtpcmVnaXN0cnkuRHVrZXJJZGVudGl0eSIrChdHZXRJZGVudGl0aWVzQnlUb2tlblJlcRIQCgh0b2tlbl9pZBgBIAEoCSI2ChBOb3RpZnlEdWtlclR4UmVxEg8KB3R4X2hhc2gYASABKAkSEQoJY2hhaW5fZWlkGAIgASgNIkUKEU5vdGlmeUR1a2VyVHhSZXNwEjAKBmV2ZW50cxgBIAMoCzIgLmR1a2lyZWdpc3RyeS5EdWtlclJlZ2lzdHJ5RXZlbnQiUQoNU3luY0V2ZW50c1JlcRIRCgljaGFpbl9laWQYASABKA0SFAoMbGFzdF9ldnRfc2VxGAIgASgEEhcKD21heF9ibG9ja19yYW5nZRgDIAEoBCJVCg5TeW5jRXZlbnRzUmVzcBIUCgxzeW5jZWRfdXBfdG8YASABKAQSFgoOZXZlbnRzX2luZGV4ZWQYAiABKA0SFQoNY2hhaW5fZXZ0X3NlcRgDIAEoBCIfCgtHZXRBZ2VudFJlcRIQCghhZ2VudF9pZBgBIAEoBCIuCgxHZXRBZ2VudHNSZXESDAoEcGFnZRgBIAEoDRIQCghwZXJfcGFnZRgCIAEoDSJKCg1HZXRBZ2VudHNSZXNwEioKBmFnZW50cxgBIAMoCzIaLmR1a2lyZWdpc3RyeS5EdWtpZ2VuQWdlbnQSDQoFdG90YWwYAiABKA0iOAoSTm90aWZ5RHVraWdlblR4UmVxEg8KB3R4X2hhc2gYASABKAkSEQoJY2hhaW5fZWlkGAIgASgNIkkKE05vdGlmeUR1a2lnZW5UeFJlc3ASMgoGZXZlbnRzGAEgAygLMiIuZHVraXJlZ2lzdHJ5LkR1a2lnZW5SZWdpc3RyeUV2ZW50MuACChREdWtlclJlZ2lzdHJ5U2VydmljZRJKCgtHZXRVc2VybmFtZRIcLmR1a2lyZWdpc3RyeS5HZXRVc2VybmFtZVJlcRodLmR1a2lyZWdpc3RyeS5HZXRVc2VybmFtZVJlc3ASXAoUR2V0SWRlbnRpdGllc0J5VG9rZW4SJS5kdWtpcmVnaXN0cnkuR2V0SWRlbnRpdGllc0J5VG9rZW5SZXEaHS5kdWtpcmVnaXN0cnkuR2V0VXNlcm5hbWVSZXNwElAKDU5vdGlmeUR1a2VyVHgSHi5kdWtpcmVnaXN0cnkuTm90aWZ5RHVrZXJUeFJlcRofLmR1a2lyZWdpc3RyeS5Ob3RpZnlEdWtlclR4UmVzcBJMCg9TeW5jRHVrZXJFdmVudHMSGy5kdWtpcmVnaXN0cnkuU3luY0V2ZW50c1JlcRocLmR1a2lyZWdpc3RyeS5TeW5jRXZlbnRzUmVzcDLJAgoWRHVraWdlblJlZ2lzdHJ5U2VydmljZRJBCghHZXRBZ2VudBIZLmR1a2lyZWdpc3RyeS5HZXRBZ2VudFJlcRoaLmR1a2lyZWdpc3RyeS5EdWtpZ2VuQWdlbnQSRAoJR2V0QWdlbnRzEhouZHVraXJlZ2lzdHJ5LkdldEFnZW50c1JlcRobLmR1a2lyZWdpc3RyeS5HZXRBZ2VudHNSZXNwElYKD05vdGlmeUR1a2lnZW5UeBIgLmR1a2lyZWdpc3RyeS5Ob3RpZnlEdWtpZ2VuVHhSZXEaIS5kdWtpcmVnaXN0cnkuTm90aWZ5RHVraWdlblR4UmVzcBJOChFTeW5jRHVraWdlbkV2ZW50cxIbLmR1a2lyZWdpc3RyeS5TeW5jRXZlbnRzUmVxGhwuZHVraXJlZ2lzdHJ5LlN5bmNFdmVudHNSZXNwYgZwcm90bzM", [file_duker_registry, file_dukigen_registry]);
+  fileDesc("ChtkdWtpcmVnaXN0cnlfc2VydmljZXMucHJvdG8SDGR1a2lyZWdpc3RyeSI0Cg5HZXRVc2VybmFtZVJlcRIPCgdhZGRyZXNzGAEgASgJEhEKCWNoYWluX2VpZBgCIAEoDSJACg9HZXRVc2VybmFtZVJlc3ASLQoIaWRlbnRpdHkYASABKAsyGy5kdWtpcmVnaXN0cnkuRHVrZXJJZGVudGl0eSIrChdHZXRJZGVudGl0aWVzQnlUb2tlblJlcRIQCgh0b2tlbl9pZBgBIAEoCSI2ChBOb3RpZnlEdWtlclR4UmVxEg8KB3R4X2hhc2gYASABKAkSEQoJY2hhaW5fZWlkGAIgASgNIkUKEU5vdGlmeUR1a2VyVHhSZXNwEjAKBmV2ZW50cxgBIAMoCzIgLmR1a2lyZWdpc3RyeS5EdWtlclJlZ2lzdHJ5RXZlbnQiUQoNU3luY0V2ZW50c1JlcRIRCgljaGFpbl9laWQYASABKA0SFAoMbGFzdF9ldnRfc2VxGAIgASgEEhcKD21heF9ibG9ja19yYW5nZRgDIAEoBCJVCg5TeW5jRXZlbnRzUmVzcBIUCgxzeW5jZWRfdXBfdG8YASABKAQSFgoOZXZlbnRzX2luZGV4ZWQYAiABKA0SFQoNY2hhaW5fZXZ0X3NlcRgDIAEoBCIfCgtHZXRBZ2VudFJlcRIQCghhZ2VudF9pZBgBIAEoBCIuCgxHZXRBZ2VudHNSZXESDAoEcGFnZRgBIAEoDRIQCghwZXJfcGFnZRgCIAEoDSJKCg1HZXRBZ2VudHNSZXNwEioKBmFnZW50cxgBIAMoCzIaLmR1a2lyZWdpc3RyeS5EdWtpZ2VuQWdlbnQSDQoFdG90YWwYAiABKA0iOAoSTm90aWZ5RHVraWdlblR4UmVxEg8KB3R4X2hhc2gYASABKAkSEQoJY2hhaW5fZWlkGAIgASgNIkkKE05vdGlmeUR1a2lnZW5UeFJlc3ASMgoGZXZlbnRzGAEgAygLMiIuZHVraXJlZ2lzdHJ5LkR1a2lnZW5SZWdpc3RyeUV2ZW50IjcKEENoZWNrVXNlcm5hbWVSZXESEAoIdXNlcm5hbWUYASABKAkSEQoJY2hhaW5fZWlkGAIgASgNIlIKEUNoZWNrVXNlcm5hbWVSZXNwEhEKCWF2YWlsYWJsZRgBIAEoCBIqCgVvd25lchgCIAEoCzIbLmR1a2lyZWdpc3RyeS5EdWtlcklkZW50aXR5MrIDChREdWtlclJlZ2lzdHJ5U2VydmljZRJKCgtHZXRVc2VybmFtZRIcLmR1a2lyZWdpc3RyeS5HZXRVc2VybmFtZVJlcRodLmR1a2lyZWdpc3RyeS5HZXRVc2VybmFtZVJlc3ASUAoNQ2hlY2tVc2VybmFtZRIeLmR1a2lyZWdpc3RyeS5DaGVja1VzZXJuYW1lUmVxGh8uZHVraXJlZ2lzdHJ5LkNoZWNrVXNlcm5hbWVSZXNwElwKFEdldElkZW50aXRpZXNCeVRva2VuEiUuZHVraXJlZ2lzdHJ5LkdldElkZW50aXRpZXNCeVRva2VuUmVxGh0uZHVraXJlZ2lzdHJ5LkdldFVzZXJuYW1lUmVzcBJQCg1Ob3RpZnlEdWtlclR4Eh4uZHVraXJlZ2lzdHJ5Lk5vdGlmeUR1a2VyVHhSZXEaHy5kdWtpcmVnaXN0cnkuTm90aWZ5RHVrZXJUeFJlc3ASTAoPU3luY0R1a2VyRXZlbnRzEhsuZHVraXJlZ2lzdHJ5LlN5bmNFdmVudHNSZXEaHC5kdWtpcmVnaXN0cnkuU3luY0V2ZW50c1Jlc3AyyQIKFkR1a2lnZW5SZWdpc3RyeVNlcnZpY2USQQoIR2V0QWdlbnQSGS5kdWtpcmVnaXN0cnkuR2V0QWdlbnRSZXEaGi5kdWtpcmVnaXN0cnkuRHVraWdlbkFnZW50EkQKCUdldEFnZW50cxIaLmR1a2lyZWdpc3RyeS5HZXRBZ2VudHNSZXEaGy5kdWtpcmVnaXN0cnkuR2V0QWdlbnRzUmVzcBJWCg9Ob3RpZnlEdWtpZ2VuVHgSIC5kdWtpcmVnaXN0cnkuTm90aWZ5RHVraWdlblR4UmVxGiEuZHVraXJlZ2lzdHJ5Lk5vdGlmeUR1a2lnZW5UeFJlc3ASTgoRU3luY0R1a2lnZW5FdmVudHMSGy5kdWtpcmVnaXN0cnkuU3luY0V2ZW50c1JlcRocLmR1a2lyZWdpc3RyeS5TeW5jRXZlbnRzUmVzcGIGcHJvdG8z", [file_duker_registry, file_dukigen_registry]);
 
 /**
  * @generated from message dukiregistry.GetUsernameReq
@@ -288,6 +288,58 @@ export const NotifyDukigenTxRespSchema: GenMessage<NotifyDukigenTxResp> = /*@__P
   messageDesc(file_dukiregistry_services, 11);
 
 /**
+ * @generated from message dukiregistry.CheckUsernameReq
+ */
+export type CheckUsernameReq = Message<"dukiregistry.CheckUsernameReq"> & {
+  /**
+   * Username to check availability
+   *
+   * @generated from field: string username = 1;
+   */
+  username: string;
+
+  /**
+   * Optional: 0 = any chain
+   *
+   * @generated from field: uint32 chain_eid = 2;
+   */
+  chainEid: number;
+};
+
+/**
+ * Describes the message dukiregistry.CheckUsernameReq.
+ * Use `create(CheckUsernameReqSchema)` to create a new message.
+ */
+export const CheckUsernameReqSchema: GenMessage<CheckUsernameReq> = /*@__PURE__*/
+  messageDesc(file_dukiregistry_services, 12);
+
+/**
+ * @generated from message dukiregistry.CheckUsernameResp
+ */
+export type CheckUsernameResp = Message<"dukiregistry.CheckUsernameResp"> & {
+  /**
+   * true if the username is not taken
+   *
+   * @generated from field: bool available = 1;
+   */
+  available: boolean;
+
+  /**
+   * set if the username is taken (who owns it)
+   *
+   * @generated from field: dukiregistry.DukerIdentity owner = 2;
+   */
+  owner?: DukerIdentity;
+};
+
+/**
+ * Describes the message dukiregistry.CheckUsernameResp.
+ * Use `create(CheckUsernameRespSchema)` to create a new message.
+ */
+export const CheckUsernameRespSchema: GenMessage<CheckUsernameResp> = /*@__PURE__*/
+  messageDesc(file_dukiregistry_services, 13);
+
+/**
  * @generated from service dukiregistry.DukerRegistryService
  */
 export const DukerRegistryService: GenService<{
@@ -300,6 +352,16 @@ export const DukerRegistryService: GenService<{
     methodKind: "unary";
     input: typeof GetUsernameReqSchema;
     output: typeof GetUsernameRespSchema;
+  },
+  /**
+   * Check if a username is available
+   *
+   * @generated from rpc dukiregistry.DukerRegistryService.CheckUsername
+   */
+  checkUsername: {
+    methodKind: "unary";
+    input: typeof CheckUsernameReqSchema;
+    output: typeof CheckUsernameRespSchema;
   },
   /**
    * Query all chain presences for a given token ID

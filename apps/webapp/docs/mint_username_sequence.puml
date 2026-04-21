@@ -1,0 +1,113 @@
+@startuml
+
+title Mint Username — Welcome Page Flow
+
+actor User
+participant "welcome.tsx" as WP
+participant "useChainHandle" as UCH
+participant "directHandle" as DH
+participant "Wallet" as Wallet
+participant "Anvil Chain" as Chain
+participant "registry-api" as RegAPI
+participant "Worker :8788" as Worker
+participant "auth/refresh" as Auth
+participant "Webapp D1" as D1
+participant "authStore" as Store
+
+== 0. Page Load ==
+
+User -> WP: navigate to /welcome
+WP -> Store: read me?.username
+Store --> WP: me.username (any value)
+WP --> User: show welcome form\n(no auto-redirect)
+
+== 1. Username Check (debounced typing) ==
+
+User -> WP: types "kang"
+WP -> RegAPI: checkUsernameAvailability("kang", 31337)
+RegAPI -> Worker: POST /CheckUsername
+Worker -> Worker: SELECT duker_users\nWHERE username = ?
+Worker --> RegAPI: {available: true}
+WP --> User: "kang.31337 is available"
+
+== 2. Mint — Happy Path ==
+
+User -> WP: clicks "Mint"
+WP -> UCH: dispatch(txData)
+UCH -> DH: directHandle(txData)
+DH -> Wallet: approve USDT
+User -> Wallet: confirms
+DH -> Wallet: mintUsername("kang", ...)
+User -> Wallet: confirms
+Wallet --> DH: txHash
+DH --> UCH: {txHash}
+
+UCH -> Chain: waitForTransactionReceipt(txHash)
+Chain --> UCH: receipt.status = "success"
+
+UCH -> RegAPI: notifyRegistryWorker(txHash, chainId)
+RegAPI -> Worker: POST /NotifyDukerTx
+Worker -> Chain: getTransactionReceipt
+Chain --> Worker: receipt + logs
+Worker -> Worker: INSERT duker_users
+Worker --> RegAPI: {events, latestEvtSeq}
+
+UCH -> Auth: POST /api/auth/refresh
+Auth -> Worker: getRegistryIdentity(addr, eid)\n(via vite proxy /worker-api)
+Worker --> Auth: {username: "kang"}
+Auth -> D1: UPSERT users SET username="kang"
+Auth -> Auth: re-sign JWT
+Auth --> UCH: {success, data}
+
+UCH --> WP: {authResult}
+WP -> Store: setMe({username: "kang"})
+WP --> User: shows success\nuser navigates away manually
+
+== 3. Mint — AlreadyHasIdentity Recovery ==
+
+note over WP
+  Wallet has on-chain identity
+  but webapp JWT has no username
+  (fresh browser, cleared cookies)
+end note
+
+User -> WP: clicks "Mint"
+WP -> UCH: dispatch(txData)
+UCH -> DH: directHandle(txData)
+DH -> Wallet: mintUsername(...)
+User -> Wallet: confirms
+Wallet --> DH: txHash
+
+UCH -> Chain: waitForTransactionReceipt(txHash)
+Chain --> UCH: receipt.status = "reverted"
+UCH -> UCH: throw "AlreadyHasIdentity"
+
+UCH -> UCH: catch: detect AlreadyHasIdentity
+UCH -> RegAPI: syncDukerEvents(chainId)
+RegAPI -> Worker: POST /SyncDukerEvents
+Worker -> Chain: eth_getLogs(DukerEvent)
+Worker -> Worker: upsert duker_users
+Worker --> RegAPI: {syncedUpTo}
+
+UCH -> Auth: POST /api/auth/refresh
+Auth -> Worker: getRegistryIdentity(addr, eid)\n(via vite proxy /worker-api)
+Worker --> Auth: {username: "kang"}
+Auth -> D1: UPSERT users SET username="kang"
+Auth -> Auth: re-sign JWT
+Auth --> UCH: {success, data}
+
+UCH --> WP: {authResult}
+WP -> Store: setMe({username: "kang"})
+WP --> User: recovery success\nuser navigates away manually
+
+== 4. Subsequent Login ==
+
+User -> WP: SIWE sign-in
+WP -> Auth: POST /api/auth/login
+Auth -> D1: SELECT username\nWHERE address = ?
+D1 --> Auth: username = "kang"
+Auth -> Auth: sign JWT with username
+Auth --> WP: {username: "kang"}
+WP --> User: logged in with username
+
+@enduml

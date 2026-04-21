@@ -8,6 +8,7 @@ import {
     DukerRegistryService,
     DukigenRegistryService,
     GetUsernameRespSchema,
+    CheckUsernameRespSchema,
     NotifyDukerTxRespSchema,
     NotifyDukigenTxRespSchema,
     GetAgentsRespSchema,
@@ -77,6 +78,32 @@ export function registerGrpcRoutes(router: ConnectRouter) {
                 })
             }
             return resp
+        },
+
+        async checkUsername(req) {
+            let query = 'SELECT * FROM duker_users WHERE username = ? COLLATE NOCASE AND status = ?'
+            const params: any[] = [req.username, 'active']
+
+            if (req.chainEid > 0) {
+                query += ' AND chain_eid = ?'
+                params.push(req.chainEid)
+            }
+            query += ' LIMIT 1'
+
+            const row = await _db.prepare(query).bind(...params).first<any>()
+
+            if (row) {
+                return create(CheckUsernameRespSchema, {
+                    available: false,
+                    owner: create(DukerIdentitySchema, {
+                        username: row.username,
+                        chainEid: row.chain_eid,
+                        tokenId: row.token_id,
+                        ego: row.ego,
+                    }),
+                })
+            }
+            return create(CheckUsernameRespSchema, { available: true })
         },
 
         async getIdentitiesByToken(req) {

@@ -22,7 +22,7 @@ import { directHandle } from './directHandle'
 import type { DirectHandleResult } from './directHandle'
 import { getDefaultStablecoin, ADDRESSES, DEFAULT_CHAIN_ID } from '../lib/contracts'
 import { signPayment } from './signPayment'
-import { notifyRegistryWorker } from './registry-api'
+import { notifyRegistryWorker, syncDukerEvents } from './registry-api'
 
 // ConnectRPC client for x402 + notifyTx
 const cmdTransport = createConnectTransport({ baseUrl: '/rpc' })
@@ -165,6 +165,35 @@ export function useChainHandle() {
 
             setTxHash(result.txHash)
 
+            // For USER_MINTED, the tx goes to DukerRegistry (not DukerNews DAO),
+            // so skip the SSR NotifyTx (which parses DukerNews events) and use
+            // the registry worker directly instead.
+            if (txData.evtType === EventType.USER_MINTED) {
+                setStep('confirming')
+
+                // Must check receipt — writeContractAsync returns hash even on reverts
+                const receipt = await publicClient!.waitForTransactionReceipt({
+                    hash: result.txHash as `0x${string}`,
+                })
+                if (receipt.status === 'reverted') {
+                    throw new Error('AlreadyHasIdentity — on-chain revert')
+                }
+
+                // Sync to registry worker API (handles chain access externally)
+                try {
+                    await new Promise(r => setTimeout(r, 1000))
+                    await notifyRegistryWorker(result.txHash, publicClient!.chain.id)
+                } catch { /* best-effort — worker will catch up */ }
+
+                const dukiBps = txData.data?.payload?.case === 'userMinted'
+                    ? txData.data.payload.value.dukiBps : 0
+                let authResult: AuthRefreshResult | undefined
+                try { authResult = await refreshAuth(dukiBps) } catch { /* best-effort */ }
+                setStep('done')
+                return { ...result, events: [], authResult }
+            }
+
+            // For DukerNews DAO events (posts, comments, etc.):
             // Server confirms tx + applies events via ConnectRPC (returns PbEvent[])
             setStep('confirming')
             let events: PbEvent[] = []
@@ -174,25 +203,27 @@ export function useChainHandle() {
                 events = resp.events
             } catch { /* best-effort — webhook will catch up */ }
 
-            // Fire-and-forget: sync to registry worker API
-            if (txData.evtType === EventType.USER_MINTED) {
-                notifyRegistryWorker(result.txHash, DEFAULT_CHAIN_ID).catch(() => {})
-            }
-
-            // If USER_MINTED, also refresh auth to get JWT cookie
-            if (txData.evtType === EventType.USER_MINTED) {
-                const dukiBps = txData.data?.payload?.case === 'userMinted'
-                    ? txData.data.payload.value.dukiBps : 0
-                let authResult: AuthRefreshResult | undefined
-                try { authResult = await refreshAuth(dukiBps) } catch { /* best-effort */ }
-                setStep('done')
-                return { ...result, events, authResult }
-            }
-
             setStep('done')
             return { ...result, events }
         } catch (e: any) {
             const msg = extractRevertReason(e)
+
+            // ── AlreadyHasIdentity recovery ────────────────
+            // The wallet already has an on-chain identity but the webapp
+            // doesn't know about it (fresh cookies, cleared session, etc.).
+            // Sync events from the worker and refresh auth to recover.
+            if (msg.includes('AlreadyHasIdentity') && txData.evtType === EventType.USER_MINTED) {
+                setStep('confirming')
+                try {
+                    await syncDukerEvents(publicClient!.chain.id)
+                    const authResult = await refreshAuth()
+                    setStep('done')
+                    return { txHash: '', events: [], authResult }
+                } catch {
+                    // Recovery failed — fall through to normal error handling
+                }
+            }
+
             setError(msg)
             setStep('idle')
             throw e

@@ -8,7 +8,7 @@ export interface AuthRefreshResult {
 }
 
 /** POST /api/auth/refresh — verify on-chain username, re-issue JWT. */
-export async function refreshAuth(dukiBps: number, txHash?: string): Promise<AuthRefreshResult> {
+export async function refreshAuth(dukiBps: number = 0, txHash?: string): Promise<AuthRefreshResult> {
     const resp = await fetch('/api/auth/refresh', {
         method: 'POST',
         credentials: 'include',

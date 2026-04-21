@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "lsof -ti:3000 | xargs kill -9 2>/dev/null; vite dev --port 3000",
+    "dev": "lsof -ti:3000 | xargs kill -9 2>/dev/null; vite dev --port 3000 --host",
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",

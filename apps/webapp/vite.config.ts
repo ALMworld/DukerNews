@@ -14,6 +14,15 @@ const config = defineConfig(() => ({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  server: {
+    proxy: {
+      '/worker-api': {
+        target: 'http://localhost:8788',
+        changeOrigin: true,
+        rewrite: (path: string) => path.replace(/^\/worker-api/, ''),
+      },
+    },
+  },
   plugins: [
     cloudflare({ viteEnvironment: { name: 'ssr' } }),
     paraglideVitePlugin({
