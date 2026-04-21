@@ -111,15 +111,16 @@ deploy-local: ## Deploy ALM stack + DukerNews DAO to fresh Anvil
 	@echo "   Addresses are in the contract package deployments/index.ts files."
 	@echo "   Run 'pnpm dev' to start the webapp."
 
+# make fund-local FUND_TO=0x35011409798d5Cd93B015bfDEC1AC99a06301747
 fund-local:
 	@echo "=== Funding $(FUND_TO) on Anvil ==="
-	@USDT_ADDR=$$(python3 -c "import json; print(json.load(open('$(ALM_DEPLOY_JSON)'))['mockUsdt'])") && \
+	@USDT_ADDR=$$(grep "mockUsdt:" $(ALM_PKG)/deployments/index.ts | head -1 | sed "s/.*'\(0x[^']*\)'.*/\1/") && \
 	echo "→ MockUSDT at $$USDT_ADDR" && \
 	echo "→ Sending $(FUND_ETH) ETH…" && \
 	cast send $(FUND_TO) --value $(FUND_ETH)ether \
 		--rpc-url $(ANVIL_RPC) --private-key $(ANVIL_KEY_0) && \
-	echo "→ Minting $(FUND_USDT) MockUSDT…" && \
-	cast send $$USDT_ADDR "mint(address,uint256)" $(FUND_TO) $$(echo "$(FUND_USDT) * 1000000" | bc) \
+	echo "→ Transferring $(FUND_USDT) MockUSDT…" && \
+	cast send $$USDT_ADDR "transfer(address,uint256)" $(FUND_TO) $$(echo "$(FUND_USDT) * 1000000" | bc) \
 		--rpc-url $(ANVIL_RPC) --private-key $(ANVIL_KEY_0) && \
 	echo "✓ Funded: $(FUND_ETH) ETH + $(FUND_USDT) USDT → $(FUND_TO)"
 
