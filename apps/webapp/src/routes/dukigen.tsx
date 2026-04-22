@@ -16,12 +16,13 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { useAccount, useChainId, useSwitchChain, useWriteContract, usePublicClient } from 'wagmi'
 import { useAuthStore } from '../lib/authStore'
-import { ADDRESSES, DEFAULT_CHAIN_ID, dukigenRegistryAbi } from '../lib/contracts'
+import { ADDRESSES, DEFAULT_CHAIN_ID, SUPPORTED_CHAINS, dukigenRegistryAbi } from '../lib/contracts'
+import { notifyDukigenTx } from '../client/registry-api'
 import { DukiBpsSlider } from '../components/DukiBpsSlider'
 import {
     FileDigit, Package, UserStar,
     TrendingUp, PieChart, Loader2,
-    CheckCircle2, AlertCircle, Plus, ExternalLink,
+    CheckCircle2, AlertCircle, Plus, ExternalLink, Link as LinkIcon,
 } from 'lucide-react'
 
 export const Route = createFileRoute('/dukigen')({
@@ -116,13 +117,7 @@ function DukigenPage() {
         setRegisteredId(null)
 
         try {
-            // Switch chain if needed
-            if (chainId !== DEFAULT_CHAIN_ID) {
-                setStep('switching')
-                await switchChainAsync({ chainId: DEFAULT_CHAIN_ID })
-            }
-
-            const addrs = ADDRESSES[DEFAULT_CHAIN_ID]
+            const addrs = ADDRESSES[chainId] ?? ADDRESSES[DEFAULT_CHAIN_ID]
             const tags = tagsInput.split(',').map(t => t.trim()).filter(Boolean)
 
             setStep('executing')
@@ -148,6 +143,9 @@ function DukigenPage() {
             }
 
             setStep('done')
+
+            // Notify the registry worker so it indexes the new agent
+            notifyDukigenTx(hash, chainId)  // fire-and-forget
         } catch (e: any) {
             // Try to decode revert reason
             let msg = e?.shortMessage || e?.message?.split('\n')[0] || 'Transaction failed'
@@ -186,6 +184,47 @@ function DukigenPage() {
 
             {/* ── Form ── */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+                {/* ── Chain selector ── */}
+                {SUPPORTED_CHAINS.length > 1 && (
+                    <div>
+                        <label style={{
+                            display: 'block', fontSize: 11, fontWeight: 600, marginBottom: 6,
+                            color: META, textTransform: 'uppercase' as const, letterSpacing: '0.06em',
+                        }}>
+                            <LinkIcon size={10} style={{ display: 'inline', marginRight: 4, verticalAlign: 'middle' }} />
+                            Network
+                        </label>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                            {SUPPORTED_CHAINS.map(c => {
+                                const on = chainId === c.id
+                                return (
+                                    <button
+                                        key={c.id}
+                                        type="button"
+                                        onClick={async () => {
+                                            if (saving || c.id === chainId) return
+                                            try { await switchChainAsync({ chainId: c.id }) } catch { /* user rejected */ }
+                                        }}
+                                        disabled={saving || step === 'done'}
+                                        style={{
+                                            padding: '6px 14px', borderRadius: 8, fontSize: 12,
+                                            fontWeight: 500, cursor: saving ? 'not-allowed' : 'pointer',
+                                            border: on ? '2px solid #8b5cf6' : `1px solid ${BDR}`,
+                                            background: on ? 'rgba(139,92,246,0.08)' : 'transparent',
+                                            color: on ? '#8b5cf6' : FG,
+                                            opacity: saving ? 0.5 : 1,
+                                            transition: 'all 0.15s',
+                                        }}
+                                    >
+                                        {c.name}
+                                        {c.isHome && <span style={{ marginLeft: 4, opacity: 0.5, fontSize: 9 }}>●</span>}
+                                    </button>
+                                )
+                            })}
+                        </div>
+                    </div>
+                )}
 
                 {/* Agent Name */}
                 <FieldGroup label="Agent Name" required hint="Brand name for your works (spaces allowed)">

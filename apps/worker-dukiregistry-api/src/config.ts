@@ -5,8 +5,8 @@
  * RPC URLs come from environment variables (.dev.vars).
  */
 
-import { parseAbi } from 'viem'
 import { almDeployments, type AlmDeployment } from 'contract-duki-alm-world/deployments'
+import { dukerRegistryAbi, dukigenRegistryAbi } from 'contract-duki-alm-world'
 
 // ── Chain config ──────────────────────────────────────────────
 
@@ -45,12 +45,12 @@ export function getSupportedChainEids(): number[] {
     return Object.keys(CHAIN_CONFIGS).map(Number)
 }
 
-// ── ABI fragments for log parsing ─────────────────────────────
+// ── ABI fragments for log parsing (derived from generated contract ABIs) ──
 
-export const DUKER_EVENT_ABI = parseAbi([
-    'event DukerEvent(uint256 indexed tokenId, uint64 indexed evtSeq, uint8 eventType, address ego, string username, uint64 evtTime, bytes eventData)',
-])
+export const DUKER_EVENT_ABI = dukerRegistryAbi.filter(
+    (item) => item.type === 'event' && item.name === 'DukerEvent'
+)
 
-export const DUKIGEN_EVENT_ABI = parseAbi([
-    'event DukigenEvent(uint256 indexed agentId, uint64 indexed evtSeq, uint32 eventType, address ego, uint64 evtTime, bytes eventData)',
-])
+export const DUKIGEN_EVENT_ABI = dukigenRegistryAbi.filter(
+    (item) => item.type === 'event' && item.name === 'DukigenEvent'
+)

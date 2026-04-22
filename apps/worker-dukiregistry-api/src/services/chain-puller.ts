@@ -117,7 +117,7 @@ function parseDukigenLog(log: Log, chainEid: number, txHash: string, blockNumber
             eventType: Number(args.eventType),
             ego: args.ego.toLowerCase(),
             evtTime: args.evtTime,
-            eventData: log.data,
+            eventData: args.eventData,
             txHash,
             blockNumber,
         }

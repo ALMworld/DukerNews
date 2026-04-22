@@ -36,6 +36,7 @@
     "@radix-ui/react-separator": "^1.1.8",
     "@rainbow-me/rainbowkit": "^2.2.10",
     "@repo/apidefs": "workspace:*",
+    "@repo/dukiregistry-apidefs": "workspace:*",
     "@tailwindcss/vite": "^4.0.6",
     "@tanstack/react-devtools": "^0.7.0",
     "@tanstack/react-form": "^1.12.4",

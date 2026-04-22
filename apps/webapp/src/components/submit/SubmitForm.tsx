@@ -25,11 +25,17 @@ import { DukiPayment, type DukiPaymentValue } from '../DukiPayment'
 import { SubmitOnChainButton } from '../SubmitOnChainButton'
 import { SectionHeader } from './SectionHeader'
 import { useAppForm } from './form-context'
+import { useDukigenAgent } from '../../client/useDukigenAgent'
 
 import {
     HeartHandshake,
     FileText,
     Zap,
+    ExternalLink,
+    Loader2,
+    CheckCircle2,
+    AlertCircle,
+    Boxes,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -89,6 +95,12 @@ export default function SubmitForm() {
     const { dispatch, step, txHash, error: submitError, reset: _reset } = useChainHandle()
     const navigate = useNavigate()
     const queryClient = useQueryClient()
+
+    // ── DukiGen Agent lookup ────────────────────────────────
+    const {
+        agentIdInput, setAgentIdInput, loadAgent,
+        agent: agentInfo, isLoading: agentLoading, error: agentError,
+    } = useDukigenAgent()
     const isSubmitting = step !== 'idle' && step !== 'done'
     const isConfirming = step === 'confirming'
     const isIndexing = step === 'indexing'
@@ -319,6 +331,101 @@ export default function SubmitForm() {
                         kind !== PostKind.WORKS ? null : (
                             <>
                                 <SectionHeader icon={HeartHandshake} label="DUKI · Works Details" />
+
+                                {/* ── DukiGen Agent ID ── */}
+                                <div>
+                                    <label className="mb-0.5 flex items-center gap-1.5 text-xs" style={{ color: 'var(--meta-color)' }}>
+                                        <Boxes size={11} />
+                                        <span className="font-medium">DukiGen Agent ID</span>
+                                        <span className="opacity-60">(optional)</span>
+                                    </label>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            step="1"
+                                            value={agentIdInput}
+                                            onChange={(e) => setAgentIdInput(e.target.value)}
+                                            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); loadAgent() } }}
+                                            placeholder="e.g. 1"
+                                            className={inputCls}
+                                            style={{ ...inputStyle, width: '120px' }}
+                                            disabled={isSubmitting || isConfirmed}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={loadAgent}
+                                            disabled={!agentIdInput.trim() || agentLoading || isSubmitting || isConfirmed}
+                                            className="flex items-center gap-1 rounded border px-2 py-1 text-xs font-medium transition-colors"
+                                            style={{
+                                                borderColor: 'var(--border)',
+                                                background: 'var(--muted)',
+                                                color: 'var(--foreground)',
+                                                cursor: !agentIdInput.trim() || agentLoading ? 'not-allowed' : 'pointer',
+                                                opacity: !agentIdInput.trim() || agentLoading ? 0.5 : 1,
+                                            }}
+                                        >
+                                            {agentLoading ? <Loader2 size={12} className="animate-spin" /> : 'Load'}
+                                        </button>
+                                        {agentInfo && <CheckCircle2 size={14} style={{ color: '#22c55e' }} />}
+                                        {agentError && <AlertCircle size={14} style={{ color: '#ef4444' }} />}
+                                        <a
+                                            href="/dukigen"
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="flex items-center gap-1 text-xs font-medium transition-opacity hover:opacity-80"
+                                            style={{ color: 'var(--duki-400)', marginLeft: 'auto' }}
+                                        >
+                                            Register new agent <ExternalLink size={10} />
+                                        </a>
+                                    </div>
+
+                                    {/* Agent error */}
+                                    {agentError && (
+                                        <p className="mt-1 text-xs" style={{ color: '#ef4444' }}>{agentError}</p>
+                                    )}
+
+                                    {/* Agent preview card (read-only) */}
+                                    {agentInfo && (
+                                        <div
+                                            className="mt-2 rounded-lg border px-3 py-2 text-xs"
+                                            style={{ borderColor: 'var(--duki-500)', background: 'var(--muted)', color: 'var(--foreground)' }}
+                                        >
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className="font-semibold">{agentInfo.name}</span>
+                                                <span className="opacity-50">#{String(agentInfo.agentId)}</span>
+                                            </div>
+                                            {agentInfo.agentUri && (
+                                                <div className="truncate opacity-70" style={{ fontSize: 10 }}>
+                                                    {agentInfo.agentUri}
+                                                </div>
+                                            )}
+                                            <div className="flex items-center gap-3 mt-1.5 flex-wrap" style={{ color: 'var(--meta-color)' }}>
+                                                <span>
+                                                    {PRODUCT_LABELS[agentInfo.productType as ProductType] ?? 'Unknown'}
+                                                </span>
+                                                <span>·</span>
+                                                <span>{agentInfo.dukiType === 1 ? 'Revenue Share' : agentInfo.dukiType === 2 ? 'Profit Share' : '—'}</span>
+                                                <span>·</span>
+                                                <span>DUKI {(agentInfo.defaultDukiBps / 100).toFixed(1)}%</span>
+                                            </div>
+                                            {agentInfo.tags.length > 0 && (
+                                                <div className="flex gap-1 flex-wrap mt-1.5">
+                                                    {agentInfo.tags.map((tag, i) => (
+                                                        <span
+                                                            key={i}
+                                                            className="rounded-full border px-1.5 py-0.5"
+                                                            style={{ fontSize: 9, borderColor: 'var(--border)', color: 'var(--meta-color)' }}
+                                                        >
+                                                            {tag}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
 
                                 <form.AppField
                                     name="productType"

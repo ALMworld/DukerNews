@@ -2,6 +2,7 @@
  * dukigen-event-service.ts — Persist DukigenRegistry events and materialize agents.
  */
 
+import { decodeAbiParameters } from 'viem'
 import type { PulledDukigenEvent } from './chain-puller'
 import { DukigenEventType } from '@repo/dukiregistry-apidefs'
 
@@ -28,18 +29,40 @@ export async function persistDukigenEvent(db: D1Database, evt: PulledDukigenEven
 
 /**
  * Materialize agent state from a DukigenEvent.
+ * Decodes ABI-encoded eventData for each event type.
  */
 export async function materializeAgent(db: D1Database, evt: PulledDukigenEvent): Promise<void> {
     const now = Math.floor(Date.now() / 1000)
 
     switch (evt.eventType) {
         case DukigenEventType.AGENT_REGISTERED: {
+            // eventData = abi.encode(AgentRegisteredData) = (string name, string agentURI)
+            let name = ''
+            let agentUri = ''
+            try {
+                const decoded = decodeAbiParameters(
+                    [
+                        { type: 'tuple', components: [
+                            { name: 'name', type: 'string' },
+                            { name: 'agentURI', type: 'string' },
+                        ]}
+                    ],
+                    evt.eventData as `0x${string}`,
+                )
+                name = (decoded[0] as any).name ?? ''
+                agentUri = (decoded[0] as any).agentURI ?? ''
+            } catch {
+                // fallback: event data may be malformed
+            }
+
             await db.prepare(`
                 INSERT OR REPLACE INTO dukigen_agents
-                (agent_id, owner, origin_chain_eid, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?)
+                (agent_id, name, agent_uri, owner, origin_chain_eid, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             `).bind(
                 evt.agentId.toString(),
+                name,
+                agentUri,
                 evt.ego,
                 evt.chainEid,
                 Number(evt.evtTime),
@@ -49,25 +72,77 @@ export async function materializeAgent(db: D1Database, evt: PulledDukigenEvent):
         }
 
         case DukigenEventType.AGENT_URI_UPDATED: {
+            // eventData = abi.encode(AgentURIUpdatedData) = (string newURI)
+            let newUri = ''
+            try {
+                const decoded = decodeAbiParameters(
+                    [{ type: 'tuple', components: [{ name: 'newURI', type: 'string' }] }],
+                    evt.eventData as `0x${string}`,
+                )
+                newUri = (decoded[0] as any).newURI ?? ''
+            } catch {}
+
             await db.prepare(`
-                UPDATE dukigen_agents SET agent_uri = '', updated_at = ?
+                UPDATE dukigen_agents SET agent_uri = ?, updated_at = ?
                 WHERE agent_id = ?
-            `).bind(now, evt.agentId.toString()).run()
-            // TODO: decode ABI to get newURI
+            `).bind(newUri, now, evt.agentId.toString()).run()
             break
         }
 
         case DukigenEventType.AGENT_DUKI_BPS_SET: {
-            // TODO: decode ABI to get defaultDukiBps, minDukiBps, maxDukiBps
+            // eventData = abi.encode(AgentDukiBpsSetData) = (uint16 defaultDukiBps, uint16 minDukiBps, uint16 maxDukiBps)
+            let defaultDukiBps = 0, minDukiBps = 0, maxDukiBps = 0
+            try {
+                const decoded = decodeAbiParameters(
+                    [{ type: 'tuple', components: [
+                        { name: 'defaultDukiBps', type: 'uint16' },
+                        { name: 'minDukiBps', type: 'uint16' },
+                        { name: 'maxDukiBps', type: 'uint16' },
+                    ]}],
+                    evt.eventData as `0x${string}`,
+                )
+                const d = decoded[0] as any
+                defaultDukiBps = Number(d.defaultDukiBps ?? 0)
+                minDukiBps = Number(d.minDukiBps ?? 0)
+                maxDukiBps = Number(d.maxDukiBps ?? 0)
+            } catch {}
+
             await db.prepare(`
-                UPDATE dukigen_agents SET updated_at = ?
+                UPDATE dukigen_agents SET default_duki_bps = ?, min_duki_bps = ?, max_duki_bps = ?, updated_at = ?
                 WHERE agent_id = ?
-            `).bind(now, evt.agentId.toString()).run()
+            `).bind(defaultDukiBps, minDukiBps, maxDukiBps, now, evt.agentId.toString()).run()
+            break
+        }
+
+        case DukigenEventType.AGENT_WORKS_DATA_SET: {
+            // eventData = abi.encode(AgentWorksDataSetData) = (uint8 productType, uint8 dukiType, string pledgeUrl, string[] tags)
+            let productType = 0, dukiType = 0, pledgeUrl = '', tags: string[] = []
+            try {
+                const decoded = decodeAbiParameters(
+                    [{ type: 'tuple', components: [
+                        { name: 'productType', type: 'uint8' },
+                        { name: 'dukiType', type: 'uint8' },
+                        { name: 'pledgeUrl', type: 'string' },
+                        { name: 'tags', type: 'string[]' },
+                    ]}],
+                    evt.eventData as `0x${string}`,
+                )
+                const d = decoded[0] as any
+                productType = Number(d.productType ?? 0)
+                dukiType = Number(d.dukiType ?? 0)
+                pledgeUrl = d.pledgeUrl ?? ''
+                tags = d.tags ?? []
+            } catch {}
+
+            await db.prepare(`
+                UPDATE dukigen_agents SET product_type = ?, duki_type = ?, pledge_url = ?, tags = ?, updated_at = ?
+                WHERE agent_id = ?
+            `).bind(productType, dukiType, pledgeUrl, JSON.stringify(tags), now, evt.agentId.toString()).run()
             break
         }
 
         case DukigenEventType.AGENT_WALLET_SET: {
-            // TODO: decode ABI to get newWallet
+            // eventData = abi.encode(AgentWalletSetData) = (address newWallet)
             await db.prepare(`
                 UPDATE dukigen_agents SET updated_at = ?
                 WHERE agent_id = ?
@@ -76,7 +151,7 @@ export async function materializeAgent(db: D1Database, evt: PulledDukigenEvent):
         }
 
         default:
-            // WORKS_DATA_SET, METADATA_SET, WALLET_UNSET, PAYMENT_PROCESSED — log only for now
+            // METADATA_SET, WALLET_UNSET, PAYMENT_PROCESSED — log only for now
             break
     }
 }
@@ -90,3 +165,4 @@ export async function processDukigenEvents(db: D1Database, events: PulledDukigen
         await materializeAgent(db, evt)
     }
 }
+

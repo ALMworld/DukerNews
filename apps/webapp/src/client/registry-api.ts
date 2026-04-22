@@ -99,3 +99,43 @@ export async function syncDukerEvents(chainEid: number, lastEvtSeq: number = 0):
         return {}
     }
 }
+// ── DukigenRegistryService (ConnectRPC binary client) ─────────────────────
+
+import { createClient } from '@connectrpc/connect'
+import { createConnectTransport } from '@connectrpc/connect-web'
+import { DukigenRegistryService, type DukigenAgent } from '@repo/dukiregistry-apidefs'
+
+const dukigenTransport = createConnectTransport({
+    baseUrl: REGISTRY_WORKER_URL,
+})
+
+export const dukigenClient = createClient(DukigenRegistryService, dukigenTransport)
+
+export type { DukigenAgent }
+
+/**
+ * Fetch a DukiGen agent by token ID using the generated ConnectRPC client.
+ * Returns null if not found or worker is unreachable.
+ */
+export async function getDukigenAgent(agentId: string): Promise<DukigenAgent | null> {
+    try {
+        const agent = await dukigenClient.getAgent({ agentId: BigInt(agentId) })
+        // Empty response (no name) means agent not found
+        if (!agent.name) return null
+        return agent
+    } catch {
+        return null
+    }
+}
+
+/**
+ * Notify the registry worker about a DukigenRegistry tx so it indexes the events.
+ * Fire-and-forget — errors are silently swallowed.
+ */
+export async function notifyDukigenTx(txHash: string, chainEid: number): Promise<void> {
+    try {
+        await dukigenClient.notifyDukigenTx({ txHash, chainEid })
+    } catch {
+        // Best-effort; don't block the UI
+    }
+}
