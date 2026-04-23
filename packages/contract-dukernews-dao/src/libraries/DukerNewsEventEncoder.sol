@@ -10,14 +10,14 @@ library DukerNewsEventEncoder {
         uint256 tokenId,
         string memory username,
         uint128 amount,
-        uint16 dukiBps
+        uint16 dealDukiBps
     ) internal pure returns (bytes memory) {
         return abi.encode(
             IDukerNewsEvents.UsernameMintedData({
                 tokenId: tokenId,
                 username: username,
                 amount: amount,
-                dukiBps: dukiBps
+                dealDukiBps: dealDukiBps
             })
         );
     }

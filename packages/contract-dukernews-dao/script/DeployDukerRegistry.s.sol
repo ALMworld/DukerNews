@@ -15,8 +15,8 @@ contract DeployLocalDukerNews is Script {
 
         // Registry addresses (set after deploying registries)
         address dukerRegistryAddr = vm.envOr("DUKER_REGISTRY_ADDRESS", address(0));
-        address dukigenRegistryAddr = vm.envOr("DUKIGEN_REGISTRY_ADDRESS", address(0));
-        uint256 agentId = vm.envOr("DUKERNEWS_AGENT_ID", uint256(0));
+        address almWorldDukiMinterAddr = vm.envOr("ALM_WORLD_DUKI_MINTER", address(0));
+        uint256 dukerNewsAgentId = vm.envOr("DUKERNEWS_AGENT_ID", uint256(0));
 
         vm.startBroadcast(deployerKey);
 
@@ -27,7 +27,7 @@ contract DeployLocalDukerNews is Script {
         DukerNews impl = new DukerNews();
         bytes memory initData = abi.encodeCall(
             DukerNews.initialize,
-            (dukerRegistryAddr, dukigenRegistryAddr, agentId, address(usdt))
+            (dukerRegistryAddr, almWorldDukiMinterAddr, dukerNewsAgentId)
         );
         ERC1967Proxy proxy = new ERC1967Proxy(address(impl), initData);
 

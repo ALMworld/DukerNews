@@ -10,7 +10,7 @@
 import { toBinary } from '@bufbuild/protobuf'
 import { toHex } from 'viem'
 import { EventType, EventDataSchema, type DukerTxReq, deflateRaw } from '@repo/apidefs'
-import { ADDRESSES, dukerNewsAbi, dukerRegistryAbi, ERC20_ABI, DEFAULT_CHAIN_ID, getDefaultStablecoin, MIN_APPROVE_MICRO } from '../lib/contracts'
+import { ADDRESSES, dukerNewsAbi, ERC20_ABI, DEFAULT_CHAIN_ID, getDefaultStablecoin, MIN_APPROVE_MICRO } from '../lib/contracts'
 
 function maxBigInt(a: bigint, b: bigint): bigint { return a > b ? a : b }
 
@@ -72,24 +72,24 @@ export async function directHandle(
         case EventType.USER_MINTED: {
             const payload = txData.data?.payload
             if (payload?.case !== 'userMinted') throw new Error('Missing userMinted payload')
-            const { username, mintAmount, dukiBps } = payload.value
+            const { username, mintAmount } = payload.value
             const amountMicro = BigInt(mintAmount)
 
-            // If paying, approve DukigenRegistry (it calls transferFrom in payTo)
+            // Approve DukerRegistry for payment transfer (registry handles payment routing)
             if (amountMicro > 0n) {
-                await ensureAllowance(ctx, stablecoin.address, addrs.DukigenRegistry, amountMicro)
+                await ensureAllowance(ctx, stablecoin.address, addrs.DukerRegistry, amountMicro)
             }
 
             ctx.onStep('executing')
             const contractCall = {
-                address: addrs.DukerRegistry,
-                abi: dukerRegistryAbi,
+                address: addrs.DukerNews,
+                abi: dukerNewsAbi,
                 functionName: 'mintUsername' as const,
                 args: [
-                    username,                                          // displayName
-                    dukiBps,                                           // preferDukiBps_
-                    amountMicro,                                       // experienceAmount
-                    stablecoin.address
+                    ctx.address,           // to (self-mint)
+                    username,              // displayName
+                    amountMicro,           // amount
+                    stablecoin.address,    // stableCoin
                 ],
                 account: ctx.address,
             }
@@ -97,9 +97,8 @@ export async function directHandle(
                 const mintTx = await ctx.writeContractAsync(contractCall)
                 return { txHash: mintTx }
             } catch (err) {
-                // Simulate to decode the actual revert reason (wallet errors are opaque)
                 await ctx.simulateContract(contractCall)
-                throw err // if simulate didn't throw, rethrow original
+                throw err
             }
         }
 
@@ -119,7 +118,7 @@ export async function directHandle(
                 address: addrs.DukerNews,
                 abi: dukerNewsAbi,
                 functionName: 'submitPost',
-                args: [AGG_TYPE_POST, BigInt(0), EVT_TYPE_POST_CREATED, hexData, amountMicro],
+                args: [AGG_TYPE_POST, BigInt(0), EVT_TYPE_POST_CREATED, hexData, amountMicro, stablecoin.address],
             })
 
             return { txHash: postTx }
@@ -189,7 +188,7 @@ export async function directHandle(
                 address: addrs.DukerNews,
                 abi: dukerNewsAbi,
                 functionName: 'boostAttention',
-                args: [txData.aggType, BigInt(txData.aggId ?? 0), txData.evtType, hexData, boostMicro],
+                args: [txData.aggType, BigInt(txData.aggId ?? 0), txData.evtType, hexData, boostMicro, stablecoin.address],
             })
 
             return { txHash: boostTx }

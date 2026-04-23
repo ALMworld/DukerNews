@@ -30,15 +30,9 @@ const publicClient = createPublicClient({ chain: foundry, transport: http(deploy
 
 // ── Minimal ABIs ─────────────────────────────────────────────
 const REGISTRY_ABI = parseAbi([
-    'function mintUsername(string displayName, uint16 preferDukiBps_, uint256 experienceAmount, address stableCoinAddress)',
+    'function mintUsername(string displayName)',
     'function usernameOf(address owner) view returns (string)',
-    'function setSelfAgentId(uint256 _selfAgentId)',
     'event DukerEvent(uint256 indexed tokenId, uint64 indexed evtSeq, uint8 eventType, address ego, string username, uint64 evtTime, bytes eventData)',
-])
-
-const ERC20_ABI = parseAbi([
-    'function approve(address spender, uint256 amount) returns (bool)',
-    'function balanceOf(address owner) view returns (uint256)',
 ])
 
 // ── Helpers ──────────────────────────────────────────────────
@@ -87,29 +81,14 @@ async function main() {
         process.exit(1)
     }
 
-    // ── 2. Approve stablecoin for DukerRegistry ──────────────
-    console.log('\n[2/7] Approving MockUSDT for DukerRegistry...')
-    const approveAmount = 1000000000n // 1000 USDT (6 decimals)
-    const approveTx = await walletClient.writeContract({
-        address: deploy.mockUsdt!,
-        abi: ERC20_ABI,
-        functionName: 'approve',
-        args: [deploy.dukerRegistry, approveAmount],
-    })
-    await publicClient.waitForTransactionReceipt({ hash: approveTx })
-    assert(true, `Approved ${approveAmount} to DukerRegistry`)
-
-    // ── 3. Mint username ─────────────────────────────────────
-    console.log('\n[3/7] Minting username "alice"...')
+    // ── 2. Mint username ─────────────────────────────────────
+    console.log('\n[2/7] Minting username "alice"...')
     const mintTx = await walletClient.writeContract({
         address: deploy.dukerRegistry,
         abi: REGISTRY_ABI,
         functionName: 'mintUsername',
         args: [
             'alice',                        // displayName
-            500,                            // preferDukiBps (5%)
-            0n,                             // experienceAmount (0 = free mint)
-            deploy.mockUsdt!,               // stableCoinAddress
         ],
     })
     const mintReceipt = await publicClient.waitForTransactionReceipt({ hash: mintTx })

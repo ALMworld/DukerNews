@@ -118,11 +118,11 @@ message LikeItemPayload {
 // ─── User Payloads ───────────────────────────────────────
 
 message UserMintedPayload {
-  string address     = 1;
-  string username    = 2;
-  uint64 mint_amount = 3;  // USDT amount in 6-decimal precision
-  uint32 duki_bps    = 4;  // Basis points (0–10000) platform share
-  uint64 token_id    = 5;  // NFT token ID
+  string address          = 1;
+  string username         = 2;
+  uint64 mint_amount      = 3;  // USDT amount in 6-decimal precision
+  uint32 deal_duki_bps    = 4;  // Basis points (0–10000) DUKI ecosystem share
+  uint64 token_id         = 5;  // NFT token ID
 }
 
 message UserAmendedPayload {

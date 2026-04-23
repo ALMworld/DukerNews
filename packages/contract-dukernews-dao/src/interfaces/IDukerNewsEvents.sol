@@ -33,8 +33,8 @@ interface IDukerNewsEvents {
     struct UsernameMintedData {
         uint256 tokenId;
         string username;
-        uint128 amount; // USDT amount in 6-decimal native precision
-        uint16 dukiBps; // basis points (0–10000) for platform share
+        uint128 amount;       // USDT amount in 6-decimal native precision
+        uint16 dealDukiBps;   // basis points (0–10000) for DUKI ecosystem share
     }
 
     // ABI helper — gives ethers.js / viem the struct ABI for decoding eventData

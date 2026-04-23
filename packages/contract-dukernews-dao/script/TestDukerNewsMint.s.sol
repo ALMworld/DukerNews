@@ -30,7 +30,7 @@ contract TestDukerNewsPost is Script {
             1,    // evtType = POST_CREATED
             "",   // data (empty for test)
             0,    // boostAmount = 0 (free)
-            5000  // userPreferDukiBps (irrelevant when boost=0)
+            address(0) // stableCoin (ignored when boost=0)
         );
 
         vm.stopBroadcast();

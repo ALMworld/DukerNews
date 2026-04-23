@@ -59,17 +59,12 @@ async function main() {
     // Read ALM stack addresses from canonical source
     const alm = almDeployments[31337]
     let dukerRegistryAddr = '0x0000000000000000000000000000000000000000' as `0x${string}`
-    let dukigenRegistryAddr = '0x0000000000000000000000000000000000000000' as `0x${string}`
-    let agentId = 0n
 
     if (alm) {
         dukerRegistryAddr = alm.dukerRegistry
-        dukigenRegistryAddr = alm.dukigenRegistry
-        agentId = (1n << 32n) | BigInt(31337)
         console.log(`  Using ALM stack addresses:`)
-        console.log(`    DukerRegistry:   ${dukerRegistryAddr}`)
-        console.log(`    DukigenRegistry: ${dukigenRegistryAddr}`)
-        console.log(`    AgentId:         ${agentId}\n`)
+        console.log(`    DukerRegistry:       ${dukerRegistryAddr}`)
+        console.log(`    AlmWorldDukiMinter:  ${alm.almWorldDukiMinter}\n`)
     } else {
         console.log(`  ⚠️  No ALM stack found — using zeroed registry addresses\n`)
     }
@@ -98,13 +93,31 @@ async function main() {
     // 3. Deploy ERC1967Proxy + initialize
     console.log('  [3/3] Deploying ERC1967Proxy + initialize...')
     const proxyArtifact = loadArtifact('out/ERC1967Proxy.sol/ERC1967Proxy.json')
+    const almWorldDukiMinterAddr = alm?.almWorldDukiMinter ?? '0x0000000000000000000000000000000000000000' as `0x${string}`
+    const agentId = alm ? (1n << 32n) | BigInt(31337) : 0n
     const initData = encodeFunctionData({
         abi: dukerNewsArtifact.abi,
         functionName: 'initialize',
-        args: [dukerRegistryAddr, dukigenRegistryAddr, agentId, mockUsdtAddr],
+        args: [dukerRegistryAddr, almWorldDukiMinterAddr, agentId],
     })
     const proxyAddr = await deploy(proxyArtifact.abi, proxyArtifact.bytecode, [implAddr, initData])
     console.log(`        ✓ Proxy (DukerNews): ${proxyAddr}`)
+
+    // 3b. Configure DukerRegistry to use AlmWorldDukiMinter for payment-gated minting
+    if (dukerRegistryAddr !== '0x0000000000000000000000000000000000000000' && alm?.almWorldDukiMinter) {
+        console.log('        → Setting AlmWorldDukiMinter on DukerRegistry...')
+        const registryArtifact = JSON.parse(
+            readFileSync(resolve(__dirname, '../../contract_duki_alm_world/out/DukerRegistry.sol/DukerRegistry.json'), 'utf-8')
+        )
+        const minterTx = await walletClient.writeContract({
+            address: dukerRegistryAddr,
+            abi: registryArtifact.abi,
+            functionName: 'setAlmWorldDukiMinter',
+            args: [alm.almWorldDukiMinter],
+        })
+        await publicClient.waitForTransactionReceipt({ hash: minterTx })
+        console.log(`        ✓ DukerRegistry.setAlmWorldDukiMinter(${alm.almWorldDukiMinter})`)
+    }
 
     // 4. Distribute USDT to test accounts
     console.log('        → Distributing USDT to test accounts...')

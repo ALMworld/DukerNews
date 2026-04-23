@@ -13,9 +13,8 @@ contract DeployDukerNews is Script {
 
         // Read addresses from env
         address dukerRegistryAddr = vm.envOr("DUKER_REGISTRY_ADDRESS", address(0));
-        address dukigenRegistryAddr = vm.envOr("DUKIGEN_REGISTRY_ADDRESS", address(0));
+        address almWorldDukiMinterAddr = vm.envOr("ALM_WORLD_DUKI_MINTER", address(0));
         uint256 dukerNewsAgentId = vm.envOr("DUKERNEWS_AGENT_ID", uint256(0));
-        address stableCoinAddr = vm.envOr("STABLECOIN_ADDRESS", address(0x5FbDB2315678afecb367f032d93F642f64180aa3));
 
         vm.startBroadcast(deployerKey);
 
@@ -25,7 +24,7 @@ contract DeployDukerNews is Script {
         // 2. Deploy ERC1967Proxy pointing to implementation
         bytes memory initData = abi.encodeCall(
             DukerNews.initialize,
-            (dukerRegistryAddr, dukigenRegistryAddr, dukerNewsAgentId, stableCoinAddr)
+            (dukerRegistryAddr, almWorldDukiMinterAddr, dukerNewsAgentId)
         );
         ERC1967Proxy proxy = new ERC1967Proxy(address(impl), initData);
 
@@ -47,9 +46,7 @@ contract DeployDukerNews is Script {
         console.log("DukerNews (proxy):", address(proxy));
         console.log("DukerNews (impl): ", address(impl));
         console.log("DukerRegistry:     ", dukerRegistryAddr);
-        console.log("DukigenRegistry:   ", dukigenRegistryAddr);
-        console.log("AgentId:           ", dukerNewsAgentId);
-        console.log("Stablecoin:        ", stableCoinAddr);
+        console.log("AlmWorldDukiMinter:", almWorldDukiMinterAddr);
         console.log("Written to", filename);
     }
 }
