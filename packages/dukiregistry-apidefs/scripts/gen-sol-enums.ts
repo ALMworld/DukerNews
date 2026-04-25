@@ -2,9 +2,8 @@
  * gen-sol-enums.ts — Generate Solidity enum files from proto definitions.
  *
  * Proto is the SINGLE SOURCE OF TRUTH for enum values.
- * This script parses .proto files, extracts enum blocks, and generates
- * Solidity enum declarations that can be copy-pasted or directly written
- * into the contract interface files.
+ * This script parses .proto files line-by-line, extracts enum blocks,
+ * and writes Solidity enum declarations into the contract interface files.
  *
  * Usage:  pnpm gen:sol-enums
  *         tsx scripts/gen-sol-enums.ts
@@ -30,30 +29,30 @@ const MAPPINGS: EnumMapping[] = [
     {
         protoEnum: 'DukerEventType',
         protoFile: 'duker_registry.proto',
-        solFile: 'packages/contract_duki_alm_world/contracts/registry/libraries/IDukerRegistryEnums.sol',
+        solFile: 'packages/contract_duki_alm_world/contracts/libraries/IDukerRegistryEnums.sol',
         stripPrefix: 'DUKER_EVENT_TYPE_',
     },
     {
         protoEnum: 'DukigenEventType',
         protoFile: 'dukigen_registry.proto',
-        solFile: 'packages/contract_duki_alm_world/contracts/registry/libraries/IDukigenRegistryEnums.sol',
+        solFile: 'packages/contract_duki_alm_world/contracts/libraries/IDukigenRegistryEnums.sol',
         stripPrefix: 'DUKIGEN_EVENT_TYPE_',
     },
     {
         protoEnum: 'ProductType',
-        protoFile: 'dukigen_registry.proto',
-        solFile: 'packages/contract_duki_alm_world/contracts/registry/libraries/IDukigenRegistryEnums.sol',
+        protoFile: 'dukigen_types.proto',
+        solFile: 'packages/contract_duki_alm_world/contracts/libraries/IDukigenRegistryEnums.sol',
         stripPrefix: 'PRODUCT_TYPE_',
     },
     {
         protoEnum: 'DukiType',
-        protoFile: 'dukigen_registry.proto',
-        solFile: 'packages/contract_duki_alm_world/contracts/registry/libraries/IDukigenRegistryEnums.sol',
+        protoFile: 'dukigen_types.proto',
+        solFile: 'packages/contract_duki_alm_world/contracts/libraries/IDukigenRegistryEnums.sol',
         stripPrefix: 'DUKI_TYPE_',
     },
 ]
 
-// ── Proto parser ─────────────────────────────────────────────────────────
+// ── Proto parser (line-by-line) ──────────────────────────────────────────
 
 interface ProtoEnumValue {
     name: string
@@ -61,49 +60,94 @@ interface ProtoEnumValue {
 }
 
 function parseProtoEnum(protoContent: string, enumName: string): ProtoEnumValue[] {
-    // Match: enum EnumName { ... }
-    const enumRegex = new RegExp(`enum\\s+${enumName}\\s*\\{([^}]+)\\}`, 's')
-    const match = protoContent.match(enumRegex)
-    if (!match) {
-        throw new Error(`Enum "${enumName}" not found in proto content`)
-    }
-
-    const body = match[1]
+    const lines = protoContent.split('\n')
     const values: ProtoEnumValue[] = []
+    let inside = false
 
-    // Match: VALUE_NAME = 123;
-    const valueRegex = /(\w+)\s*=\s*(\d+)\s*;/g
-    let m: RegExpExecArray | null
-    while ((m = valueRegex.exec(body)) !== null) {
-        values.push({ name: m[1], number: parseInt(m[2], 10) })
+    for (const line of lines) {
+        const trimmed = line.trim()
+
+        // Detect start: "enum FooBar {"
+        if (!inside && trimmed.startsWith('enum') && trimmed.includes(enumName) && trimmed.includes('{')) {
+            inside = true
+            continue
+        }
+
+        // Detect end: "}"
+        if (inside && trimmed === '}') break
+
+        // Parse value: "VALUE_NAME = 123;"
+        if (inside) {
+            const m = trimmed.match(/^(\w+)\s*=\s*(\d+)\s*;/)
+            if (m) {
+                values.push({ name: m[1], number: parseInt(m[2], 10) })
+            }
+        }
     }
 
-    // Sort by number to ensure correct order
+    if (values.length === 0) {
+        throw new Error(`Enum "${enumName}" not found or empty in proto content`)
+    }
+
     values.sort((a, b) => a.number - b.number)
     return values
 }
 
 // ── Solidity generator ───────────────────────────────────────────────────
 
-function generateSolEnum(enumName: string, values: ProtoEnumValue[], stripPrefix: string): string {
-    const lines = values.map((v, i) => {
-        let name = v.name
-        // Strip the proto prefix (e.g. DUKER_EVENT_TYPE_UNSPECIFIED → UNSPECIFIED)
+function generateSolEnumLines(enumName: string, values: ProtoEnumValue[], stripPrefix: string): string[] {
+    const result: string[] = [
+        '    // GENERATED FROM proto — DO NOT EDIT MANUALLY',
+        '    // Re-generate with: pnpm --filter @repo/dukiregistry-apidefs gen:sol-enums',
+        `    enum ${enumName} {`,
+    ]
+
+    for (let i = 0; i < values.length; i++) {
+        let name = values[i].name
         if (stripPrefix && name.startsWith(stripPrefix)) {
             name = name.slice(stripPrefix.length)
         }
         const comma = i < values.length - 1 ? ',' : ''
         const pad = ' '.repeat(Math.max(1, 40 - name.length - comma.length))
-        return `        ${name}${comma}${pad}// ${v.number}`
-    })
+        result.push(`        ${name}${comma}${pad}// ${values[i].number}`)
+    }
 
-    return [
-        `    // GENERATED FROM proto — DO NOT EDIT MANUALLY`,
-        `    // Re-generate with: pnpm --filter @repo/dukiregistry-apidefs gen:sol-enums`,
-        `    enum ${enumName} {`,
-        ...lines,
-        `    }`,
-    ].join('\n')
+    result.push('    }')
+    return result
+}
+
+// ── Solidity file updater (line-by-line splice) ──────────────────────────
+
+function replaceEnumInSol(content: string, enumName: string, newLines: string[]): { content: string; updated: boolean } {
+    const lines = content.split('\n')
+    let blockStart = -1
+    let blockEnd = -1
+
+    for (let i = 0; i < lines.length; i++) {
+        const trimmed = lines[i].trim()
+
+        // Find "enum <name> {"
+        if (blockStart === -1 && trimmed.startsWith(`enum ${enumName}`) && trimmed.includes('{')) {
+            // Include preceding GENERATED comment lines (up to 2 lines above)
+            blockStart = i
+            if (i >= 1 && lines[i - 1].trim().startsWith('// Re-generate')) blockStart = i - 1
+            if (blockStart >= 1 && lines[blockStart - 1].trim().startsWith('// GENERATED FROM proto')) blockStart = blockStart - 1
+            continue
+        }
+
+        // Find closing "}" for the enum block
+        if (blockStart !== -1 && blockEnd === -1 && trimmed === '}') {
+            blockEnd = i
+            break
+        }
+    }
+
+    if (blockStart !== -1 && blockEnd !== -1) {
+        lines.splice(blockStart, blockEnd - blockStart + 1, ...newLines)
+        return { content: lines.join('\n'), updated: true }
+    }
+
+    return { content, updated: false }
 }
 
 // ── Main ─────────────────────────────────────────────────────────────────
@@ -114,7 +158,7 @@ const REPO_ROOT = path.resolve(import.meta.dirname, '..', '..', '..')
 console.log('🔧 gen-sol-enums: Generating Solidity enums from proto definitions\n')
 
 // Group mappings by solFile to batch updates
-const byFile = new Map<string, { enumName: string; generated: string }[]>()
+const byFile = new Map<string, { enumName: string; lines: string[] }[]>()
 
 for (const mapping of MAPPINGS) {
     const protoPath = path.join(PROTO_DIR, mapping.protoFile)
@@ -123,11 +167,11 @@ for (const mapping of MAPPINGS) {
 
     console.log(`  ✓ ${mapping.protoEnum}: ${values.length} values from ${mapping.protoFile}`)
 
-    const generated = generateSolEnum(mapping.protoEnum, values, mapping.stripPrefix)
+    const lines = generateSolEnumLines(mapping.protoEnum, values, mapping.stripPrefix)
     const solPath = path.join(REPO_ROOT, mapping.solFile)
 
     if (!byFile.has(solPath)) byFile.set(solPath, [])
-    byFile.get(solPath)!.push({ enumName: mapping.protoEnum, generated })
+    byFile.get(solPath)!.push({ enumName: mapping.protoEnum, lines })
 }
 
 console.log('')
@@ -137,7 +181,6 @@ for (const [solPath, enums] of byFile) {
     let content: string
 
     if (!fs.existsSync(solPath)) {
-        // Create a new Solidity file scaffold
         const baseName = path.basename(solPath, '.sol')
         content = [
             '// SPDX-License-Identifier: MIT',
@@ -152,21 +195,19 @@ for (const [solPath, enums] of byFile) {
         content = fs.readFileSync(solPath, 'utf-8')
     }
 
-    for (const { enumName, generated } of enums) {
-        // Replace existing enum block (including any preceding comment lines with GENERATED)
-        const enumRegex = new RegExp(
-            `(    // GENERATED FROM proto[^\\n]*\\n    // Re-generate[^\\n]*\\n)?    enum ${enumName}\\s*\\{[^}]+\\}`,
-            's'
-        )
+    for (const { enumName, lines } of enums) {
+        const result = replaceEnumInSol(content, enumName, lines)
 
-        if (enumRegex.test(content)) {
-            content = content.replace(enumRegex, generated)
+        if (result.updated) {
+            content = result.content
             console.log(`  ✓ Updated ${enumName} in ${path.basename(solPath)}`)
         } else {
             // Enum not found — insert before the last closing brace
-            const lastBrace = content.lastIndexOf('}')
-            if (lastBrace !== -1) {
-                content = content.slice(0, lastBrace) + '\n' + generated + '\n' + content.slice(lastBrace)
+            const fileLines = content.split('\n')
+            const lastBraceIdx = fileLines.lastIndexOf('}')
+            if (lastBraceIdx !== -1) {
+                fileLines.splice(lastBraceIdx, 0, '', ...lines)
+                content = fileLines.join('\n')
                 console.log(`  + Inserted ${enumName} into ${path.basename(solPath)}`)
             } else {
                 console.warn(`  ⚠ Could not find insertion point in ${path.basename(solPath)} — skipping ${enumName}`)
@@ -174,7 +215,6 @@ for (const [solPath, enums] of byFile) {
         }
     }
 
-    // Ensure directory exists
     fs.mkdirSync(path.dirname(solPath), { recursive: true })
     fs.writeFileSync(solPath, content, 'utf-8')
 }

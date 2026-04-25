@@ -10,8 +10,20 @@ enum DukerEventType {
   DUKER_EVENT_TYPE_UNSPECIFIED               = 0;
   USER_MINTED                                = 1;
   IDENTITY_BURNED                            = 2;
-  DEAL_DUKI_BPS_SET                          = 3;
-  PROFILE_UPDATED                            = 4;
+  PROFILE_UPDATED                            = 3;
+}
+
+// ── DukerRegistry Event Payloads ────────────────────────────────────────
+
+// Data for IDENTITY_BURNED (eventType=2)
+message IdentityBurnedPayload {
+  uint32 chain_eid = 1;
+}
+
+// Data for PROFILE_UPDATED (eventType=3)
+message ProfileUpdatedPayload {
+  string bio     = 1;
+  string website = 2;
 }
 
 // ── Indexed DukerEvent row ──────────────────────────────────────────────
@@ -26,13 +38,10 @@ message DukerRegistryEvent {
   uint64          evt_time     = 7;
   string          tx_hash      = 8;
   uint64          block_number = 9;
-  bytes           event_data   = 10; // Raw ABI-encoded event-specific data
-}
-
-// ── Per-agent deal DUKI bps pair ────────────────────────────────────────
-message AgentDealDukiBps {
-  string agent_id      = 1;  // DukigenRegistry agent token ID (uint256 as string)
-  uint32 deal_duki_bps = 2;  // User's deal DUKI bps for this agent (0 = agent default)
+  oneof event_data {
+    IdentityBurnedPayload  identity_burned  = 10;
+    ProfileUpdatedPayload  profile_updated  = 11;
+  }
 }
 
 // ── Identity record (materialized view from events) ─────────────────────
@@ -41,7 +50,6 @@ message DukerIdentity {
   uint32          chain_eid          = 2;  // Chain where this identity lives
   string          token_id           = 3;  // On-chain uint256 as string
   string          ego                = 4;  // Wallet address (case-insensitive)
-  repeated AgentDealDukiBps deal_duki_bps_list = 5; // Per-agent DUKI bps deals
-  string          bio                = 6;  // Short biography (max 480 bytes ≈ 160 CJK chars)
-  string          website            = 7;  // Personal/project URL
+  string          bio                = 5;  // Short biography (max 480 bytes ≈ 160 CJK chars)
+  string          website            = 6;  // Personal/project URL
 }

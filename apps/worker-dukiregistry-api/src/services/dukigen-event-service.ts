@@ -89,28 +89,24 @@ export async function materializeAgent(db: D1Database, evt: PulledDukigenEvent):
             break
         }
 
-        case DukigenEventType.AGENT_DUKI_BPS_SET: {
-            // eventData = abi.encode(AgentDukiBpsSetData) = (uint16 defaultDukiBps, uint16 minDukiBps, uint16 maxDukiBps)
-            let defaultDukiBps = 0, minDukiBps = 0, maxDukiBps = 0
+        case DukigenEventType.AGENT_APPROX_BPS_SET: {
+            // eventData = abi.encode(AgentApproxBpsSetData) = (uint16 approxBps)
+            let approxBps = 0
             try {
                 const decoded = decodeAbiParameters(
                     [{ type: 'tuple', components: [
-                        { name: 'defaultDukiBps', type: 'uint16' },
-                        { name: 'minDukiBps', type: 'uint16' },
-                        { name: 'maxDukiBps', type: 'uint16' },
+                        { name: 'approxBps', type: 'uint16' },
                     ]}],
                     evt.eventData as `0x${string}`,
                 )
                 const d = decoded[0] as any
-                defaultDukiBps = Number(d.defaultDukiBps ?? 0)
-                minDukiBps = Number(d.minDukiBps ?? 0)
-                maxDukiBps = Number(d.maxDukiBps ?? 0)
+                approxBps = Number(d.approxBps ?? 0)
             } catch {}
 
             await db.prepare(`
-                UPDATE dukigen_agents SET default_duki_bps = ?, min_duki_bps = ?, max_duki_bps = ?, updated_at = ?
+                UPDATE dukigen_agents SET approx_bps = ?, updated_at = ?
                 WHERE agent_id = ?
-            `).bind(defaultDukiBps, minDukiBps, maxDukiBps, now, evt.agentId.toString()).run()
+            `).bind(approxBps, now, evt.agentId.toString()).run()
             break
         }
 
@@ -151,7 +147,7 @@ export async function materializeAgent(db: D1Database, evt: PulledDukigenEvent):
         }
 
         default:
-            // METADATA_SET, WALLET_UNSET, PAYMENT_PROCESSED — log only for now
+            // METADATA_SET, CHAIN_CONTRACT_SET — log only for now
             break
     }
 }

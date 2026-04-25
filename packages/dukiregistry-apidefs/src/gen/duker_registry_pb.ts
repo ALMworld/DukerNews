@@ -10,7 +10,50 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file duker_registry.proto.
  */
 export const file_duker_registry: GenFile = /*@__PURE__*/
-  fileDesc("ChRkdWtlcl9yZWdpc3RyeS5wcm90bxIMZHVraXJlZ2lzdHJ5IugBChJEdWtlclJlZ2lzdHJ5RXZlbnQSEQoJY2hhaW5fZWlkGAEgASgNEg8KB2V2dF9zZXEYAiABKAQSEAoIdG9rZW5faWQYAyABKAkSMAoKZXZlbnRfdHlwZRgEIAEoDjIcLmR1a2lyZWdpc3RyeS5EdWtlckV2ZW50VHlwZRILCgNlZ28YBSABKAkSEAoIdXNlcm5hbWUYBiABKAkSEAoIZXZ0X3RpbWUYByABKAQSDwoHdHhfaGFzaBgIIAEoCRIUCgxibG9ja19udW1iZXIYCSABKAQSEgoKZXZlbnRfZGF0YRgKIAEoDCI7ChBBZ2VudERlYWxEdWtpQnBzEhAKCGFnZW50X2lkGAEgASgJEhUKDWRlYWxfZHVraV9icHMYAiABKA0irQEKDUR1a2VySWRlbnRpdHkSEAoIdXNlcm5hbWUYASABKAkSEQoJY2hhaW5fZWlkGAIgASgNEhAKCHRva2VuX2lkGAMgASgJEgsKA2VnbxgEIAEoCRI6ChJkZWFsX2R1a2lfYnBzX2xpc3QYBSADKAsyHi5kdWtpcmVnaXN0cnkuQWdlbnREZWFsRHVraUJwcxILCgNiaW8YBiABKAkSDwoHd2Vic2l0ZRgHIAEoCSqEAQoORHVrZXJFdmVudFR5cGUSIAocRFVLRVJfRVZFTlRfVFlQRV9VTlNQRUNJRklFRBAAEg8KC1VTRVJfTUlOVEVEEAESEwoPSURFTlRJVFlfQlVSTkVEEAISFQoRREVBTF9EVUtJX0JQU19TRVQQAxITCg9QUk9GSUxFX1VQREFURUQQBGIGcHJvdG8z");
+  fileDesc("ChRkdWtlcl9yZWdpc3RyeS5wcm90bxIMZHVraXJlZ2lzdHJ5IioKFUlkZW50aXR5QnVybmVkUGF5bG9hZBIRCgljaGFpbl9laWQYASABKA0iNQoVUHJvZmlsZVVwZGF0ZWRQYXlsb2FkEgsKA2JpbxgBIAEoCRIPCgd3ZWJzaXRlGAIgASgJIuICChJEdWtlclJlZ2lzdHJ5RXZlbnQSEQoJY2hhaW5fZWlkGAEgASgNEg8KB2V2dF9zZXEYAiABKAQSEAoIdG9rZW5faWQYAyABKAkSMAoKZXZlbnRfdHlwZRgEIAEoDjIcLmR1a2lyZWdpc3RyeS5EdWtlckV2ZW50VHlwZRILCgNlZ28YBSABKAkSEAoIdXNlcm5hbWUYBiABKAkSEAoIZXZ0X3RpbWUYByABKAQSDwoHdHhfaGFzaBgIIAEoCRIUCgxibG9ja19udW1iZXIYCSABKAQSPgoPaWRlbnRpdHlfYnVybmVkGAogASgLMiMuZHVraXJlZ2lzdHJ5LklkZW50aXR5QnVybmVkUGF5bG9hZEgAEj4KD3Byb2ZpbGVfdXBkYXRlZBgLIAEoCzIjLmR1a2lyZWdpc3RyeS5Qcm9maWxlVXBkYXRlZFBheWxvYWRIAEIMCgpldmVudF9kYXRhInEKDUR1a2VySWRlbnRpdHkSEAoIdXNlcm5hbWUYASABKAkSEQoJY2hhaW5fZWlkGAIgASgNEhAKCHRva2VuX2lkGAMgASgJEgsKA2VnbxgEIAEoCRILCgNiaW8YBSABKAkSDwoHd2Vic2l0ZRgGIAEoCSptCg5EdWtlckV2ZW50VHlwZRIgChxEVUtFUl9FVkVOVF9UWVBFX1VOU1BFQ0lGSUVEEAASDwoLVVNFUl9NSU5URUQQARITCg9JREVOVElUWV9CVVJORUQQAhITCg9QUk9GSUxFX1VQREFURUQQA2IGcHJvdG8z");
+
+/**
+ * Data for IDENTITY_BURNED (eventType=2)
+ *
+ * @generated from message dukiregistry.IdentityBurnedPayload
+ */
+export type IdentityBurnedPayload = Message<"dukiregistry.IdentityBurnedPayload"> & {
+  /**
+   * @generated from field: uint32 chain_eid = 1;
+   */
+  chainEid: number;
+};
+
+/**
+ * Describes the message dukiregistry.IdentityBurnedPayload.
+ * Use `create(IdentityBurnedPayloadSchema)` to create a new message.
+ */
+export const IdentityBurnedPayloadSchema: GenMessage<IdentityBurnedPayload> = /*@__PURE__*/
+  messageDesc(file_duker_registry, 0);
+
+/**
+ * Data for PROFILE_UPDATED (eventType=3)
+ *
+ * @generated from message dukiregistry.ProfileUpdatedPayload
+ */
+export type ProfileUpdatedPayload = Message<"dukiregistry.ProfileUpdatedPayload"> & {
+  /**
+   * @generated from field: string bio = 1;
+   */
+  bio: string;
+
+  /**
+   * @generated from field: string website = 2;
+   */
+  website: string;
+};
+
+/**
+ * Describes the message dukiregistry.ProfileUpdatedPayload.
+ * Use `create(ProfileUpdatedPayloadSchema)` to create a new message.
+ */
+export const ProfileUpdatedPayloadSchema: GenMessage<ProfileUpdatedPayload> = /*@__PURE__*/
+  messageDesc(file_duker_registry, 1);
 
 /**
  * ── Indexed DukerEvent row ──────────────────────────────────────────────
@@ -75,11 +118,21 @@ export type DukerRegistryEvent = Message<"dukiregistry.DukerRegistryEvent"> & {
   blockNumber: bigint;
 
   /**
-   * Raw ABI-encoded event-specific data
-   *
-   * @generated from field: bytes event_data = 10;
+   * @generated from oneof dukiregistry.DukerRegistryEvent.event_data
    */
-  eventData: Uint8Array;
+  eventData: {
+    /**
+     * @generated from field: dukiregistry.IdentityBurnedPayload identity_burned = 10;
+     */
+    value: IdentityBurnedPayload;
+    case: "identityBurned";
+  } | {
+    /**
+     * @generated from field: dukiregistry.ProfileUpdatedPayload profile_updated = 11;
+     */
+    value: ProfileUpdatedPayload;
+    case: "profileUpdated";
+  } | { case: undefined; value?: undefined };
 };
 
 /**
@@ -87,35 +140,7 @@ export type DukerRegistryEvent = Message<"dukiregistry.DukerRegistryEvent"> & {
  * Use `create(DukerRegistryEventSchema)` to create a new message.
  */
 export const DukerRegistryEventSchema: GenMessage<DukerRegistryEvent> = /*@__PURE__*/
-  messageDesc(file_duker_registry, 0);
-
-/**
- * ── Per-agent deal DUKI bps pair ────────────────────────────────────────
- *
- * @generated from message dukiregistry.AgentDealDukiBps
- */
-export type AgentDealDukiBps = Message<"dukiregistry.AgentDealDukiBps"> & {
-  /**
-   * DukigenRegistry agent token ID (uint256 as string)
-   *
-   * @generated from field: string agent_id = 1;
-   */
-  agentId: string;
-
-  /**
-   * User's deal DUKI bps for this agent (0 = agent default)
-   *
-   * @generated from field: uint32 deal_duki_bps = 2;
-   */
-  dealDukiBps: number;
-};
-
-/**
- * Describes the message dukiregistry.AgentDealDukiBps.
- * Use `create(AgentDealDukiBpsSchema)` to create a new message.
- */
-export const AgentDealDukiBpsSchema: GenMessage<AgentDealDukiBps> = /*@__PURE__*/
-  messageDesc(file_duker_registry, 1);
+  messageDesc(file_duker_registry, 2);
 
 /**
  * ── Identity record (materialized view from events) ─────────────────────
@@ -152,23 +177,16 @@ export type DukerIdentity = Message<"dukiregistry.DukerIdentity"> & {
   ego: string;
 
   /**
-   * Per-agent DUKI bps deals
-   *
-   * @generated from field: repeated dukiregistry.AgentDealDukiBps deal_duki_bps_list = 5;
-   */
-  dealDukiBpsList: AgentDealDukiBps[];
-
-  /**
    * Short biography (max 480 bytes ≈ 160 CJK chars)
    *
-   * @generated from field: string bio = 6;
+   * @generated from field: string bio = 5;
    */
   bio: string;
 
   /**
    * Personal/project URL
    *
-   * @generated from field: string website = 7;
+   * @generated from field: string website = 6;
    */
   website: string;
 };
@@ -178,7 +196,7 @@ export type DukerIdentity = Message<"dukiregistry.DukerIdentity"> & {
  * Use `create(DukerIdentitySchema)` to create a new message.
  */
 export const DukerIdentitySchema: GenMessage<DukerIdentity> = /*@__PURE__*/
-  messageDesc(file_duker_registry, 2);
+  messageDesc(file_duker_registry, 3);
 
 /**
  * ── DukerRegistry Event Types ──────────────────────────────────────────────
@@ -205,14 +223,9 @@ export enum DukerEventType {
   IDENTITY_BURNED = 2,
 
   /**
-   * @generated from enum value: DEAL_DUKI_BPS_SET = 3;
+   * @generated from enum value: PROFILE_UPDATED = 3;
    */
-  DEAL_DUKI_BPS_SET = 3,
-
-  /**
-   * @generated from enum value: PROFILE_UPDATED = 4;
-   */
-  PROFILE_UPDATED = 4,
+  PROFILE_UPDATED = 3,
 }
 
 /**

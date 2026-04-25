@@ -15,16 +15,28 @@ import {
     DukerRegistryEventSchema,
     DukigenRegistryEventSchema,
     SyncEventsRespSchema,
+    DukerEventType,
+    DukigenEventType,
+    IdentityBurnedPayloadSchema,
+    ProfileUpdatedPayloadSchema,
+    AgentRegisteredPayloadSchema,
+    AgentURIUpdatedPayloadSchema,
+    AgentApproxBpsSetPayloadSchema,
+    AgentWorksDataSetPayloadSchema,
+    AgentMetadataSetPayloadSchema,
+    AgentWalletSetPayloadSchema,
+    AgentChainContractSetPayloadSchema,
 } from '@repo/dukiregistry-apidefs'
+import type { DukerRegistryEvent, DukigenRegistryEvent } from '@repo/dukiregistry-apidefs'
 import {
     DukerIdentitySchema,
     DukigenAgentSchema,
-    AgentDealDukiBpsSchema,
 } from '@repo/dukiregistry-apidefs'
 import { pullTxReceipt, pullDukerEventsByBlockRange, pullDukigenEventsByBlockRange } from '../services/chain-puller'
+import type { PulledDukerEvent, PulledDukigenEvent } from '../services/chain-puller'
 import { processDukerEvents } from '../services/duker-event-service'
 import { processDukigenEvents } from '../services/dukigen-event-service'
-import { createPublicClient, http } from 'viem'
+import { createPublicClient, http, decodeAbiParameters } from 'viem'
 import { getChainConfig } from '../config'
 import { dukerRegistryAbi, dukigenRegistryAbi } from 'contract-duki-alm-world'
 
@@ -35,18 +47,187 @@ export function setDb(db: D1Database) {
     _db = db
 }
 
-/** Load per-agent preferences from D1 for a given identity. */
-async function loadPreferences(chainEid: number, tokenId: string) {
-    const rows = await _db.prepare(
-        'SELECT agent_id, deal_duki_bps FROM duker_preferences WHERE chain_eid = ? AND token_id = ?'
-    ).bind(chainEid, tokenId).all<any>()
-    return (rows.results ?? []).map((r: any) =>
-        create(AgentDealDukiBpsSchema, {
-            agentId: r.agent_id,
-            dealDukiBps: r.deal_duki_bps,
-        })
-    )
+// ── ABI decode helpers — raw hex eventData → typed oneof ────────────────
+
+function decodeDukerEventData(evt: PulledDukerEvent): DukerRegistryEvent['eventData'] {
+    try {
+        switch (evt.eventType) {
+            case DukerEventType.IDENTITY_BURNED: {
+                const decoded = decodeAbiParameters(
+                    [{ type: 'tuple', components: [{ name: 'chainEid', type: 'uint24' }] }],
+                    evt.eventData as `0x${string}`,
+                )
+                return {
+                    case: 'identityBurned' as const,
+                    value: create(IdentityBurnedPayloadSchema, {
+                        chainEid: Number((decoded[0] as any).chainEid),
+                    }),
+                }
+            }
+            case DukerEventType.PROFILE_UPDATED: {
+                const decoded = decodeAbiParameters(
+                    [{ type: 'tuple', components: [
+                        { name: 'bio', type: 'string' },
+                        { name: 'website', type: 'string' },
+                    ]}],
+                    evt.eventData as `0x${string}`,
+                )
+                const d = decoded[0] as any
+                return {
+                    case: 'profileUpdated' as const,
+                    value: create(ProfileUpdatedPayloadSchema, {
+                        bio: d.bio ?? '',
+                        website: d.website ?? '',
+                    }),
+                }
+            }
+            default:
+                return { case: undefined, value: undefined }
+        }
+    } catch {
+        return { case: undefined, value: undefined }
+    }
 }
+
+function decodeDukigenEventData(evt: PulledDukigenEvent): DukigenRegistryEvent['eventData'] {
+    try {
+        switch (evt.eventType) {
+            case DukigenEventType.AGENT_REGISTERED: {
+                const decoded = decodeAbiParameters(
+                    [{ type: 'tuple', components: [
+                        { name: 'name', type: 'string' },
+                        { name: 'agentURI', type: 'string' },
+                        { name: 'website', type: 'string' },
+                        { name: 'approxBps', type: 'uint16' },
+                        { name: 'agentWallet', type: 'address' },
+                        { name: 'productType', type: 'uint8' },
+                        { name: 'dukiType', type: 'uint8' },
+                        { name: 'pledgeUrl', type: 'string' },
+                        { name: 'tags', type: 'string[]' },
+                    ]}],
+                    evt.eventData as `0x${string}`,
+                )
+                const d = decoded[0] as any
+                return {
+                    case: 'agentRegistered' as const,
+                    value: create(AgentRegisteredPayloadSchema, {
+                        name: d.name ?? '',
+                        agentUri: d.agentURI ?? '',
+                        website: d.website ?? '',
+                        approxBps: Number(d.approxBps ?? 0),
+                        agentWallet: d.agentWallet ?? '',
+                        productType: Number(d.productType ?? 0),
+                        dukiType: Number(d.dukiType ?? 0),
+                        pledgeUrl: d.pledgeUrl ?? '',
+                        tags: d.tags ?? [],
+                    }),
+                }
+            }
+            case DukigenEventType.AGENT_URI_UPDATED: {
+                const decoded = decodeAbiParameters(
+                    [{ type: 'tuple', components: [{ name: 'newURI', type: 'string' }] }],
+                    evt.eventData as `0x${string}`,
+                )
+                return {
+                    case: 'agentUriUpdated' as const,
+                    value: create(AgentURIUpdatedPayloadSchema, {
+                        newUri: (decoded[0] as any).newURI ?? '',
+                    }),
+                }
+            }
+            case DukigenEventType.AGENT_APPROX_BPS_SET: {
+                const decoded = decodeAbiParameters(
+                    [{ type: 'tuple', components: [
+                        { name: 'approxBps', type: 'uint16' },
+                    ]}],
+                    evt.eventData as `0x${string}`,
+                )
+                const d = decoded[0] as any
+                return {
+                    case: 'agentApproxBpsSet' as const,
+                    value: create(AgentApproxBpsSetPayloadSchema, {
+                        approxBps: Number(d.approxBps ?? 0),
+                    }),
+                }
+            }
+            case DukigenEventType.AGENT_WORKS_DATA_SET: {
+                const decoded = decodeAbiParameters(
+                    [{ type: 'tuple', components: [
+                        { name: 'productType', type: 'uint8' },
+                        { name: 'dukiType', type: 'uint8' },
+                        { name: 'pledgeUrl', type: 'string' },
+                        { name: 'tags', type: 'string[]' },
+                        { name: 'website', type: 'string' },
+                    ]}],
+                    evt.eventData as `0x${string}`,
+                )
+                const d = decoded[0] as any
+                return {
+                    case: 'agentWorksDataSet' as const,
+                    value: create(AgentWorksDataSetPayloadSchema, {
+                        productType: Number(d.productType ?? 0),
+                        dukiType: Number(d.dukiType ?? 0),
+                        pledgeUrl: d.pledgeUrl ?? '',
+                        tags: d.tags ?? [],
+                        website: d.website ?? '',
+                    }),
+                }
+            }
+            case DukigenEventType.AGENT_METADATA_SET: {
+                const decoded = decodeAbiParameters(
+                    [{ type: 'tuple', components: [
+                        { name: 'key', type: 'string' },
+                        { name: 'value', type: 'bytes' },
+                    ]}],
+                    evt.eventData as `0x${string}`,
+                )
+                const d = decoded[0] as any
+                return {
+                    case: 'agentMetadataSet' as const,
+                    value: create(AgentMetadataSetPayloadSchema, {
+                        key: d.key ?? '',
+                        value: d.value ? new Uint8Array(Buffer.from((d.value as string).slice(2), 'hex')) : new Uint8Array(),
+                    }),
+                }
+            }
+            case DukigenEventType.AGENT_WALLET_SET: {
+                const decoded = decodeAbiParameters(
+                    [{ type: 'tuple', components: [{ name: 'newWallet', type: 'address' }] }],
+                    evt.eventData as `0x${string}`,
+                )
+                return {
+                    case: 'agentWalletSet' as const,
+                    value: create(AgentWalletSetPayloadSchema, {
+                        newWallet: (decoded[0] as any).newWallet ?? '',
+                    }),
+                }
+            }
+            case DukigenEventType.AGENT_CHAIN_CONTRACT_SET: {
+                const decoded = decodeAbiParameters(
+                    [{ type: 'tuple', components: [
+                        { name: 'chainEid', type: 'uint32' },
+                        { name: 'contractAddr', type: 'address' },
+                    ]}],
+                    evt.eventData as `0x${string}`,
+                )
+                const d = decoded[0] as any
+                return {
+                    case: 'agentChainContractSet' as const,
+                    value: create(AgentChainContractSetPayloadSchema, {
+                        chainEid: Number(d.chainEid ?? 0),
+                        contractAddr: d.contractAddr ?? '',
+                    }),
+                }
+            }
+            default:
+                return { case: undefined, value: undefined }
+        }
+    } catch {
+        return { case: undefined, value: undefined }
+    }
+}
+
+
 
 export function registerGrpcRoutes(router: ConnectRouter) {
     // ── DukerRegistryService ────────────────────────────────
@@ -66,13 +247,11 @@ export function registerGrpcRoutes(router: ConnectRouter) {
 
             const row = await _db.prepare(query).bind(...params).first<any>()
             if (row) {
-                const prefs = await loadPreferences(row.chain_eid, row.token_id)
                 resp.identity = create(DukerIdentitySchema, {
                     username: row.username,
                     chainEid: row.chain_eid,
                     tokenId: row.token_id,
                     ego: row.ego,
-                    dealDukiBpsList: prefs,
                     bio: row.bio ?? '',
                     website: row.website ?? '',
                 })
@@ -132,7 +311,7 @@ export function registerGrpcRoutes(router: ConnectRouter) {
             const pulled = await pullTxReceipt(req.chainEid, req.txHash)
             await processDukerEvents(_db, pulled.dukerEvents)
 
-            // Return parsed events as proto messages
+            // Return parsed events as proto messages with typed payloads
             resp.events = pulled.dukerEvents.map(evt =>
                 create(DukerRegistryEventSchema, {
                     chainEid: evt.chainEid,
@@ -144,6 +323,7 @@ export function registerGrpcRoutes(router: ConnectRouter) {
                     evtTime: evt.evtTime,
                     txHash: evt.txHash,
                     blockNumber: evt.blockNumber,
+                    eventData: decodeDukerEventData(evt),
                 })
             )
             return resp
@@ -211,13 +391,12 @@ export function registerGrpcRoutes(router: ConnectRouter) {
                 agentUri: row.agent_uri,
                 owner: row.owner,
                 originChainEid: row.origin_chain_eid,
-                defaultDukiBps: row.default_duki_bps,
-                minDukiBps: row.min_duki_bps,
-                maxDukiBps: row.max_duki_bps,
+                approxBps: row.approx_bps ?? row.default_duki_bps ?? 0,
                 productType: row.product_type,
                 dukiType: row.duki_type,
                 pledgeUrl: row.pledge_url,
                 tags: JSON.parse(row.tags || '[]'),
+                website: row.website ?? '',
             })
         },
 
@@ -242,9 +421,7 @@ export function registerGrpcRoutes(router: ConnectRouter) {
                         agentUri: row.agent_uri,
                         owner: row.owner,
                         originChainEid: row.origin_chain_eid,
-                        defaultDukiBps: row.default_duki_bps,
-                        minDukiBps: row.min_duki_bps,
-                        maxDukiBps: row.max_duki_bps,
+                        approxBps: row.approx_bps ?? row.default_duki_bps ?? 0,
                     })
                 ),
             })
@@ -266,6 +443,7 @@ export function registerGrpcRoutes(router: ConnectRouter) {
                     evtTime: evt.evtTime,
                     txHash: evt.txHash,
                     blockNumber: evt.blockNumber,
+                    eventData: decodeDukigenEventData(evt),
                 })
             )
             return resp
@@ -321,7 +499,7 @@ export function registerGrpcRoutes(router: ConnectRouter) {
  * Find the best (lowest) block number from checkpoints that covers
  * events after lastEvtSeq. Falls back to the earliest non-zero checkpoint.
  */
-function findBestCheckpoint(checkpoints: bigint[], lastEvtSeq: number): bigint {
+function findBestCheckpoint(checkpoints: readonly bigint[], lastEvtSeq: number): bigint {
     // The checkpoint at slot i covers events starting at evtSeq = i*64 + 1
     // Find the slot that contains lastEvtSeq
     const targetSlot = lastEvtSeq > 0 ? Math.floor((lastEvtSeq - 1) / 64) % 4 : 0

@@ -64,13 +64,6 @@ export async function materializeIdentity(db: D1Database, evt: PulledDukerEvent)
             break
         }
 
-        case DukerEventType.DEAL_DUKI_BPS_SET: {
-            // eventData contains (dukigenAgentId, preferDukiBps) — parse from hex
-            // For now, store raw in event log. D1 materialization can be extended.
-            // TODO: decode ABI and upsert duker_preferences
-            break
-        }
-
         case DukerEventType.PROFILE_UPDATED: {
             // eventData contains (bio, website) — ABI-encoded
             // TODO: decode ABI and update bio/website columns

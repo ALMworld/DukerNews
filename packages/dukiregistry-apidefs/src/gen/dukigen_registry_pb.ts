@@ -4,13 +4,218 @@
 
 import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
+import type { DukiType, ProductType } from "./dukigen_types_pb";
+import { file_dukigen_types } from "./dukigen_types_pb";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file dukigen_registry.proto.
  */
 export const file_dukigen_registry: GenFile = /*@__PURE__*/
-  fileDesc("ChZkdWtpZ2VuX3JlZ2lzdHJ5LnByb3RvEgxkdWtpcmVnaXN0cnki2gEKFER1a2lnZW5SZWdpc3RyeUV2ZW50EhEKCWNoYWluX2VpZBgBIAEoDRIPCgdldnRfc2VxGAIgASgEEhAKCGFnZW50X2lkGAMgASgEEjIKCmV2ZW50X3R5cGUYBCABKA4yHi5kdWtpcmVnaXN0cnkuRHVraWdlbkV2ZW50VHlwZRILCgNlZ28YBSABKAkSEAoIZXZ0X3RpbWUYBiABKAQSDwoHdHhfaGFzaBgHIAEoCRIUCgxibG9ja19udW1iZXIYCCABKAQSEgoKZXZlbnRfZGF0YRgJIAEoDCL7AQoMRHVraWdlbkFnZW50EhAKCGFnZW50X2lkGAEgASgEEgwKBG5hbWUYAiABKAkSEQoJYWdlbnRfdXJpGAMgASgJEg0KBW93bmVyGAQgASgJEhgKEG9yaWdpbl9jaGFpbl9laWQYBSABKA0SGAoQZGVmYXVsdF9kdWtpX2JwcxgGIAEoDRIUCgxtaW5fZHVraV9icHMYByABKA0SFAoMbWF4X2R1a2lfYnBzGAggASgNEhQKDHByb2R1Y3RfdHlwZRgJIAEoDRIRCglkdWtpX3R5cGUYCiABKA0SEgoKcGxlZGdlX3VybBgLIAEoCRIMCgR0YWdzGAwgAygJKvIBChBEdWtpZ2VuRXZlbnRUeXBlEiIKHkRVS0lHRU5fRVZFTlRfVFlQRV9VTlNQRUNJRklFRBAAEhQKEEFHRU5UX1JFR0lTVEVSRUQQARIVChFBR0VOVF9VUklfVVBEQVRFRBACEhYKEkFHRU5UX0RVS0lfQlBTX1NFVBADEhgKFEFHRU5UX1dPUktTX0RBVEFfU0VUEAQSFgoSQUdFTlRfTUVUQURBVEFfU0VUEAUSFAoQQUdFTlRfV0FMTEVUX1NFVBAGEhYKEkFHRU5UX1dBTExFVF9VTlNFVBAHEhUKEVBBWU1FTlRfUFJPQ0VTU0VEEAgqegoLUHJvZHVjdFR5cGUSHAoYUFJPRFVDVF9UWVBFX1VOU1BFQ0lGSUVEEAASGAoUUFJPRFVDVF9UWVBFX0RJR0lUQUwQARIZChVQUk9EVUNUX1RZUEVfUEhZU0lDQUwQAhIYChRQUk9EVUNUX1RZUEVfU0VSVklDRRADKl4KCER1a2lUeXBlEhkKFURVS0lfVFlQRV9VTlNQRUNJRklFRBAAEhsKF0RVS0lfVFlQRV9SRVZFTlVFX1NIQVJFEAESGgoWRFVLSV9UWVBFX1BST0ZJVF9TSEFSRRACYgZwcm90bzM");
+  fileDesc("ChZkdWtpZ2VuX3JlZ2lzdHJ5LnByb3RvEgxkdWtpcmVnaXN0cnki8gEKFkFnZW50UmVnaXN0ZXJlZFBheWxvYWQSDAoEbmFtZRgBIAEoCRIRCglhZ2VudF91cmkYAiABKAkSDwoHd2Vic2l0ZRgDIAEoCRISCgphcHByb3hfYnBzGAQgASgNEhQKDGFnZW50X3dhbGxldBgFIAEoCRIvCgxwcm9kdWN0X3R5cGUYBiABKA4yGS5kdWtpcmVnaXN0cnkuUHJvZHVjdFR5cGUSKQoJZHVraV90eXBlGAcgASgOMhYuZHVraXJlZ2lzdHJ5LkR1a2lUeXBlEhIKCnBsZWRnZV91cmwYCCABKAkSDAoEdGFncxgJIAMoCSIpChZBZ2VudFVSSVVwZGF0ZWRQYXlsb2FkEg8KB25ld191cmkYASABKAkiLgoYQWdlbnRBcHByb3hCcHNTZXRQYXlsb2FkEhIKCmFwcHJveF9icHMYASABKA0iqQEKGEFnZW50V29ya3NEYXRhU2V0UGF5bG9hZBIvCgxwcm9kdWN0X3R5cGUYASABKA4yGS5kdWtpcmVnaXN0cnkuUHJvZHVjdFR5cGUSKQoJZHVraV90eXBlGAIgASgOMhYuZHVraXJlZ2lzdHJ5LkR1a2lUeXBlEhIKCnBsZWRnZV91cmwYAyABKAkSDAoEdGFncxgEIAMoCRIPCgd3ZWJzaXRlGAUgASgJIjUKF0FnZW50TWV0YWRhdGFTZXRQYXlsb2FkEgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoDCIrChVBZ2VudFdhbGxldFNldFBheWxvYWQSEgoKbmV3X3dhbGxldBgBIAEoCSJIChxBZ2VudENoYWluQ29udHJhY3RTZXRQYXlsb2FkEhEKCWNoYWluX2VpZBgBIAEoDRIVCg1jb250cmFjdF9hZGRyGAIgASgJIr8FChREdWtpZ2VuUmVnaXN0cnlFdmVudBIRCgljaGFpbl9laWQYASABKA0SDwoHZXZ0X3NlcRgCIAEoBBIQCghhZ2VudF9pZBgDIAEoBBIyCgpldmVudF90eXBlGAQgASgOMh4uZHVraXJlZ2lzdHJ5LkR1a2lnZW5FdmVudFR5cGUSCwoDZWdvGAUgASgJEhAKCGV2dF90aW1lGAYgASgEEg8KB3R4X2hhc2gYByABKAkSFAoMYmxvY2tfbnVtYmVyGAggASgEEkAKEGFnZW50X3JlZ2lzdGVyZWQYCSABKAsyJC5kdWtpcmVnaXN0cnkuQWdlbnRSZWdpc3RlcmVkUGF5bG9hZEgAEkEKEWFnZW50X3VyaV91cGRhdGVkGAogASgLMiQuZHVraXJlZ2lzdHJ5LkFnZW50VVJJVXBkYXRlZFBheWxvYWRIABJGChRhZ2VudF9hcHByb3hfYnBzX3NldBgLIAEoCzImLmR1a2lyZWdpc3RyeS5BZ2VudEFwcHJveEJwc1NldFBheWxvYWRIABJGChRhZ2VudF93b3Jrc19kYXRhX3NldBgMIAEoCzImLmR1a2lyZWdpc3RyeS5BZ2VudFdvcmtzRGF0YVNldFBheWxvYWRIABJDChJhZ2VudF9tZXRhZGF0YV9zZXQYDSABKAsyJS5kdWtpcmVnaXN0cnkuQWdlbnRNZXRhZGF0YVNldFBheWxvYWRIABI/ChBhZ2VudF93YWxsZXRfc2V0GA4gASgLMiMuZHVraXJlZ2lzdHJ5LkFnZW50V2FsbGV0U2V0UGF5bG9hZEgAEk4KGGFnZW50X2NoYWluX2NvbnRyYWN0X3NldBgPIAEoCzIqLmR1a2lyZWdpc3RyeS5BZ2VudENoYWluQ29udHJhY3RTZXRQYXlsb2FkSABCDAoKZXZlbnRfZGF0YSKjAgoMRHVraWdlbkFnZW50EhAKCGFnZW50X2lkGAEgASgEEgwKBG5hbWUYAiABKAkSEQoJYWdlbnRfdXJpGAMgASgJEg0KBW93bmVyGAQgASgJEhgKEG9yaWdpbl9jaGFpbl9laWQYBSABKA0SEgoKYXBwcm94X2JwcxgGIAEoDRIvCgxwcm9kdWN0X3R5cGUYByABKA4yGS5kdWtpcmVnaXN0cnkuUHJvZHVjdFR5cGUSKQoJZHVraV90eXBlGAggASgOMhYuZHVraXJlZ2lzdHJ5LkR1a2lUeXBlEhIKCnBsZWRnZV91cmwYCSABKAkSDAoEdGFncxgKIAMoCRIPCgd3ZWJzaXRlGAsgASgJEhQKDGFnZW50X3dhbGxldBgMIAEoCSrjAQoQRHVraWdlbkV2ZW50VHlwZRIiCh5EVUtJR0VOX0VWRU5UX1RZUEVfVU5TUEVDSUZJRUQQABIUChBBR0VOVF9SRUdJU1RFUkVEEAESFQoRQUdFTlRfVVJJX1VQREFURUQQAhIYChRBR0VOVF9BUFBST1hfQlBTX1NFVBADEhgKFEFHRU5UX1dPUktTX0RBVEFfU0VUEAQSFgoSQUdFTlRfTUVUQURBVEFfU0VUEAUSFAoQQUdFTlRfV0FMTEVUX1NFVBAGEhwKGEFHRU5UX0NIQUlOX0NPTlRSQUNUX1NFVBAHYgZwcm90bzM", [file_dukigen_types]);
+
+/**
+ * Data for AGENT_REGISTERED (eventType=1)
+ *
+ * @generated from message dukiregistry.AgentRegisteredPayload
+ */
+export type AgentRegisteredPayload = Message<"dukiregistry.AgentRegisteredPayload"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: string agent_uri = 2;
+   */
+  agentUri: string;
+
+  /**
+   * @generated from field: string website = 3;
+   */
+  website: string;
+
+  /**
+   * @generated from field: uint32 approx_bps = 4;
+   */
+  approxBps: number;
+
+  /**
+   * @generated from field: string agent_wallet = 5;
+   */
+  agentWallet: string;
+
+  /**
+   * @generated from field: dukiregistry.ProductType product_type = 6;
+   */
+  productType: ProductType;
+
+  /**
+   * @generated from field: dukiregistry.DukiType duki_type = 7;
+   */
+  dukiType: DukiType;
+
+  /**
+   * @generated from field: string pledge_url = 8;
+   */
+  pledgeUrl: string;
+
+  /**
+   * @generated from field: repeated string tags = 9;
+   */
+  tags: string[];
+};
+
+/**
+ * Describes the message dukiregistry.AgentRegisteredPayload.
+ * Use `create(AgentRegisteredPayloadSchema)` to create a new message.
+ */
+export const AgentRegisteredPayloadSchema: GenMessage<AgentRegisteredPayload> = /*@__PURE__*/
+  messageDesc(file_dukigen_registry, 0);
+
+/**
+ * Data for AGENT_URI_UPDATED (eventType=2)
+ *
+ * @generated from message dukiregistry.AgentURIUpdatedPayload
+ */
+export type AgentURIUpdatedPayload = Message<"dukiregistry.AgentURIUpdatedPayload"> & {
+  /**
+   * @generated from field: string new_uri = 1;
+   */
+  newUri: string;
+};
+
+/**
+ * Describes the message dukiregistry.AgentURIUpdatedPayload.
+ * Use `create(AgentURIUpdatedPayloadSchema)` to create a new message.
+ */
+export const AgentURIUpdatedPayloadSchema: GenMessage<AgentURIUpdatedPayload> = /*@__PURE__*/
+  messageDesc(file_dukigen_registry, 1);
+
+/**
+ * Data for AGENT_APPROX_BPS_SET (eventType=3)
+ *
+ * @generated from message dukiregistry.AgentApproxBpsSetPayload
+ */
+export type AgentApproxBpsSetPayload = Message<"dukiregistry.AgentApproxBpsSetPayload"> & {
+  /**
+   * @generated from field: uint32 approx_bps = 1;
+   */
+  approxBps: number;
+};
+
+/**
+ * Describes the message dukiregistry.AgentApproxBpsSetPayload.
+ * Use `create(AgentApproxBpsSetPayloadSchema)` to create a new message.
+ */
+export const AgentApproxBpsSetPayloadSchema: GenMessage<AgentApproxBpsSetPayload> = /*@__PURE__*/
+  messageDesc(file_dukigen_registry, 2);
+
+/**
+ * Data for AGENT_WORKS_DATA_SET (eventType=4)
+ *
+ * @generated from message dukiregistry.AgentWorksDataSetPayload
+ */
+export type AgentWorksDataSetPayload = Message<"dukiregistry.AgentWorksDataSetPayload"> & {
+  /**
+   * @generated from field: dukiregistry.ProductType product_type = 1;
+   */
+  productType: ProductType;
+
+  /**
+   * @generated from field: dukiregistry.DukiType duki_type = 2;
+   */
+  dukiType: DukiType;
+
+  /**
+   * @generated from field: string pledge_url = 3;
+   */
+  pledgeUrl: string;
+
+  /**
+   * @generated from field: repeated string tags = 4;
+   */
+  tags: string[];
+
+  /**
+   * @generated from field: string website = 5;
+   */
+  website: string;
+};
+
+/**
+ * Describes the message dukiregistry.AgentWorksDataSetPayload.
+ * Use `create(AgentWorksDataSetPayloadSchema)` to create a new message.
+ */
+export const AgentWorksDataSetPayloadSchema: GenMessage<AgentWorksDataSetPayload> = /*@__PURE__*/
+  messageDesc(file_dukigen_registry, 3);
+
+/**
+ * Data for AGENT_METADATA_SET (eventType=5)
+ *
+ * @generated from message dukiregistry.AgentMetadataSetPayload
+ */
+export type AgentMetadataSetPayload = Message<"dukiregistry.AgentMetadataSetPayload"> & {
+  /**
+   * @generated from field: string key = 1;
+   */
+  key: string;
+
+  /**
+   * @generated from field: bytes value = 2;
+   */
+  value: Uint8Array;
+};
+
+/**
+ * Describes the message dukiregistry.AgentMetadataSetPayload.
+ * Use `create(AgentMetadataSetPayloadSchema)` to create a new message.
+ */
+export const AgentMetadataSetPayloadSchema: GenMessage<AgentMetadataSetPayload> = /*@__PURE__*/
+  messageDesc(file_dukigen_registry, 4);
+
+/**
+ * Data for AGENT_WALLET_SET (eventType=6)
+ *
+ * @generated from message dukiregistry.AgentWalletSetPayload
+ */
+export type AgentWalletSetPayload = Message<"dukiregistry.AgentWalletSetPayload"> & {
+  /**
+   * @generated from field: string new_wallet = 1;
+   */
+  newWallet: string;
+};
+
+/**
+ * Describes the message dukiregistry.AgentWalletSetPayload.
+ * Use `create(AgentWalletSetPayloadSchema)` to create a new message.
+ */
+export const AgentWalletSetPayloadSchema: GenMessage<AgentWalletSetPayload> = /*@__PURE__*/
+  messageDesc(file_dukigen_registry, 5);
+
+/**
+ * Data for AGENT_CHAIN_CONTRACT_SET (eventType=7)
+ *
+ * @generated from message dukiregistry.AgentChainContractSetPayload
+ */
+export type AgentChainContractSetPayload = Message<"dukiregistry.AgentChainContractSetPayload"> & {
+  /**
+   * @generated from field: uint32 chain_eid = 1;
+   */
+  chainEid: number;
+
+  /**
+   * @generated from field: string contract_addr = 2;
+   */
+  contractAddr: string;
+};
+
+/**
+ * Describes the message dukiregistry.AgentChainContractSetPayload.
+ * Use `create(AgentChainContractSetPayloadSchema)` to create a new message.
+ */
+export const AgentChainContractSetPayloadSchema: GenMessage<AgentChainContractSetPayload> = /*@__PURE__*/
+  messageDesc(file_dukigen_registry, 6);
 
 /**
  * ── Indexed DukigenEvent row ────────────────────────────────────────────
@@ -64,9 +269,51 @@ export type DukigenRegistryEvent = Message<"dukiregistry.DukigenRegistryEvent"> 
   blockNumber: bigint;
 
   /**
-   * @generated from field: bytes event_data = 9;
+   * @generated from oneof dukiregistry.DukigenRegistryEvent.event_data
    */
-  eventData: Uint8Array;
+  eventData: {
+    /**
+     * @generated from field: dukiregistry.AgentRegisteredPayload agent_registered = 9;
+     */
+    value: AgentRegisteredPayload;
+    case: "agentRegistered";
+  } | {
+    /**
+     * @generated from field: dukiregistry.AgentURIUpdatedPayload agent_uri_updated = 10;
+     */
+    value: AgentURIUpdatedPayload;
+    case: "agentUriUpdated";
+  } | {
+    /**
+     * @generated from field: dukiregistry.AgentApproxBpsSetPayload agent_approx_bps_set = 11;
+     */
+    value: AgentApproxBpsSetPayload;
+    case: "agentApproxBpsSet";
+  } | {
+    /**
+     * @generated from field: dukiregistry.AgentWorksDataSetPayload agent_works_data_set = 12;
+     */
+    value: AgentWorksDataSetPayload;
+    case: "agentWorksDataSet";
+  } | {
+    /**
+     * @generated from field: dukiregistry.AgentMetadataSetPayload agent_metadata_set = 13;
+     */
+    value: AgentMetadataSetPayload;
+    case: "agentMetadataSet";
+  } | {
+    /**
+     * @generated from field: dukiregistry.AgentWalletSetPayload agent_wallet_set = 14;
+     */
+    value: AgentWalletSetPayload;
+    case: "agentWalletSet";
+  } | {
+    /**
+     * @generated from field: dukiregistry.AgentChainContractSetPayload agent_chain_contract_set = 15;
+     */
+    value: AgentChainContractSetPayload;
+    case: "agentChainContractSet";
+  } | { case: undefined; value?: undefined };
 };
 
 /**
@@ -74,7 +321,7 @@ export type DukigenRegistryEvent = Message<"dukiregistry.DukigenRegistryEvent"> 
  * Use `create(DukigenRegistryEventSchema)` to create a new message.
  */
 export const DukigenRegistryEventSchema: GenMessage<DukigenRegistryEvent> = /*@__PURE__*/
-  messageDesc(file_dukigen_registry, 0);
+  messageDesc(file_dukigen_registry, 7);
 
 /**
  * ── Agent record (materialized view from events) ────────────────────────
@@ -108,39 +355,39 @@ export type DukigenAgent = Message<"dukiregistry.DukigenAgent"> & {
   originChainEid: number;
 
   /**
-   * @generated from field: uint32 default_duki_bps = 6;
+   * @generated from field: uint32 approx_bps = 6;
    */
-  defaultDukiBps: number;
+  approxBps: number;
 
   /**
-   * @generated from field: uint32 min_duki_bps = 7;
+   * @generated from field: dukiregistry.ProductType product_type = 7;
    */
-  minDukiBps: number;
+  productType: ProductType;
 
   /**
-   * @generated from field: uint32 max_duki_bps = 8;
+   * @generated from field: dukiregistry.DukiType duki_type = 8;
    */
-  maxDukiBps: number;
+  dukiType: DukiType;
 
   /**
-   * @generated from field: uint32 product_type = 9;
-   */
-  productType: number;
-
-  /**
-   * @generated from field: uint32 duki_type = 10;
-   */
-  dukiType: number;
-
-  /**
-   * @generated from field: string pledge_url = 11;
+   * @generated from field: string pledge_url = 9;
    */
   pledgeUrl: string;
 
   /**
-   * @generated from field: repeated string tags = 12;
+   * @generated from field: repeated string tags = 10;
    */
   tags: string[];
+
+  /**
+   * @generated from field: string website = 11;
+   */
+  website: string;
+
+  /**
+   * @generated from field: string agent_wallet = 12;
+   */
+  agentWallet: string;
 };
 
 /**
@@ -148,7 +395,7 @@ export type DukigenAgent = Message<"dukiregistry.DukigenAgent"> & {
  * Use `create(DukigenAgentSchema)` to create a new message.
  */
 export const DukigenAgentSchema: GenMessage<DukigenAgent> = /*@__PURE__*/
-  messageDesc(file_dukigen_registry, 1);
+  messageDesc(file_dukigen_registry, 8);
 
 /**
  * ── DukigenRegistry Event Types ─────────────────────────────────────────
@@ -173,9 +420,9 @@ export enum DukigenEventType {
   AGENT_URI_UPDATED = 2,
 
   /**
-   * @generated from enum value: AGENT_DUKI_BPS_SET = 3;
+   * @generated from enum value: AGENT_APPROX_BPS_SET = 3;
    */
-  AGENT_DUKI_BPS_SET = 3,
+  AGENT_APPROX_BPS_SET = 3,
 
   /**
    * @generated from enum value: AGENT_WORKS_DATA_SET = 4;
@@ -193,14 +440,9 @@ export enum DukigenEventType {
   AGENT_WALLET_SET = 6,
 
   /**
-   * @generated from enum value: AGENT_WALLET_UNSET = 7;
+   * @generated from enum value: AGENT_CHAIN_CONTRACT_SET = 7;
    */
-  AGENT_WALLET_UNSET = 7,
-
-  /**
-   * @generated from enum value: PAYMENT_PROCESSED = 8;
-   */
-  PAYMENT_PROCESSED = 8,
+  AGENT_CHAIN_CONTRACT_SET = 7,
 }
 
 /**
@@ -208,77 +450,4 @@ export enum DukigenEventType {
  */
 export const DukigenEventTypeSchema: GenEnum<DukigenEventType> = /*@__PURE__*/
   enumDesc(file_dukigen_registry, 0);
-
-/**
- * ── Product category for DUKIGEN agents ─────────────────────────────────
- * SINGLE SOURCE OF TRUTH → Solidity enum generated via `pnpm gen:sol-enums`.
- *
- * @generated from enum dukiregistry.ProductType
- */
-export enum ProductType {
-  /**
-   * @generated from enum value: PRODUCT_TYPE_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
-
-  /**
-   * Apps, software, SaaS, digital goods
-   *
-   * @generated from enum value: PRODUCT_TYPE_DIGITAL = 1;
-   */
-  DIGITAL = 1,
-
-  /**
-   * Hardware, manufactured goods
-   *
-   * @generated from enum value: PRODUCT_TYPE_PHYSICAL = 2;
-   */
-  PHYSICAL = 2,
-
-  /**
-   * Consulting, professional services
-   *
-   * @generated from enum value: PRODUCT_TYPE_SERVICE = 3;
-   */
-  SERVICE = 3,
-}
-
-/**
- * Describes the enum dukiregistry.ProductType.
- */
-export const ProductTypeSchema: GenEnum<ProductType> = /*@__PURE__*/
-  enumDesc(file_dukigen_registry, 1);
-
-/**
- * ── DUKI contribution model ─────────────────────────────────────────────
- * SINGLE SOURCE OF TRUTH → Solidity enum generated via `pnpm gen:sol-enums`.
- *
- * @generated from enum dukiregistry.DukiType
- */
-export enum DukiType {
-  /**
-   * @generated from enum value: DUKI_TYPE_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
-
-  /**
-   * real-time DUKI minting on each payment
-   *
-   * @generated from enum value: DUKI_TYPE_REVENUE_SHARE = 1;
-   */
-  REVENUE_SHARE = 1,
-
-  /**
-   * profit-share pledge, contributed separately
-   *
-   * @generated from enum value: DUKI_TYPE_PROFIT_SHARE = 2;
-   */
-  PROFIT_SHARE = 2,
-}
-
-/**
- * Describes the enum dukiregistry.DukiType.
- */
-export const DukiTypeSchema: GenEnum<DukiType> = /*@__PURE__*/
-  enumDesc(file_dukigen_registry, 2);
 

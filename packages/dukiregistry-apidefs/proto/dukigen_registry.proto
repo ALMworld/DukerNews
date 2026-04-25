@@ -2,35 +2,70 @@ syntax = "proto3";
 
 package dukiregistry;
 
+import "dukigen_types.proto";
+
 // ── DukigenRegistry Event Types ─────────────────────────────────────────
 // SINGLE SOURCE OF TRUTH → Solidity enum generated via `pnpm gen:sol-enums`.
 enum DukigenEventType {
   DUKIGEN_EVENT_TYPE_UNSPECIFIED = 0;
   AGENT_REGISTERED        = 1;
   AGENT_URI_UPDATED       = 2;
-  AGENT_DUKI_BPS_SET      = 3;
+  AGENT_APPROX_BPS_SET    = 3;
   AGENT_WORKS_DATA_SET    = 4;
   AGENT_METADATA_SET      = 5;
   AGENT_WALLET_SET        = 6;
-  AGENT_WALLET_UNSET      = 7;
-  PAYMENT_PROCESSED       = 8;
+  AGENT_CHAIN_CONTRACT_SET = 7;
 }
 
-// ── Product category for DUKIGEN agents ─────────────────────────────────
-// SINGLE SOURCE OF TRUTH → Solidity enum generated via `pnpm gen:sol-enums`.
-enum ProductType {
-  PRODUCT_TYPE_UNSPECIFIED = 0;
-  PRODUCT_TYPE_DIGITAL    = 1;  // Apps, software, SaaS, digital goods
-  PRODUCT_TYPE_PHYSICAL   = 2;  // Hardware, manufactured goods
-  PRODUCT_TYPE_SERVICE    = 3;  // Consulting, professional services
+// ── DukigenRegistry Event Payloads ──────────────────────────────────────
+
+// Data for AGENT_REGISTERED (eventType=1)
+message AgentRegisteredPayload {
+  string          name         = 1;
+  string          agent_uri    = 2;
+  string          website      = 3;
+  uint32          approx_bps   = 4;
+  string          agent_wallet = 5;
+  ProductType     product_type = 6;
+  DukiType        duki_type    = 7;
+  string          pledge_url   = 8;
+  repeated string tags         = 9;
 }
 
-// ── DUKI contribution model ─────────────────────────────────────────────
-// SINGLE SOURCE OF TRUTH → Solidity enum generated via `pnpm gen:sol-enums`.
-enum DukiType {
-  DUKI_TYPE_UNSPECIFIED   = 0;
-  DUKI_TYPE_REVENUE_SHARE = 1;  // real-time DUKI minting on each payment
-  DUKI_TYPE_PROFIT_SHARE  = 2;  // profit-share pledge, contributed separately
+// Data for AGENT_URI_UPDATED (eventType=2)
+message AgentURIUpdatedPayload {
+  string new_uri = 1;
+}
+
+// Data for AGENT_APPROX_BPS_SET (eventType=3)
+message AgentApproxBpsSetPayload {
+  uint32 approx_bps = 1;
+}
+
+// Data for AGENT_WORKS_DATA_SET (eventType=4)
+message AgentWorksDataSetPayload {
+  ProductType     product_type = 1;
+  DukiType        duki_type    = 2;
+  string          pledge_url   = 3;
+  repeated string tags         = 4;
+  string          website      = 5;
+}
+
+// Data for AGENT_METADATA_SET (eventType=5)
+message AgentMetadataSetPayload {
+  string key   = 1;
+  bytes  value = 2;
+}
+
+// Data for AGENT_WALLET_SET (eventType=6)
+message AgentWalletSetPayload {
+  string new_wallet = 1;
+}
+
+// Data for AGENT_CHAIN_CONTRACT_SET (eventType=7)
+message AgentChainContractSetPayload {
+  uint32 chain_eid     = 1;
+  string contract_addr = 2;
 }
 
 // ── Indexed DukigenEvent row ────────────────────────────────────────────
@@ -44,7 +79,15 @@ message DukigenRegistryEvent {
   uint64              evt_time     = 6;
   string              tx_hash      = 7;
   uint64              block_number = 8;
-  bytes               event_data   = 9;
+  oneof event_data {
+    AgentRegisteredPayload        agent_registered       = 9;
+    AgentURIUpdatedPayload        agent_uri_updated       = 10;
+    AgentApproxBpsSetPayload      agent_approx_bps_set    = 11;
+    AgentWorksDataSetPayload      agent_works_data_set    = 12;
+    AgentMetadataSetPayload       agent_metadata_set      = 13;
+    AgentWalletSetPayload         agent_wallet_set        = 14;
+    AgentChainContractSetPayload  agent_chain_contract_set = 15;
+  }
 }
 
 // ── Agent record (materialized view from events) ────────────────────────
@@ -54,11 +97,11 @@ message DukigenAgent {
   string          agent_uri         = 3;
   string          owner             = 4;
   uint32          origin_chain_eid  = 5;
-  uint32          default_duki_bps  = 6;
-  uint32          min_duki_bps      = 7;
-  uint32          max_duki_bps      = 8;
-  uint32          product_type      = 9;
-  uint32          duki_type         = 10;
-  string          pledge_url        = 11;
-  repeated string tags              = 12;
+  uint32          approx_bps        = 6;
+  ProductType     product_type      = 7;
+  DukiType        duki_type         = 8;
+  string          pledge_url        = 9;
+  repeated string tags              = 10;
+  string          website           = 11;
+  string          agent_wallet      = 12;
 }

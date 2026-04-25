@@ -14,7 +14,13 @@ import { AggData } from "./interfaces/IDukerNewsTypes.sol";
 interface IDukerRegistry {
     function ownerToTokenId(address owner) external view returns (uint256);
     function usernameOf(address owner) external view returns (string memory);
-    function mintUsernameTo(address to, string calldata displayName, uint256 amount, address stableCoinAddress, uint256 agentId) external;
+    function mintUsernameTo(
+        address to,
+        string calldata displayName,
+        uint256 amount,
+        address stableCoinAddress,
+        uint256 agentId
+    ) external returns (uint256);
 }
 
 /// @notice Minimal interface for AlmWorldDukiMinter (payment layer).
@@ -70,7 +76,6 @@ contract DukerNews is OwnableUpgradeable, UUPSUpgradeable, IDukerNewsEvents, IDu
     /// @notice Per-user event sequence (incremented on every mutation)
     mapping(address => uint64) public userSeqOf;
 
-
     // ── Storage gap for upgradeable contracts ────────────────────────────────
     uint256[64] private __gap;
 
@@ -81,11 +86,7 @@ contract DukerNews is OwnableUpgradeable, UUPSUpgradeable, IDukerNewsEvents, IDu
         _disableInitializers();
     }
 
-    function initialize(
-        address _dukerRegistry,
-        address _almWorldDukiMinter,
-        uint256 _agentId
-    ) external initializer {
+    function initialize(address _dukerRegistry, address _almWorldDukiMinter, uint256 _agentId) external initializer {
         __Ownable_init(msg.sender);
 
         dukerRegistry = IDukerRegistry(_dukerRegistry);
@@ -104,18 +105,11 @@ contract DukerNews is OwnableUpgradeable, UUPSUpgradeable, IDukerNewsEvents, IDu
     /// @param displayName      Desired display name (e.g., "alice")
     /// @param amount            Stablecoin amount (must be > 0)
     /// @param stableCoin        ERC-20 stablecoin address
-    function mintUsername(
-        address to,
-        string calldata displayName,
-        uint128 amount,
-        address stableCoin
-    ) external {
+    function mintUsername(address to, string calldata displayName, uint128 amount, address stableCoin) external {
         // DukerRegistry handles payment + identity minting atomically.
         // User must have approved stablecoin to DukerRegistry before calling.
-        dukerRegistry.mintUsernameTo(to, displayName, amount, stableCoin, agentId);
+        uint64 dukerTokenId = uint64(dukerRegistry.mintUsernameTo(to, displayName, amount, stableCoin, agentId));
 
-        // Resolve token ID from the freshly minted identity
-        uint256 tokenId = dukerRegistry.ownerToTokenId(to);
         string memory username = dukerRegistry.usernameOf(to);
 
         ++userSeqOf[to];
@@ -128,15 +122,14 @@ contract DukerNews is OwnableUpgradeable, UUPSUpgradeable, IDukerNewsEvents, IDu
             username,
             userSeqOf[to],
             21, // USER_MINTED
-            1,  // aggType = USER
-            uint64(tokenId),
+            1, // aggType = USER
+            dukerTokenId,
             uint64(block.timestamp),
-            abi.encode(UsernameMintedData({
-                tokenId: tokenId,
-                username: username,
-                amount: amount,
-                dealDukiBps: defaultDealDukiBps
-            }))
+            abi.encode(
+                UsernameMintedData({
+                    tokenId: dukerTokenId, username: username, amount: amount, dealDukiBps: defaultDealDukiBps
+                })
+            )
         );
     }
 
@@ -260,15 +253,7 @@ contract DukerNews is OwnableUpgradeable, UUPSUpgradeable, IDukerNewsEvents, IDu
 
         uint64 seq = ++_evtSeq;
         emit DukerEvent(
-            actor,
-            seq,
-            username,
-            userSeqOf[actor],
-            uint32(evtType),
-            aggType,
-            aggId,
-            uint64(block.timestamp),
-            data
+            actor, seq, username, userSeqOf[actor], uint32(evtType), aggType, aggId, uint64(block.timestamp), data
         );
     }
 
@@ -288,15 +273,7 @@ contract DukerNews is OwnableUpgradeable, UUPSUpgradeable, IDukerNewsEvents, IDu
         uint64 seq = ++_evtSeq;
 
         emit DukerEvent(
-            actor,
-            seq,
-            username,
-            userSeqOf[actor],
-            uint32(evtType),
-            aggType,
-            aggId,
-            uint64(block.timestamp),
-            data
+            actor, seq, username, userSeqOf[actor], uint32(evtType), aggType, aggId, uint64(block.timestamp), data
         );
     }
 
@@ -310,15 +287,7 @@ contract DukerNews is OwnableUpgradeable, UUPSUpgradeable, IDukerNewsEvents, IDu
 
         uint64 seq = ++_evtSeq;
         emit DukerEvent(
-            actor,
-            seq,
-            username,
-            userSeqOf[actor],
-            uint32(evtType),
-            aggType,
-            aggId,
-            uint64(block.timestamp),
-            data
+            actor, seq, username, userSeqOf[actor], uint32(evtType), aggType, aggId, uint64(block.timestamp), data
         );
     }
 
@@ -384,11 +353,7 @@ contract DukerNews is OwnableUpgradeable, UUPSUpgradeable, IDukerNewsEvents, IDu
     // ══════════════════════════════════════════════════════════════════════════
 
     /// @notice Update registry references.
-    function setRegistries(
-        address _dukerRegistry,
-        address _almWorldDukiMinter,
-        uint256 _agentId
-    ) external onlyOwner {
+    function setRegistries(address _dukerRegistry, address _almWorldDukiMinter, uint256 _agentId) external onlyOwner {
         dukerRegistry = IDukerRegistry(_dukerRegistry);
         almWorldDukiMinter = IAlmWorldDukiMinter(_almWorldDukiMinter);
         agentId = _agentId;
@@ -420,7 +385,7 @@ contract DukerNews is OwnableUpgradeable, UUPSUpgradeable, IDukerNewsEvents, IDu
         IERC20(stableCoin).forceApprove(address(almWorldDukiMinter), amount);
         almWorldDukiMinter.mint(
             stableCoin,
-            payer,         // yang — payer gets their share of ALM
+            payer, // yang — payer gets their share of ALM
             address(this), // yin — DukerNews treasury collects ALM
             amount,
             agentId
