@@ -4,7 +4,7 @@ import { useAuthStore } from '../lib/authStore'
 import { useRequireAuth } from '../lib/useRequireAuth'
 import { renderFormattedText } from '../lib/format-text'
 import { useLocale, type SupportedLocale } from '../lib/locale-context'
-import type { PbComment } from '@repo/apidefs'
+import type { PbComment } from '@repo/dukernews-apidefs'
 import { applyCommentEvents } from '../lib/apply-events'
 import {
     EventType,
@@ -14,7 +14,7 @@ import {
     CommentCreatedPayloadSchema,
     CommentAmendPayloadSchema,
     CommentItemPayloadSchema as _CommentItemPayloadSchema,
-} from '@repo/apidefs'
+} from '@repo/dukernews-apidefs'
 import { getDisplayText } from '../lib/bagua-text'
 import { getLocaleName } from '../client'
 import { useChainHandle } from '../client/useChainHandle'

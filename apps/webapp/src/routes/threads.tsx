@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useEffect, useState, useCallback } from 'react'
 import { getUserThreads } from '../server/comments'
-import type { PbComment } from '@repo/apidefs'
+import type { PbComment } from '@repo/dukernews-apidefs'
 import type { UserThread } from '../services/comment-service'
 import CommentThread from '../components/CommentThread'
 

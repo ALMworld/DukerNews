@@ -2,26 +2,14 @@ syntax = "proto3";
 
 package duker;
 
+import "dukigen_types.proto";
+
 // ─── Enums ───────────────────────────────────────────────
 
 enum PostKind {
   POST_KIND_UNSPECIFIED = 0;
   WORKS = 1;
   VOICE = 2;
-}
-
-enum ProductType {
-  PRODUCT_TYPE_UNSPECIFIED = 0;
-  DIGITAL  = 1;  // Apps, software, SaaS, tools, content
-  PHYSICAL = 2;  // Hardware, goods, merchandise
-  SERVICE  = 3;  // Consulting, professional services
-}
-
-// Donation type — each entry pairs with a percent in duki_percents
-enum DukiType {
-  DUKI_TYPE_UNSPECIFIED = 0;
-  REVENUE = 1;  // 营业额 — percentage of gross revenue
-  PROFIT  = 2;  // 净利润 — percentage of net profit
 }
 
 // Aggregate type — identifies domain entity type
@@ -48,12 +36,12 @@ message PbUser {
 // ─── Post Data (oneof payload per post type) ────────────
 
 message WorksPostData {
-  DukiType            duki_type            = 1;  // Donation model (REVENUE or PROFIT)
-  repeated int32      duki_values          = 2;  // Donation values (basis pts: 250 = 2.50%)
-  string              duki_pledge_url      = 3;  // Pledge URL (DUKI-compliant DAO or project page)
-  repeated string     product_tags         = 4;  // Product tags (e.g. ["ai", "web3", "oss"])
-  string              dao_contract_address = 5;  // DAO contract address (on-chain)
-  ProductType         product_type         = 6;  // What kind of product
+  dukiregistry.DukiType    duki_type            = 1;  // Donation model (REVENUE_SHARE or PROFIT_SHARE)
+  repeated int32           duki_values          = 2;  // Donation values (basis pts: 250 = 2.50%)
+  string                   duki_pledge_url      = 3;  // Pledge URL (DUKI-compliant DAO or project page)
+  repeated string          product_tags         = 4;  // Product tags (e.g. ["ai", "web3", "oss"])
+  string                   dao_contract_address = 5;  // DAO contract address (on-chain)
+  dukiregistry.ProductType product_type         = 6;  // What kind of product
 }
 
 message VoicePostData {

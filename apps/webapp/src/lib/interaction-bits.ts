@@ -16,7 +16,7 @@
  * Call sites use AggType.POST (2) / AggType.COMMENT (3).
  * Stored as integer in DB and on-chain.
  */
-export { AggType } from '@repo/apidefs'
+export { AggType } from '@repo/dukernews-apidefs'
 
 export const VOTE_MASK  = 0b11       // 3  — covers bits 0-1
 export const VOTE_UP    = 0b01       // 1

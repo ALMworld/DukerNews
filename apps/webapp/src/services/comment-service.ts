@@ -5,7 +5,7 @@
 
 import { getKysely } from '../lib/db'
 import { sql } from 'kysely'
-import type { PbComment, PbEvent } from '@repo/apidefs'
+import type { PbComment, PbEvent } from '@repo/dukernews-apidefs'
 
 // ─── Service Functions ───────────────────────────────────
 

@@ -5,11 +5,11 @@
  */
 
 import { ConnectRouter, createClient, type HandlerContext } from '@connectrpc/connect'
-import { QueryService, TxService } from '@repo/apidefs'
+import { QueryService, TxService } from '@repo/dukernews-apidefs'
 import * as InteractionService from '../services/interaction-service'
 import { create } from '@bufbuild/protobuf'
-import { PbGetUserInteractionsRespSchema, PbUserInteractionSchema, PbDeltaEventsRespSchema } from '@repo/apidefs'
-import type { NotifyTxReq, DukerTxReq } from '@repo/apidefs'
+import { PbGetUserInteractionsRespSchema, PbUserInteractionSchema, PbDeltaEventsRespSchema } from '@repo/dukernews-apidefs'
+import type { NotifyTxReq, DukerTxReq } from '@repo/dukernews-apidefs'
 import { getGoApiTransport, MIGRATED } from '../lib/grpc-goapi-transport'
 import { handleTx } from './tx-service'
 import { getEventsFromTx } from './blockchain-service'

@@ -8,7 +8,7 @@
 import { createSerializationAdapter } from '@tanstack/react-router'
 import { toBinary, fromBinary, type Message } from '@bufbuild/protobuf'
 import { base64Encode, base64Decode } from '@bufbuild/protobuf/wire'
-import { registry } from '@repo/apidefs'
+import { registry } from '@repo/dukernews-apidefs'
 
 export const protoAdapter = createSerializationAdapter<Message, string>({
     key: 'custom',

@@ -6,7 +6,7 @@
  * Use from other apps/packages:
  *
  * ```ts
- * import { hello } from '@repo/protos'
+ * import { hello } from '@repo/dukernews-apidefs'
  *
  * hello()
  * ```
@@ -19,12 +19,15 @@ export function hello() {
 export * from './gen/duki_dao_pb.js'
 
 // Export service definitions:
-export * from './gen/rpc_pb.js'
-export * from './gen/duker_pb.js'
-export * from './gen/duker_es_pb.js'
+export * from './gen/dukernews_rpc_pb.js'
+export * from './gen/dukernews_pb.js'
+export * from './gen/dukernews_es_pb.js'
 export * from './gen/payment_pb.js'
 export * from './gen/schema_transcript_pb.js'
 export * from './gen/google/rpc/status_pb.js'
+
+// Re-export shared enums from dukiregistry-apidefs (single source of truth)
+export { ProductType, ProductTypeSchema, DukiType, DukiTypeSchema } from '@repo/dukiregistry-apidefs'
 
 // Export domain aggregates
 export * from './domain/aggregates.js'

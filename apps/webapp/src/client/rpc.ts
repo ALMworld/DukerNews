@@ -5,7 +5,7 @@
 
 import { createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
-import { QueryService } from '@repo/apidefs'
+import { QueryService } from '@repo/dukernews-apidefs'
 
 const transport = createConnectTransport({
     baseUrl: '/rpc',

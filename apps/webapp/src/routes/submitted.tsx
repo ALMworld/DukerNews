@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { getPosts } from '../server/posts'
 import { timeAgo } from '../lib/utils'
 import { useLocale } from '../lib/locale-context'
-import type { PbPost } from '@repo/apidefs'
+import type { PbPost } from '@repo/dukernews-apidefs'
 
 export const Route = createFileRoute('/submitted')({
     validateSearch: (search: Record<string, unknown>) => ({

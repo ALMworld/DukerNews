@@ -12,7 +12,7 @@ import {
     DukiType,
     type WorksPostData,
     type PbPostData,
-} from '@repo/apidefs'
+} from '@repo/dukernews-apidefs'
 import {
     MAX_DISPLAY_TAGS,
     META_ICON_SIZE,
@@ -58,7 +58,7 @@ export function WorksBadge({ data }: WorksBadgeProps) {
                             rel="noopener noreferrer"
                             className="meta-link no-underline inline-flex items-center gap-0.5"
                             style={{ color: 'inherit', transform: 'translateY(1px)' }}
-                            title={`${dukiType === DukiType.REVENUE ? 'Revenue' : 'Profit'}: ${formattedValues}`}
+                            title={`${dukiType === DukiType.REVENUE_SHARE ? 'Revenue' : 'Profit'}: ${formattedValues}`}
                         >
                             <DukiIcon size={META_ICON_SIZE} />{formattedValues}
                         </a>
@@ -66,7 +66,7 @@ export function WorksBadge({ data }: WorksBadgeProps) {
                         <span
                             className="meta-link inline-flex items-center gap-0.5"
                             style={{ color: 'inherit', transform: 'translateY(1px)' }}
-                            title={`${dukiType === DukiType.REVENUE ? 'Revenue' : 'Profit'}: ${formattedValues}`}
+                            title={`${dukiType === DukiType.REVENUE_SHARE ? 'Revenue' : 'Profit'}: ${formattedValues}`}
                         >
                             <DukiIcon size={META_ICON_SIZE} />{formattedValues}
                         </span>

@@ -1,8 +1,8 @@
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useSuspenseQuery } from '@tanstack/react-query'
 import { postsQueryOptions } from '../lib/query-options'
-import type { PbPost } from '@repo/apidefs'
-import { PostKind } from '@repo/apidefs'
+import type { PbPost } from '@repo/dukernews-apidefs'
+import { PostKind } from '@repo/dukernews-apidefs'
 import type { GetPostsInput } from '../services/post-service'
 import PostItem from './PostItem'
 

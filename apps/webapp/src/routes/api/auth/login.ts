@@ -6,7 +6,7 @@ import { createPublicClient, http, recoverMessageAddress } from 'viem'
 import { mainnet } from 'viem/chains'
 import { createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
-import { QueryService } from '@repo/apidefs'
+import { QueryService } from '@repo/dukernews-apidefs'
 import { getKysely } from '../../../lib/db'
 import { MIGRATED } from '../../../lib/grpc-goapi-transport'
 import {

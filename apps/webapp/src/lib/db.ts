@@ -9,7 +9,7 @@
 
 import { Kysely } from 'kysely'
 import { D1Dialect } from 'kysely-d1'
-import type { DB } from '@repo/apidefs'
+import type { DB } from '@repo/dukernews-apidefs'
 import { env } from 'cloudflare:workers'
 import { MIGRATED } from './grpc-goapi-transport'
 

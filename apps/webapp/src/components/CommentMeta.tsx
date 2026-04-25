@@ -12,7 +12,7 @@
 import { Link } from '@tanstack/react-router'
 import { timeAgo } from '../lib/utils'
 import { useLocale } from '../lib/locale-context'
-import type { PbComment } from '@repo/apidefs'
+import type { PbComment } from '@repo/dukernews-apidefs'
 
 /** Navigation info computed from sibling/parent context (post detail view) */
 export interface CommentNav {

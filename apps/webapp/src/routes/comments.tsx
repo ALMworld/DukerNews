@@ -4,7 +4,7 @@ import { getRecentComments } from '../server/comments'
 import { timeAgo } from '../lib/utils'
 import { useLocale } from '../lib/locale-context'
 import { renderFormattedText } from '../lib/format-text'
-import type { PbComment } from '@repo/apidefs'
+import type { PbComment } from '@repo/dukernews-apidefs'
 
 export const Route = createFileRoute('/comments')({
     component: CommentsPage,

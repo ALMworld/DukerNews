@@ -7,7 +7,7 @@
  *   titleRow - detail-page layout: comments as plain text, "Translate All" button shown.
  */
 import { Link } from '@tanstack/react-router'
-import type { PbPost, PbPostData } from '@repo/apidefs'
+import type { PbPost, PbPostData } from '@repo/dukernews-apidefs'
 import { WorksBadge } from './WorksBadge'
 import { timeAgo } from '../lib/utils'
 import { useLocale } from '../lib/locale-context'

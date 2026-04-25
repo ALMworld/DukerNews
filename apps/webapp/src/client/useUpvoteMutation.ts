@@ -19,7 +19,7 @@ import {
     DukerTxReqSchema,
     EventDataSchema,
     UpvoteAttentionPayloadSchema,
-} from '@repo/apidefs'
+} from '@repo/dukernews-apidefs'
 import { useChainHandle } from './useChainHandle'
 import { useInteractions, VOTE_MASK, VOTE_UP } from './useInteractions'
 

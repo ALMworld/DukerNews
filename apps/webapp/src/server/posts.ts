@@ -6,8 +6,8 @@
 
 import { createServerFn } from '@tanstack/react-start'
 import { createClient } from '@connectrpc/connect'
-import { QueryService } from '@repo/apidefs'
-import type { PbGetPostAggResp } from '@repo/apidefs'
+import { QueryService } from '@repo/dukernews-apidefs'
+import type { PbGetPostAggResp } from '@repo/dukernews-apidefs'
 import { getGoApiTransport, MIGRATED } from '../lib/grpc-goapi-transport'
 import * as PostService from '../services/post-service'
 import type { GetPostsInput, CreatePostInput, UpvotePostInput, GetPostAggInput } from '../services/post-service'

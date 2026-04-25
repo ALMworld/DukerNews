@@ -8,7 +8,7 @@ import {
     MessageSquareDashed,
     UserStar,
 } from 'lucide-react'
-import { DukiType, ProductType, PostKind } from '@repo/apidefs'
+import { DukiType, ProductType, PostKind } from '@repo/dukernews-apidefs'
 
 /** Max tags displayed per post item */
 export const MAX_DISPLAY_TAGS = 3
@@ -19,8 +19,8 @@ export const META_ICON_SIZE = 10
 // ─── Shared icon / label maps ────────────────────────────
 
 export const DUKI_ICONS: Partial<Record<DukiType, typeof TrendingUp>> = {
-    [DukiType.REVENUE]: TrendingUp,
-    [DukiType.PROFIT]: PieChart,
+    [DukiType.REVENUE_SHARE]: TrendingUp,
+    [DukiType.PROFIT_SHARE]: PieChart,
 }
 
 export const PRODUCT_ICONS: Partial<Record<ProductType, typeof AppWindow>> = {

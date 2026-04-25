@@ -6,7 +6,7 @@
  */
 
 import { openDB, type IDBPDatabase } from 'idb'
-import { AggType } from '@repo/apidefs'
+import { AggType } from '@repo/dukernews-apidefs'
 
 // ─── DB Schema ──────────────────────────────────────────
 

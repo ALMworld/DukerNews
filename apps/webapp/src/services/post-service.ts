@@ -4,8 +4,8 @@
  */
 
 import { getKysely } from '../lib/db'
-import type { PbPost, PbComment, PbGetPostsResp, PbPostData } from '@repo/apidefs'
-import { PostKind, PbPostDataSchema, PbPostSchema } from '@repo/apidefs'
+import type { PbPost, PbComment, PbGetPostsResp, PbPostData } from '@repo/dukernews-apidefs'
+import { PostKind, PbPostDataSchema, PbPostSchema } from '@repo/dukernews-apidefs'
 import { create, toBinary, fromBinary } from '@bufbuild/protobuf'
 import { sql } from 'kysely'
 import * as InteractionService from './interaction-service'

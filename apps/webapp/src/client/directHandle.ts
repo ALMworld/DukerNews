@@ -9,7 +9,7 @@
 
 import { toBinary } from '@bufbuild/protobuf'
 import { toHex } from 'viem'
-import { EventType, EventDataSchema, type DukerTxReq, deflateRaw } from '@repo/apidefs'
+import { EventType, EventDataSchema, type DukerTxReq, deflateRaw } from '@repo/dukernews-apidefs'
 import { ADDRESSES, dukerNewsAbi, ERC20_ABI, DEFAULT_CHAIN_ID, getDefaultStablecoin, MIN_APPROVE_MICRO } from '../lib/contracts'
 
 function maxBigInt(a: bigint, b: bigint): bigint { return a > b ? a : b }

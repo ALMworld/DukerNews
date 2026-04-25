@@ -6,15 +6,15 @@ package dukiregistry;
 // SINGLE SOURCE OF TRUTH → Solidity enum generated via `pnpm gen:sol-enums`.
 enum ProductType {
   PRODUCT_TYPE_UNSPECIFIED = 0;
-  PRODUCT_TYPE_DIGITAL    = 1;  // Apps, software, SaaS, digital goods
-  PRODUCT_TYPE_PHYSICAL   = 2;  // Hardware, manufactured goods
-  PRODUCT_TYPE_SERVICE    = 3;  // Consulting, professional services
+  DIGITAL  = 1;  // Apps, software, SaaS, digital goods
+  PHYSICAL = 2;  // Hardware, manufactured goods
+  SERVICE  = 3;  // Consulting, professional services
 }
 
 // ── DUKI contribution model ─────────────────────────────────────────────
 // SINGLE SOURCE OF TRUTH → Solidity enum generated via `pnpm gen:sol-enums`.
 enum DukiType {
-  DUKI_TYPE_UNSPECIFIED   = 0;
-  DUKI_TYPE_REVENUE_SHARE = 1;  // real-time DUKI minting on each payment
-  DUKI_TYPE_PROFIT_SHARE  = 2;  // profit-share pledge, contributed separately
+  DUKI_TYPE_UNSPECIFIED = 0;
+  REVENUE_SHARE = 1;  // real-time DUKI minting on each payment
+  PROFIT_SHARE  = 2;  // profit-share pledge, contributed separately
 }

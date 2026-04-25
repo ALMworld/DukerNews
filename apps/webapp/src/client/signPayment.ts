@@ -9,7 +9,7 @@
  */
 
 import { create } from '@bufbuild/protobuf'
-import { PaymentDataSchema, PaymentScheme, type PaymentData } from '@repo/apidefs'
+import { PaymentDataSchema, PaymentScheme, type PaymentData } from '@repo/dukernews-apidefs'
 import type { WalletClient, PublicClient } from 'viem'
 
 export type PaymentSchemeType = 'x402' | 'permit'

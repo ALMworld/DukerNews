@@ -16,8 +16,8 @@ import {
     EventType, EventDataSchema, PbDeltaEventsRespSchema,
     PaymentDataSchema, PaymentScheme,
     deflateRaw,
-} from '@repo/apidefs'
-import type { DukerTxReq } from '@repo/apidefs'
+} from '@repo/dukernews-apidefs'
+import type { DukerTxReq } from '@repo/dukernews-apidefs'
 import { getDukerChainClients } from '../lib/duker-chain'
 import { dukerNewsAbi } from '@alm/dukernews-dao-contract'
 import { verifyPayment, settlePayment } from '../lib/payment'

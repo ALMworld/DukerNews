@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package duker;
 
-import "duker.proto";
-import "duker_es.proto";
+import "dukernews.proto";
+import "dukernews_es.proto";
 
 option go_package = "github.com/dukernews/goapi/gen";
 

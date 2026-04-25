@@ -9,7 +9,7 @@
 
 import { getDukerChainClients } from '../duker-chain'
 import { mockUsdtAbi } from '@alm/dukernews-dao-contract'
-import type { PaymentData } from '@repo/apidefs'
+import type { PaymentData } from '@repo/dukernews-apidefs'
 import type { SettleResult } from './x402-payment'
 
 const PERMIT_ABI = [{

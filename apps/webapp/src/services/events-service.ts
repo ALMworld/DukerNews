@@ -9,7 +9,7 @@
 import { getKysely } from '../lib/db'
 import { sql } from 'kysely'
 import { toBinary, fromBinary, create } from '@bufbuild/protobuf'
-import { EventType, AggType, EventDataSchema, PbEventSchema, type PbEvent } from '@repo/apidefs'
+import { EventType, AggType, EventDataSchema, PbEventSchema, type PbEvent } from '@repo/dukernews-apidefs'
 import * as PostService from './post-service'
 import * as CommentService from './comment-service'
 import * as InteractionService from './interaction-service'

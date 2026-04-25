@@ -7,7 +7,7 @@
  *   - absent → mock only (dev)
  */
 
-import { PaymentScheme, type PaymentData } from '@repo/apidefs'
+import { PaymentScheme, type PaymentData } from '@repo/dukernews-apidefs'
 import { x402Verify, x402Settle, type SettleResult } from './x402-payment'
 import { permitSettle } from './permit-payment'
 import { getDukerChainClients } from '../duker-chain'

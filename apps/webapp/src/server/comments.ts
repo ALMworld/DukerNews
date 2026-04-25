@@ -6,8 +6,8 @@
 
 import { createServerFn } from '@tanstack/react-start'
 import { createClient } from '@connectrpc/connect'
-import { QueryService } from '@repo/apidefs'
-import type { PbGetRecentCommentsResp } from '@repo/apidefs'
+import { QueryService } from '@repo/dukernews-apidefs'
+import type { PbGetRecentCommentsResp } from '@repo/dukernews-apidefs'
 import { getGoApiTransport, MIGRATED } from '../lib/grpc-goapi-transport'
 import * as CommentService from '../services/comment-service'
 

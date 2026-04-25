@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package duker;
 
-import "duker.proto";
+import "dukernews.proto";
 import "payment.proto";
 
 // ─── Event Type (unified — used for both commands and events) ──

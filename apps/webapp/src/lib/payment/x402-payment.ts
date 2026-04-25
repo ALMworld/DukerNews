@@ -12,7 +12,7 @@ import {
     buildPaymentRequirements,
     type OkxPaymentPayload,
 } from '../../services/okx402-service'
-import type { PaymentData } from '@repo/apidefs'
+import type { PaymentData } from '@repo/dukernews-apidefs'
 
 export interface SettleResult {
     settleTxHash: string

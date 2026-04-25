@@ -3,8 +3,8 @@
  * Uses enriched event payloads (full entity data) for proper in-memory UI updates.
  */
 
-import type { PbEvent, PbPost, PbComment } from '@repo/apidefs'
-import { EventType } from '@repo/apidefs'
+import type { PbEvent, PbPost, PbComment } from '@repo/dukernews-apidefs'
+import { EventType } from '@repo/dukernews-apidefs'
 import { setUserEvtSeq } from './client-db'
 
 // ─── Apply Events to Posts ──────────────────────────────

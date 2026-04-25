@@ -4,7 +4,7 @@ import { create } from '@bufbuild/protobuf'
 import { postAggQueryOptions } from '../lib/query-options'
 import { getComments as fetchComments } from '../server/comments'
 import { useLocale, type SupportedLocale } from '../lib/locale-context'
-import type { PbPost, PbComment } from '@repo/apidefs'
+import type { PbPost, PbComment } from '@repo/dukernews-apidefs'
 import { applyCommentEvents } from '../lib/apply-events'
 import {
     EventType,
@@ -12,7 +12,7 @@ import {
     DukerTxReqSchema,
     EventDataSchema,
     CommentCreatedPayloadSchema,
-} from '@repo/apidefs'
+} from '@repo/dukernews-apidefs'
 import CommentThread from '../components/CommentThread'
 import CommentLocaleToggle, { getCommentLocaleConfig } from '../components/CommentLocaleToggle'
 import { useRequireAuth } from '../lib/useRequireAuth'

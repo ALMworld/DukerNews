@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react'
 import { Box, Text, useInput } from 'ink'
 import { queryClient } from '../services/rpc-client.js'
 import { ellipsis, timeAgo, fmtUsdt } from '../utils/format.js'
-import type { PbPost } from '@repo/apidefs'
+import type { PbPost } from '@repo/dukernews-apidefs'
 
 interface PostListProps {
     onSelectPost: (postId: bigint) => void

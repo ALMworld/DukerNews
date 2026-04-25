@@ -22,7 +22,7 @@ import {
     UserMintedPayloadSchema,
     type PbEvent,
     inflateRaw,
-} from '@repo/apidefs'
+} from '@repo/dukernews-apidefs'
 
 function getPublicClient() {
     const { viemChain, rpcUrl } = getDukerChain()

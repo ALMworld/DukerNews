@@ -12,7 +12,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { getEventsInRange, getEventsFromTx } from '../../../services/blockchain-service'
 import { applyEvents } from '../../../services/events-service'
 import { toJson } from '@bufbuild/protobuf'
-import { PbEventSchema } from '@repo/apidefs'
+import { PbEventSchema } from '@repo/dukernews-apidefs'
 
 export const Route = createFileRoute('/api/debug/sync-events')({
     server: {

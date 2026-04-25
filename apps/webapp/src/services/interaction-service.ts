@@ -12,7 +12,7 @@
 
 import { sql } from 'kysely'
 import { getKysely } from '../lib/db'
-import { AggType } from '@repo/apidefs'
+import { AggType } from '@repo/dukernews-apidefs'
 
 // Bit constants from shared module (client-safe)
 import {

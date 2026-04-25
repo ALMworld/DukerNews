@@ -20,7 +20,7 @@ import {
     PbPostDataSchema,
     WorksPostDataSchema,
     type PbEvent,
-} from '@repo/apidefs'
+} from '@repo/dukernews-apidefs'
 
 // ─── Fake Works Data ─────────────────────────────────────
 
@@ -135,7 +135,7 @@ export function algoliaToEvents(item: AlgoliaItem, maxComments: number = 200): P
                             payload: {
                                 case: 'works' as const,
                                 value: create(WorksPostDataSchema, {
-                                    dukiType: seededRandom(item.id) > 0.5 ? DukiType.REVENUE : DukiType.PROFIT,
+                                    dukiType: seededRandom(item.id) > 0.5 ? DukiType.REVENUE_SHARE : DukiType.PROFIT_SHARE,
                                     dukiValues: [Math.round((0.5 + seededRandom(item.id) * 9.5) * 100)],
                                     dukiPledgeUrl: `https://dao.example.org/project/${item.id}`,
                                     daoContractAddress: seededRandom(item.id) > 0.7

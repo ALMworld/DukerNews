@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useQueries } from '@tanstack/react-query'
 import { useLocale, type SupportedLocale } from '../lib/locale-context'
-import type { PbComment } from '@repo/apidefs'
+import type { PbComment } from '@repo/dukernews-apidefs'
 import { translateText, queryKeys } from '../client'
 import CommentItem from './CommentItem'
 import type { CommentNav, ThreadContext } from './CommentMeta'

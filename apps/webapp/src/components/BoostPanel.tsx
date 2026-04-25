@@ -10,7 +10,7 @@ import { create } from '@bufbuild/protobuf'
 import {
     EventType, AggType,
     DukerTxReqSchema, EventDataSchema, BoostAttentionPayloadSchema,
-} from '@repo/apidefs'
+} from '@repo/dukernews-apidefs'
 import { DukiPayment, type DukiPaymentValue } from './DukiPayment'
 import { useChainHandle } from '../client/useChainHandle'
 import { useAuthStore } from '../lib/authStore'

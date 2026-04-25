@@ -8,7 +8,7 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { create } from '@bufbuild/protobuf'
-import { PostKind, DukiType, ProductType, type PbPostData, PbPostDataSchema, WorksPostDataSchema } from '@repo/apidefs'
+import { PostKind, DukiType, ProductType, type PbPostData, PbPostDataSchema, WorksPostDataSchema } from '@repo/dukernews-apidefs'
 import {
     MAX_DISPLAY_TAGS,
     DUKI_ICONS,
@@ -20,7 +20,7 @@ import {
 import { useLocale, LOCALES, type SupportedLocale } from '../../lib/locale-context'
 import { useRequireAuth } from '../../lib/useRequireAuth'
 import { useChainHandle } from '../../client/useChainHandle'
-import { AggType, EventType, DukerTxReqSchema, EventDataSchema, PostCreatedPayloadSchema } from '@repo/apidefs'
+import { AggType, EventType, DukerTxReqSchema, EventDataSchema, PostCreatedPayloadSchema } from '@repo/dukernews-apidefs'
 import { DukiPayment, type DukiPaymentValue } from '../DukiPayment'
 import { SubmitOnChainButton } from '../SubmitOnChainButton'
 import { SectionHeader } from './SectionHeader'
@@ -131,7 +131,7 @@ export default function SubmitForm() {
             text: '',
             locale: userLocale,
             productType: ProductType.DIGITAL as ProductType,
-            dukiType: DukiType.REVENUE as DukiType,
+            dukiType: DukiType.REVENUE_SHARE as DukiType,
             dukiPercent: '',
             daoUrl: '',
             daoContract: '',
@@ -440,7 +440,7 @@ export default function SubmitForm() {
                                         <form.Field name="dukiType">
                                             {(typeField) => {
                                                 const pct = pctField.state.value
-                                                const isRevenue = typeField.state.value === DukiType.REVENUE
+                                                const isRevenue = typeField.state.value === DukiType.REVENUE_SHARE
                                                 return (
                                                     <div title="Percentage of revenue or profit pledged to DUKI — the decentralized universal kindness initiative">
                                                         <label className="mb-0.5 flex items-center gap-1.5 text-xs" style={{ color: 'var(--meta-color)' }}>
@@ -471,7 +471,7 @@ export default function SubmitForm() {
                                                             <span className="text-xs" style={{ color: 'var(--meta-color)' }}>% of</span>
                                                             <button
                                                                 type="button"
-                                                                onClick={() => typeField.handleChange(DukiType.REVENUE)}
+                                                                onClick={() => typeField.handleChange(DukiType.REVENUE_SHARE)}
                                                                 className={cn(
                                                                     'text-xs font-medium transition-colors',
                                                                     isRevenue ? '' : 'line-through opacity-40'
@@ -483,7 +483,7 @@ export default function SubmitForm() {
                                                             <span className="text-xs" style={{ color: 'var(--meta-color)' }}>/</span>
                                                             <button
                                                                 type="button"
-                                                                onClick={() => typeField.handleChange(DukiType.PROFIT)}
+                                                                onClick={() => typeField.handleChange(DukiType.PROFIT_SHARE)}
                                                                 className={cn(
                                                                     'text-xs font-medium transition-colors',
                                                                     !isRevenue ? '' : 'line-through opacity-40'

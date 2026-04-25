@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import PostList from '../components/PostList'
 import { postsQueryOptions } from '../lib/query-options'
 import type { GetPostsInput } from '../services/post-service'
-import { PostKind } from '@repo/apidefs'
+import { PostKind } from '@repo/dukernews-apidefs'
 
 interface SearchParams {
     page?: number

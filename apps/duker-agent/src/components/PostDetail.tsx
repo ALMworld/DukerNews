@@ -9,7 +9,7 @@ import { queryClient } from '../services/rpc-client.js'
 import { contractCall } from '../services/onchainos-cli-wrapper.js'
 import { timeAgo, fmtUsdt, truncAddr, ellipsis } from '../utils/format.js'
 import { config } from '../utils/config.js'
-import type { PbPost, PbComment } from '@repo/apidefs'
+import type { PbPost, PbComment } from '@repo/dukernews-apidefs'
 import { encodeFunctionData, keccak256, toHex, erc20Abi } from 'viem'
 import { dukerNewsAbi } from '@alm/dukernews-dao-contract'
 

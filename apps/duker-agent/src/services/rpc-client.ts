@@ -5,7 +5,7 @@
 
 import { createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-node'
-import { QueryService, CmdService } from '@repo/apidefs'
+import { QueryService, CmdService } from '@repo/dukernews-apidefs'
 import { config } from '../utils/config.js'
 
 const transport = createConnectTransport({

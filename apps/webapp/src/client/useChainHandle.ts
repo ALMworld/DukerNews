@@ -15,7 +15,7 @@ import { createConnectTransport } from '@connectrpc/connect-web'
 import {
     TxService, EventType,
     type DukerTxReq, type PbEvent,
-} from '@repo/apidefs'
+} from '@repo/dukernews-apidefs'
 import { refreshAuth } from './auth-api'
 import type { AuthRefreshResult } from './auth-api'
 import { directHandle } from './directHandle'

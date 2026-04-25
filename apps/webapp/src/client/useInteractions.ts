@@ -24,7 +24,7 @@ import {
 } from '../lib/client-db'
 import { rpcClient } from './rpc'
 import { create } from '@bufbuild/protobuf'
-import { PbGetUserInteractionsReqSchema, AggType } from '@repo/apidefs'
+import { PbGetUserInteractionsReqSchema, AggType } from '@repo/dukernews-apidefs'
 import { useCallback, useRef } from 'react'
 
 // Re-export bit constants for convenience

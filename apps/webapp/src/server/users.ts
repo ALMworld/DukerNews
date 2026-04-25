@@ -8,8 +8,8 @@
 
 import { createServerFn } from '@tanstack/react-start'
 import { createClient } from '@connectrpc/connect'
-import { QueryService } from '@repo/apidefs'
-// import { CmdService, CmdType, CmdSchema, CmdDataSchema } from '@repo/apidefs'
+import { QueryService } from '@repo/dukernews-apidefs'
+// import { CmdService, CmdType, CmdSchema, CmdDataSchema } from '@repo/dukernews-apidefs'
 // import { create } from '@bufbuild/protobuf'
 import type { UserProfile } from '../services/user-service'
 import { ConnectError, Code } from '@connectrpc/connect'

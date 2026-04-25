@@ -4,7 +4,7 @@
  */
 
 import { getKysely } from '../lib/db'
-import type { PbUser } from '@repo/apidefs'
+import type { PbUser } from '@repo/dukernews-apidefs'
 
 // ─── Input Types ─────────────────────────────────────────
 

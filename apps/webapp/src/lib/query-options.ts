@@ -7,7 +7,7 @@
 import { queryOptions } from '@tanstack/react-query'
 import { getPosts, getPostAgg } from '../server/posts'
 import type { GetPostsInput, PostAggResult } from '../services/post-service'
-import type { PbGetPostsResp } from '@repo/apidefs'
+import type { PbGetPostsResp } from '@repo/dukernews-apidefs'
 
 // ---------------------------------------------------------------------------
 // Posts list (index / new / ask / etc.)
