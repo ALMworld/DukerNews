@@ -22,7 +22,6 @@ import { directHandle } from './directHandle'
 import type { DirectHandleResult } from './directHandle'
 import { getDefaultStablecoin, ADDRESSES, DEFAULT_CHAIN_ID } from '../lib/contracts'
 import { signPayment } from './signPayment'
-import { notifyRegistryWorker, syncDukerEvents } from './registry-api'
 
 // ConnectRPC client for x402 + notifyTx
 const cmdTransport = createConnectTransport({ baseUrl: '/rpc' })
@@ -165,9 +164,8 @@ export function useChainHandle() {
 
             setTxHash(result.txHash)
 
-            // For USER_MINTED, the tx goes to DukerRegistry (not DukerNews DAO),
-            // so skip the SSR NotifyTx (which parses DukerNews events) and use
-            // the registry worker directly instead.
+            // USER_MINTED is emitted by DukerNews, so sync it through the same
+            // backend DukerEvent path as the rest of the protocol actions.
             if (txData.evtType === EventType.USER_MINTED) {
                 setStep('confirming')
 
@@ -179,16 +177,16 @@ export function useChainHandle() {
                     throw new Error('AlreadyHasIdentity — on-chain revert')
                 }
 
-                // Sync to registry worker API (handles chain access externally)
+                // Sync DukerNews events into the backend user DB.
                 try {
                     await new Promise(r => setTimeout(r, 1000))
-                    await notifyRegistryWorker(result.txHash, publicClient!.chain.id)
+                    await txClient.notifyTx({ txHash: result.txHash })
                 } catch { /* best-effort — worker will catch up */ }
 
                 const dukiBps = txData.data?.payload?.case === 'userMinted'
                     ? txData.data.payload.value.dukiBps : 0
                 let authResult: AuthRefreshResult | undefined
-                try { authResult = await refreshAuth(dukiBps) } catch { /* best-effort */ }
+                try { authResult = await refreshAuth(dukiBps, result.txHash) } catch { /* best-effort */ }
                 setStep('done')
                 return { ...result, events: [], authResult }
             }
@@ -210,12 +208,11 @@ export function useChainHandle() {
 
             // ── AlreadyHasIdentity recovery ────────────────
             // The wallet already has an on-chain identity but the webapp
-            // doesn't know about it (fresh cookies, cleared session, etc.).
-            // Sync events from the worker and refresh auth to recover.
+            // doesn't know about it yet. Try to refresh the authenticated
+            // user from local sync / registry fallback.
             if (msg.includes('AlreadyHasIdentity') && txData.evtType === EventType.USER_MINTED) {
                 setStep('confirming')
                 try {
-                    await syncDukerEvents(publicClient!.chain.id)
                     const authResult = await refreshAuth()
                     setStep('done')
                     return { txHash: '', events: [], authResult }

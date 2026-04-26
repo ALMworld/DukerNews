@@ -9,6 +9,8 @@ import { createConnectTransport } from '@connectrpc/connect-web'
 import { QueryService } from '@repo/dukernews-apidefs'
 import { getKysely } from '../../../lib/db'
 import { MIGRATED } from '../../../lib/grpc-goapi-transport'
+import { DEFAULT_CHAIN_ID } from '../../../lib/contracts'
+import { getRegistryIdentity } from '../../../server/registry-worker-client'
 import {
     consumeNonce,
     getAddressFromMessage,
@@ -19,6 +21,12 @@ import {
     getJwtExpirySecs,
     type JWTPayload,
 } from '../../../server/auth-utils'
+
+const CHAIN_ID_TO_EID: Record<number, number> = {
+    31337: 31337,
+    196: 30274,
+    11155111: 11155111,
+}
 
 export const Route = createFileRoute('/api/auth/login')({
     server: {
@@ -108,6 +116,37 @@ export const Route = createFileRoute('/api/auth/login')({
                             username = (u?.username && u.username !== address.toLowerCase()) ? u.username : ''
                         } catch {
                             // User not found — username stays '' and onboarding handles it
+                        }
+                    }
+
+                    // If SIWE succeeded but the local DB has no username yet,
+                    // recover it from the registry materialization and cache it locally.
+                    if (!username) {
+                        const chainEid = CHAIN_ID_TO_EID[DEFAULT_CHAIN_ID] ?? DEFAULT_CHAIN_ID
+                        const identity = await getRegistryIdentity(address.toLowerCase(), chainEid)
+                        if (identity?.username) {
+                            username = identity.username
+
+                            if (db) {
+                                const now = Math.floor(Date.now() / 1000)
+                                await db
+                                    .insertInto('users')
+                                    .values({
+                                        address: address.toLowerCase(),
+                                        username,
+                                        duki_bps: 0,
+                                        karma: 1,
+                                        created_at: now,
+                                        updated_at: now,
+                                    })
+                                    .onConflict((oc) =>
+                                        oc.column('address').doUpdateSet({
+                                            username,
+                                            updated_at: now,
+                                        })
+                                    )
+                                    .execute()
+                            }
                         }
                     }
 

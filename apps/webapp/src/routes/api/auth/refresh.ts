@@ -11,6 +11,8 @@ import {
 import { getRegistryIdentity } from '../../../server/registry-worker-client'
 import { DEFAULT_CHAIN_ID } from '../../../lib/contracts'
 import { getKysely } from '../../../lib/db'
+import { getEventsFromTx } from '../../../services/blockchain-service'
+import { applyEvents } from '../../../services/events-service'
 
 const CHAIN_ID_TO_EID: Record<number, number> = {
     31337: 31337,
@@ -35,16 +37,20 @@ export const Route = createFileRoute('/api/auth/refresh')({
                     return Response.json({ success: false, message: 'Invalid session' }, { status: 401 })
                 }
 
-                // Guard: only refresh when username is empty (one-time after mint)
+                // Idempotent fast path — callers may refresh repeatedly.
                 if (payload.username) {
-                    return Response.json({ success: false, message: 'Token already has username' })
+                    return Response.json({ success: true, data: payload })
                 }
+
+                const db = getKysely()
 
                 // Read dukiBps and txHash from request body
                 let dukiBps: number | undefined
+                let txHash: string | undefined
                 try {
-                    const body = await request.json() as { dukiBps?: number }
+                    const body = await request.json() as { dukiBps?: number; txHash?: string }
                     dukiBps = body.dukiBps
+                    txHash = body.txHash
                 } catch {
                     // body is optional — defaults to undefined
                 }
@@ -52,22 +58,58 @@ export const Route = createFileRoute('/api/auth/refresh')({
                 const address = payload.ego
                 const chainEid = CHAIN_ID_TO_EID[DEFAULT_CHAIN_ID] ?? DEFAULT_CHAIN_ID
 
-                // Query registry worker for on-chain username (avoids workerd outbound restriction)
-                const identity = await getRegistryIdentity(address, chainEid)
-                if (!identity?.username) {
-                    return Response.json({ success: false, message: 'No username found — registry worker may not have indexed yet' })
+                // First sync DukerNews events when the mint tx is known.
+                if (txHash) {
+                    try {
+                        const events = await getEventsFromTx(txHash)
+                        if (events.length > 0) {
+                            await applyEvents(events)
+                        }
+                    } catch (e) {
+                        console.warn('[auth/refresh] tx sync failed (non-blocking):', e)
+                    }
+                }
+
+                let username = ''
+
+                // Preferred source after SIWE: local DB hydrated from DukerNews events.
+                if (db) {
+                    const existingUser = await db
+                        .selectFrom('users')
+                        .select(['username', 'duki_bps'])
+                        .where('address', '=', address.toLowerCase())
+                        .executeTakeFirst()
+
+                    if (existingUser?.username) {
+                        username = existingUser.username
+                        if (dukiBps == null && existingUser.duki_bps != null) {
+                            dukiBps = existingUser.duki_bps
+                        }
+                    }
+                }
+
+                // Final fallback: registry lookup only for authenticated users
+                // whose local user row has not been materialized yet.
+                if (!username) {
+                    const identity = await getRegistryIdentity(address, chainEid)
+                    if (identity?.username) {
+                        username = identity.username
+                    }
+                }
+
+                if (!username) {
+                    return Response.json({ success: false, message: 'No username found — backend sync has not caught up yet' })
                 }
 
                 // Persist to webapp D1 so login can find it next time
                 try {
-                    const db = getKysely()
                     if (db) {
                         const now = Math.floor(Date.now() / 1000)
                         await db
                             .insertInto('users')
                             .values({
                                 address: address.toLowerCase(),
-                                username: identity.username,
+                                username,
                                 duki_bps: dukiBps ?? 0,
                                 karma: 1,
                                 created_at: now,
@@ -75,7 +117,7 @@ export const Route = createFileRoute('/api/auth/refresh')({
                             })
                             .onConflict((oc) =>
                                 oc.column('address').doUpdateSet({
-                                    username: identity.username,
+                                    username,
                                     duki_bps: dukiBps ?? 0,
                                     updated_at: now,
                                 })
@@ -89,7 +131,7 @@ export const Route = createFileRoute('/api/auth/refresh')({
                 // Re-issue JWT with verified on-chain username
                 const newPayload: JWTPayload = {
                     ...payload,
-                    username: identity.username,
+                    username,
                     dukiBps: dukiBps ?? 0,
                     expireAt: Math.floor(Date.now() / 1000) + getJwtExpirySecs(),
                 }
@@ -110,4 +152,3 @@ export const Route = createFileRoute('/api/auth/refresh')({
         },
     },
 })
-

@@ -24,16 +24,9 @@ export * from './gen/dukernews_pb.js'
 export * from './gen/dukernews_es_pb.js'
 export * from './gen/payment_pb.js'
 export * from './gen/schema_transcript_pb.js'
-export * from './gen/google/rpc/status_pb.js'
 
 // Re-export shared enums from dukiregistry-apidefs (single source of truth)
 export { ProductType, ProductTypeSchema, DukiType, DukiTypeSchema } from '@repo/dukiregistry-apidefs'
-
-// Export domain aggregates
-export * from './domain/aggregates.js'
-export * from './domain/querys.js'
-export * from './domain/vid_utils.js'
-export * from './domain/nonce_utils.js'
 
 // Export database schema and types
 export * from './db/index.js'
