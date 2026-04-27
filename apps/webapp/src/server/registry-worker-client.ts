@@ -1,79 +1,125 @@
 /**
  * registry-worker-client.ts — SSR client for the DukerRegistry Worker API.
  *
- * Used by server-side routes (refreshAuth) to query the registry worker.
- * In dev, calls go through vite's proxy (/worker-api → localhost:8788)
- * to bypass workerd's private-IP blocking.
- * In production, set REGISTRY_WORKER_URL to the deployed worker URL.
+ * Uses ConnectRPC's generated DukerRegistryService client (instead of raw fetch)
+ * so request/response shapes track the proto definitions.
+ *
+ * In dev, calls go through vite's proxy (/worker-api → localhost:8788) to
+ * bypass workerd's private-IP blocking. In production, set REGISTRY_WORKER_URL
+ * to the deployed worker URL.
  */
+
+import { createClient, type Client } from '@connectrpc/connect'
+import { createConnectTransport } from '@connectrpc/connect-web'
+import { DukerRegistryService, type DukerIdentity } from '@repo/dukiregistry-apidefs'
 
 const REGISTRY_WORKER_URL = process.env.REGISTRY_WORKER_URL ?? 'http://localhost:3000/worker-api'
 
+let _client: Client<typeof DukerRegistryService> | null = null
+
+function getClient(): Client<typeof DukerRegistryService> {
+    if (!_client) {
+        const transport = createConnectTransport({
+            baseUrl: REGISTRY_WORKER_URL,
+            // workerd's edge fetch rejects redirect:"error" (the default for fetch).
+            fetch: (input, init) => fetch(input, { ...init, redirect: 'manual' }),
+        })
+        _client = createClient(DukerRegistryService, transport)
+    }
+    return _client
+}
+
+/** A serializable copy of DukerIdentity — bigints become strings, status drops. */
+export interface RegistryIdentity {
+    chainEid: number
+    username: string
+    tokenId: string
+    ego: string
+    bio: string
+    website: string
+}
+
+function toPlain(i: DukerIdentity): RegistryIdentity {
+    return {
+        chainEid: Number(i.chainEid),
+        username: i.username,
+        tokenId: i.tokenId,
+        ego: i.ego,
+        bio: i.bio,
+        website: i.website,
+    }
+}
+
 /**
- * Query the registry worker for a user's identity by wallet address.
+ * Fetch every identity owned by `address`. Pass `chainEid > 0` to limit to one
+ * chain; pass 0 to get all chain presences (the merge case used at login).
+ */
+export async function getRegistryIdentities(
+    address: string,
+    chainEid: number = 0,
+): Promise<RegistryIdentity[]> {
+    try {
+        const resp = await getClient().getUsername({ address: address.toLowerCase(), chainEid })
+        return resp.identities.map(toPlain)
+    } catch (err) {
+        console.warn('[registry-worker-client] getUsername failed:', err)
+        return []
+    }
+}
+
+/**
+ * Pick the identity to use as the primary username for an address.
+ *   1. Prefer the identity whose chainEid matches the caller's current chain.
+ *   2. Otherwise return the most recently registered one — tokenId encodes
+ *      `(seq << 24) | chainEid`, so the largest tokenId is the latest mint.
+ */
+export function pickPrimaryIdentity(
+    identities: RegistryIdentity[],
+    chainEid: number,
+): RegistryIdentity | null {
+    if (identities.length === 0) return null
+    const onChain = identities.find(i => i.chainEid === chainEid)
+    if (onChain) return onChain
+    // Sort copy by tokenId desc; tokenId is a uint256 string so compare as bigint.
+    return [...identities].sort((a, b) => {
+        const ta = BigInt(a.tokenId)
+        const tb = BigInt(b.tokenId)
+        return ta > tb ? -1 : ta < tb ? 1 : 0
+    })[0]
+}
+
+/**
+ * Back-compat: single-identity lookup used by older callers. Returns the same
+ * identity that `pickPrimaryIdentity` would, but with only the fields earlier
+ * callers consumed.
  */
 export async function getRegistryIdentity(
     address: string,
     chainEid: number,
 ): Promise<{ username?: string; tokenId?: string } | null> {
-    try {
-        const resp = await fetch(
-            `${REGISTRY_WORKER_URL}/dukiregistry.DukerRegistryService/GetUsername`,
-            {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Connect-Protocol-Version': '1',
-                },
-                body: JSON.stringify({ address, chainEid }),
-            },
-        )
-        if (!resp.ok) return null
-        const data = (await resp.json()) as any
-        if (!data.identity?.username) return null
-        return {
-            username: data.identity.username,
-            tokenId: data.identity.tokenId,
-        }
-    } catch {
-        return null
-    }
+    const all = await getRegistryIdentities(address, 0)
+    const primary = pickPrimaryIdentity(all, chainEid)
+    if (!primary) return null
+    return { username: primary.username, tokenId: primary.tokenId }
 }
 
 /**
  * Ask the registry worker to catch up DukerRegistry logs for a chain.
- *
- * Passing lastEvtSeq=0 lets the worker derive its own indexed cursor from D1.
+ * lastEvtSeq=0 lets the worker derive its own indexed cursor from D1.
  */
 export async function syncRegistryIdentities(
     chainEid: number,
-    lastEvtSeq: number = 0,
-): Promise<{ syncedUpTo?: string; eventsIndexed?: number; chainEvtSeq?: string } | null> {
+    lastEvtSeq: bigint = 0n,
+): Promise<{ syncedUpTo: bigint; eventsIndexed: number; chainEvtSeq: bigint } | null> {
     try {
-        const resp = await fetch(
-            `${REGISTRY_WORKER_URL}/dukiregistry.DukerRegistryService/SyncDukerEvents`,
-            {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Connect-Protocol-Version': '1',
-                },
-                body: JSON.stringify({ chainEid, lastEvtSeq: String(lastEvtSeq) }),
-            },
-        )
-        if (!resp.ok) return null
-        const data = (await resp.json()) as any
+        const resp = await getClient().syncDukerEvents({ chainEid, lastEvtSeq })
         return {
-            syncedUpTo: data.syncedUpTo,
-            eventsIndexed: data.eventsIndexed,
-            chainEvtSeq: data.chainEvtSeq,
+            syncedUpTo: resp.syncedUpTo,
+            eventsIndexed: resp.eventsIndexed,
+            chainEvtSeq: resp.chainEvtSeq,
         }
-    } catch {
+    } catch (err) {
+        console.warn('[registry-worker-client] syncDukerEvents failed:', err)
         return null
     }
 }
-
-/**
- * Check if a username exists in the registry worker.
- * TODO: Add a dedicated CheckUsername RPC to the registry worker.
- */

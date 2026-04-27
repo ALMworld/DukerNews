@@ -475,8 +475,26 @@ async function applyEvent(evt: PbEvent): Promise<ApplyResult> {
             const db = getKysely()
             if (db) {
                 const addrLower = v.address.toLowerCase()
-                await sql`INSERT OR REPLACE INTO users (address, username, duki_bps, karma, created_at, updated_at)
-                    VALUES (${addrLower}, ${v.username}, ${v.dukiBps}, 1, ${now}, ${now})`.execute(db)
+                // tokenId from DukerRegistry encodes the origin chain in its lower 24 bits.
+                const chainEid = Number(BigInt(v.tokenId) & 0xFFFFFFn)
+                const newEntry = {
+                    chainEid,
+                    username: v.username,
+                    tokenId: v.tokenId.toString(),
+                }
+                const existing = await db
+                    .selectFrom('users')
+                    .select('chain_identities')
+                    .where('address', '=', addrLower)
+                    .executeTakeFirst()
+                const merged = mergeChainIdentities(existing?.chain_identities, newEntry)
+                await sql`INSERT INTO users (address, username, chain_identities, duki_bps, karma, created_at, updated_at)
+                    VALUES (${addrLower}, ${v.username}, ${merged}, ${v.dukiBps}, 1, ${now}, ${now})
+                    ON CONFLICT(address) DO UPDATE SET
+                        username = excluded.username,
+                        chain_identities = excluded.chain_identities,
+                        duki_bps = excluded.duki_bps,
+                        updated_at = excluded.updated_at`.execute(db)
             }
 
             console.log(`[events-service] USER_MINTED: @${v.username} (${v.address}) dukiBps=${v.dukiBps}`)
@@ -520,6 +538,24 @@ async function ensureUser(address: string, username: string, now: number) {
     if (!db) return
     await sql`INSERT OR IGNORE INTO users (address, username, created_at, updated_at)
         VALUES (${address}, ${username}, ${now}, ${now})`.execute(db)
+}
+
+/** Merge a freshly-minted identity into the JSON array stored in users.chain_identities. */
+function mergeChainIdentities(
+    existing: string | null | undefined,
+    entry: { chainEid: number; username: string; tokenId: string },
+): string {
+    let arr: Array<{ chainEid: number; username: string; tokenId: string }> = []
+    if (existing) {
+        try {
+            const parsed = JSON.parse(existing)
+            if (Array.isArray(parsed)) arr = parsed
+        } catch { /* malformed JSON — start fresh */ }
+    }
+    const filtered = arr.filter(i => Number(i.chainEid) !== entry.chainEid)
+    filtered.push(entry)
+    filtered.sort((a, b) => a.chainEid - b.chainEid)
+    return JSON.stringify(filtered)
 }
 
 

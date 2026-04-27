@@ -11,11 +11,11 @@ import "dukigen_registry.proto";
 
 message GetUsernameReq {
   string address    = 1;  // Wallet address (case-insensitive)
-  uint32 chain_eid  = 2;  // Optional: 0 = any chain (returns first match)
+  uint32 chain_eid  = 2;  // Optional: 0 = all chains; non-zero filters to that chain
 }
 
 message GetUsernameResp {
-  DukerIdentity identity = 1;  // null if not found
+  repeated DukerIdentity identities = 1;  // empty if address has no identities
 }
 
 message GetIdentitiesByTokenReq {
@@ -75,8 +75,7 @@ message NotifyDukigenTxResp {
 }
 
 message CheckUsernameReq {
-  string username   = 1;  // Username to check availability
-  uint32 chain_eid  = 2;  // Optional: 0 = any chain
+  string username = 1;  // Username to check availability — globally unique (encodes origin chain suffix)
 }
 
 message CheckUsernameResp {

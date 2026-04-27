@@ -2,9 +2,10 @@
  * dukigen-event-service.ts — Persist DukigenRegistry events and materialize agents.
  */
 
-import { decodeAbiParameters } from 'viem'
 import type { PulledDukigenEvent } from './chain-puller'
 import { DukigenEventType } from '@repo/dukiregistry-apidefs'
+import { dukigenRegistryAbi } from 'contract-duki-alm-world'
+import { decodeEventPayload } from './event-payload'
 
 /**
  * Persist a raw DukigenEvent to the dukigen_registry_events table.
@@ -36,24 +37,11 @@ export async function materializeAgent(db: D1Database, evt: PulledDukigenEvent):
 
     switch (evt.eventType) {
         case DukigenEventType.AGENT_REGISTERED: {
-            // eventData = abi.encode(AgentRegisteredData) = (string name, string agentURI)
-            let name = ''
-            let agentUri = ''
-            try {
-                const decoded = decodeAbiParameters(
-                    [
-                        { type: 'tuple', components: [
-                            { name: 'name', type: 'string' },
-                            { name: 'agentURI', type: 'string' },
-                        ]}
-                    ],
-                    evt.eventData as `0x${string}`,
-                )
-                name = (decoded[0] as any).name ?? ''
-                agentUri = (decoded[0] as any).agentURI ?? ''
-            } catch {
-                // fallback: event data may be malformed
-            }
+            const d = decodeEventPayload<{ name: string; agentURI: string }>(
+                dukigenRegistryAbi, 'AgentRegisteredData', evt.eventData,
+            )
+            const name = d?.name ?? ''
+            const agentUri = d?.agentURI ?? ''
 
             await db.prepare(`
                 INSERT OR REPLACE INTO dukigen_agents
@@ -72,15 +60,10 @@ export async function materializeAgent(db: D1Database, evt: PulledDukigenEvent):
         }
 
         case DukigenEventType.AGENT_URI_UPDATED: {
-            // eventData = abi.encode(AgentURIUpdatedData) = (string newURI)
-            let newUri = ''
-            try {
-                const decoded = decodeAbiParameters(
-                    [{ type: 'tuple', components: [{ name: 'newURI', type: 'string' }] }],
-                    evt.eventData as `0x${string}`,
-                )
-                newUri = (decoded[0] as any).newURI ?? ''
-            } catch {}
+            const d = decodeEventPayload<{ newURI: string }>(
+                dukigenRegistryAbi, 'AgentURIUpdatedData', evt.eventData,
+            )
+            const newUri = d?.newURI ?? ''
 
             await db.prepare(`
                 UPDATE dukigen_agents SET agent_uri = ?, updated_at = ?
@@ -90,18 +73,10 @@ export async function materializeAgent(db: D1Database, evt: PulledDukigenEvent):
         }
 
         case DukigenEventType.AGENT_APPROX_BPS_SET: {
-            // eventData = abi.encode(AgentApproxBpsSetData) = (uint16 approxBps)
-            let approxBps = 0
-            try {
-                const decoded = decodeAbiParameters(
-                    [{ type: 'tuple', components: [
-                        { name: 'approxBps', type: 'uint16' },
-                    ]}],
-                    evt.eventData as `0x${string}`,
-                )
-                const d = decoded[0] as any
-                approxBps = Number(d.approxBps ?? 0)
-            } catch {}
+            const d = decodeEventPayload<{ approxBps: number | bigint }>(
+                dukigenRegistryAbi, 'AgentApproxBpsSetData', evt.eventData,
+            )
+            const approxBps = Number(d?.approxBps ?? 0)
 
             await db.prepare(`
                 UPDATE dukigen_agents SET approx_bps = ?, updated_at = ?
@@ -111,24 +86,14 @@ export async function materializeAgent(db: D1Database, evt: PulledDukigenEvent):
         }
 
         case DukigenEventType.AGENT_WORKS_DATA_SET: {
-            // eventData = abi.encode(AgentWorksDataSetData) = (uint8 productType, uint8 dukiType, string pledgeUrl, string[] tags)
-            let productType = 0, dukiType = 0, pledgeUrl = '', tags: string[] = []
-            try {
-                const decoded = decodeAbiParameters(
-                    [{ type: 'tuple', components: [
-                        { name: 'productType', type: 'uint8' },
-                        { name: 'dukiType', type: 'uint8' },
-                        { name: 'pledgeUrl', type: 'string' },
-                        { name: 'tags', type: 'string[]' },
-                    ]}],
-                    evt.eventData as `0x${string}`,
-                )
-                const d = decoded[0] as any
-                productType = Number(d.productType ?? 0)
-                dukiType = Number(d.dukiType ?? 0)
-                pledgeUrl = d.pledgeUrl ?? ''
-                tags = d.tags ?? []
-            } catch {}
+            const d = decodeEventPayload<{
+                productType: number | bigint; dukiType: number | bigint;
+                pledgeUrl: string; tags: string[];
+            }>(dukigenRegistryAbi, 'AgentWorksDataSetData', evt.eventData)
+            const productType = Number(d?.productType ?? 0)
+            const dukiType = Number(d?.dukiType ?? 0)
+            const pledgeUrl = d?.pledgeUrl ?? ''
+            const tags = d?.tags ?? []
 
             await db.prepare(`
                 UPDATE dukigen_agents SET product_type = ?, duki_type = ?, pledge_url = ?, tags = ?, updated_at = ?

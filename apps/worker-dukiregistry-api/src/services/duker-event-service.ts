@@ -4,6 +4,8 @@
 
 import type { PulledDukerEvent } from './chain-puller'
 import { DukerEventType } from '@repo/dukiregistry-apidefs'
+import { dukerRegistryAbi } from 'contract-duki-alm-world'
+import { decodeEventPayload } from './event-payload'
 
 /**
  * Persist a raw DukerEvent to the duker_registry_events table.
@@ -65,12 +67,16 @@ export async function materializeIdentity(db: D1Database, evt: PulledDukerEvent)
         }
 
         case DukerEventType.PROFILE_UPDATED: {
-            // eventData contains (bio, website) — ABI-encoded
-            // TODO: decode ABI and update bio/website columns
+            const d = decodeEventPayload<{ bio: string; website: string }>(
+                dukerRegistryAbi, 'ProfileUpdatedData', evt.eventData,
+            )
+            const bio = d?.bio ?? ''
+            const website = d?.website ?? ''
+
             await db.prepare(`
-                UPDATE duker_users SET updated_at = ?
+                UPDATE duker_users SET bio = ?, website = ?, updated_at = ?
                 WHERE token_id = ?
-            `).bind(now, evt.tokenId.toString()).run()
+            `).bind(bio, website, now, evt.tokenId.toString()).run()
             break
         }
 

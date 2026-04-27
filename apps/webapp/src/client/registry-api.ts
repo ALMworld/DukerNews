@@ -39,6 +39,8 @@ export async function notifyRegistryWorker(txHash: string, chainEid: number): Pr
 
 /**
  * Query the DukerRegistry worker for a user's identity by wallet address.
+ * Returns the matching identity for the given chain (or the first one if the
+ * address only has identities on other chains).
  */
 export async function getRegistryUser(address: string, chainEid: number): Promise<any | null> {
     try {
@@ -52,7 +54,9 @@ export async function getRegistryUser(address: string, chainEid: number): Promis
         })
         if (!resp.ok) return null
         const data = await resp.json() as any
-        return data.identity ?? null
+        const identities = (data.identities ?? []) as Array<{ chainEid: number }>
+        if (identities.length === 0) return null
+        return identities.find(i => Number(i.chainEid) === chainEid) ?? identities[0]
     } catch {
         return null
     }
@@ -60,9 +64,10 @@ export async function getRegistryUser(address: string, chainEid: number): Promis
 
 /**
  * Check if a username is available via the DukerRegistry worker.
- * Returns { available: boolean, owner?: { username, ego, tokenId } }
+ * Usernames are globally unique (the chain suffix is part of the username),
+ * so no chain filter is required.
  */
-export async function checkUsernameAvailability(username: string, chainEid: number = 0): Promise<{ available: boolean; owner?: any }> {
+export async function checkUsernameAvailability(username: string): Promise<{ available: boolean; owner?: any }> {
     try {
         const resp = await fetch(`${REGISTRY_WORKER_URL}/dukiregistry.DukerRegistryService/CheckUsername`, {
             method: 'POST',
@@ -70,7 +75,7 @@ export async function checkUsernameAvailability(username: string, chainEid: numb
                 'Content-Type': 'application/json',
                 'Connect-Protocol-Version': '1',
             },
-            body: JSON.stringify({ username, chainEid }),
+            body: JSON.stringify({ username }),
         })
         if (!resp.ok) return { available: true } // assume available if worker is down
         return await resp.json() as { available: boolean; owner?: any }

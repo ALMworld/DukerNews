@@ -109,6 +109,7 @@ export interface UserInteractions {
 export interface Users {
   about: Generated<string | null>;
   address: string;
+  chain_identities: Generated<string>;
   created_at: number;
   duki_bps: Generated<number | null>;
   email: Generated<string | null>;

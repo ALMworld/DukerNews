@@ -131,26 +131,28 @@ async function main() {
         chainEid: CHAIN_EID,
     })
     console.log(`  📦 Worker response:`, JSON.stringify(getUserResp, null, 2))
+    const userIdentity = (getUserResp.identities ?? [])[0]
     assert(
-        getUserResp.identity?.username === `alice.${CHAIN_EID}`,
-        `Worker returned username: "${getUserResp.identity?.username}"`
+        userIdentity?.username === `alice.${CHAIN_EID}`,
+        `Worker returned username: "${userIdentity?.username}"`
     )
     assert(
-        getUserResp.identity?.ego?.toLowerCase() === account.address.toLowerCase(),
-        `Ego matches: ${getUserResp.identity?.ego}`
+        userIdentity?.ego?.toLowerCase() === account.address.toLowerCase(),
+        `Ego matches: ${userIdentity?.ego}`
     )
 
     // ── 7. Query GetIdentitiesByToken ────────────────────────
     console.log('\n[7/7] Querying GetIdentitiesByToken...')
-    const tokenId = getUserResp.identity?.tokenId
+    const tokenId = userIdentity?.tokenId
     if (tokenId) {
         const getTokenResp = await workerPost('/dukiregistry.DukerRegistryService/GetIdentitiesByToken', {
             tokenId: tokenId,
         })
         console.log(`  📦 Worker response:`, JSON.stringify(getTokenResp, null, 2))
+        const tokenIdentity = (getTokenResp.identities ?? [])[0]
         assert(
-            getTokenResp.identity?.username === `alice.${CHAIN_EID}`,
-            `Token lookup returned: "${getTokenResp.identity?.username}"`
+            tokenIdentity?.username === `alice.${CHAIN_EID}`,
+            `Token lookup returned: "${tokenIdentity?.username}"`
         )
     } else {
         console.log('  ⚠ Skipped — no tokenId from previous query')

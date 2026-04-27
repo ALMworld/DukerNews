@@ -8,7 +8,11 @@ import {
     COOKIE_NAME,
     type JWTPayload,
 } from '../../../server/auth-utils'
-import { getRegistryIdentity, syncRegistryIdentities } from '../../../server/registry-worker-client'
+import {
+    getRegistryIdentities,
+    pickPrimaryIdentity,
+    syncRegistryIdentities,
+} from '../../../server/registry-worker-client'
 import { DEFAULT_CHAIN_ID } from '../../../lib/contracts'
 import { getKysely } from '../../../lib/db'
 import { getEventsFromTx } from '../../../services/blockchain-service'
@@ -71,8 +75,11 @@ export const Route = createFileRoute('/api/auth/refresh')({
                 }
 
                 let username = ''
+                let chainIdentitiesJson: string | null = null
 
-                // Preferred source after SIWE: local DB hydrated from DukerNews events.
+                // Preferred source after a successful mint: local DB hydrated from
+                // the DukerNews USER_MINTED event applied above. No registry call
+                // needed — the registry-worker handles indexing via its own webhook.
                 if (db) {
                     const existingUser = await db
                         .selectFrom('users')
@@ -88,29 +95,26 @@ export const Route = createFileRoute('/api/auth/refresh')({
                     }
                 }
 
-                // Fallback: registry lookup for authenticated users whose local
-                // user row has not been materialized yet.
+                // Recovery path used when the mint contract reverted (no txHash) or
+                // the DukerNews event sync missed the tx — fall back to the registry
+                // worker. A sync nudges the worker to catch up first in case the
+                // mint succeeded but its indexer is behind.
                 if (!username) {
-                    const identity = await getRegistryIdentity(address, chainEid)
-                    if (identity?.username) {
-                        username = identity.username
-                    }
-                }
-
-                // Recovery path: the mint may already exist in DukerRegistry
-                // even when a retry reverts with AlreadyHasIdentity or the
-                // DukerNews event sync missed the tx. Catch up registry logs
-                // for the target chain, then query the materialized identity.
-                if (!username) {
-                    try {
-                        await syncRegistryIdentities(chainEid)
-                    } catch (e) {
+                    try { await syncRegistryIdentities(chainEid) } catch (e) {
                         console.warn('[auth/refresh] registry sync failed (non-blocking):', e)
                     }
 
-                    const identity = await getRegistryIdentity(address, chainEid)
-                    if (identity?.username) {
-                        username = identity.username
+                    const identities = await getRegistryIdentities(address, 0)
+                    const primary = pickPrimaryIdentity(identities, chainEid)
+                    if (primary) {
+                        username = primary.username
+                        chainIdentitiesJson = JSON.stringify(
+                            identities.map(i => ({
+                                chainEid: i.chainEid,
+                                username: i.username,
+                                tokenId: i.tokenId,
+                            })),
+                        )
                     }
                 }
 
@@ -118,27 +122,35 @@ export const Route = createFileRoute('/api/auth/refresh')({
                     return Response.json({ success: false, message: 'No username found — backend sync has not caught up yet' })
                 }
 
-                // Persist to webapp D1 so login can find it next time
+                // Persist to webapp D1 so login can find it next time. Only write
+                // chain_identities when we actually fetched it; otherwise the local
+                // event handler is the source of truth and we leave it alone.
                 try {
                     if (db) {
                         const now = Math.floor(Date.now() / 1000)
+                        const insertValues = {
+                            address: address.toLowerCase(),
+                            username,
+                            duki_bps: dukiBps ?? 0,
+                            karma: 1,
+                            created_at: now,
+                            updated_at: now,
+                            ...(chainIdentitiesJson != null
+                                ? { chain_identities: chainIdentitiesJson }
+                                : {}),
+                        }
+                        const updateValues = {
+                            username,
+                            duki_bps: dukiBps ?? 0,
+                            updated_at: now,
+                            ...(chainIdentitiesJson != null
+                                ? { chain_identities: chainIdentitiesJson }
+                                : {}),
+                        }
                         await db
                             .insertInto('users')
-                            .values({
-                                address: address.toLowerCase(),
-                                username,
-                                duki_bps: dukiBps ?? 0,
-                                karma: 1,
-                                created_at: now,
-                                updated_at: now,
-                            })
-                            .onConflict((oc) =>
-                                oc.column('address').doUpdateSet({
-                                    username,
-                                    duki_bps: dukiBps ?? 0,
-                                    updated_at: now,
-                                })
-                            )
+                            .values(insertValues)
+                            .onConflict((oc) => oc.column('address').doUpdateSet(updateValues))
                             .execute()
                     }
                 } catch (e) {

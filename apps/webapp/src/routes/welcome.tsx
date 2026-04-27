@@ -82,7 +82,7 @@ function MintPanel({ address }: { address: string }) {
         if (checkTimer.current) clearTimeout(checkTimer.current)
         checkTimer.current = setTimeout(async () => {
             try {
-                const { available } = await checkUsernameAvailability(name, DEFAULT_CHAIN_ID)
+                const { available } = await checkUsernameAvailability(name)
                 // Only update if name hasn't changed during the request
                 if (username.trim() === name) {
                     setNameTaken(!available)

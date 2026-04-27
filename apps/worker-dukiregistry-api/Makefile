@@ -71,6 +71,9 @@ schema: ## Apply D1 schema (local)
 e2e: ## Run E2E integration test (assumes anvil + worker running)
 	npx tsx scripts/test-e2e.ts
 
+e2e-sync: ## Run SyncDukerEvents E2E test (assumes anvil + worker running)
+	npx tsx scripts/test-sync-e2e.ts
+
 # ── Full Test ────────────────────────────────────────────
 
 test: deploy schema e2e ## Full test: deploy → schema → e2e (anvil + worker must be running)

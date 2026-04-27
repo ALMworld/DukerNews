@@ -10,7 +10,7 @@ import { QueryService } from '@repo/dukernews-apidefs'
 import { getKysely } from '../../../lib/db'
 import { MIGRATED } from '../../../lib/grpc-goapi-transport'
 import { DEFAULT_CHAIN_ID } from '../../../lib/contracts'
-import { getRegistryIdentity } from '../../../server/registry-worker-client'
+import { getRegistryIdentities, pickPrimaryIdentity } from '../../../server/registry-worker-client'
 import {
     consumeNonce,
     getAddressFromMessage,
@@ -120,20 +120,30 @@ export const Route = createFileRoute('/api/auth/login')({
                     }
 
                     // If SIWE succeeded but the local DB has no username yet,
-                    // recover it from the registry materialization and cache it locally.
+                    // pull every chain identity for this address from the registry
+                    // worker, pick a primary, and cache the merged list locally.
                     if (!username) {
                         const chainEid = CHAIN_ID_TO_EID[DEFAULT_CHAIN_ID] ?? DEFAULT_CHAIN_ID
-                        const identity = await getRegistryIdentity(address.toLowerCase(), chainEid)
-                        if (identity?.username) {
-                            username = identity.username
+                        const identities = await getRegistryIdentities(address.toLowerCase(), 0)
+                        const primary = pickPrimaryIdentity(identities, chainEid)
+                        if (primary) {
+                            username = primary.username
 
                             if (db) {
                                 const now = Math.floor(Date.now() / 1000)
+                                const chainIdentitiesJson = JSON.stringify(
+                                    identities.map(i => ({
+                                        chainEid: i.chainEid,
+                                        username: i.username,
+                                        tokenId: i.tokenId,
+                                    })),
+                                )
                                 await db
                                     .insertInto('users')
                                     .values({
                                         address: address.toLowerCase(),
                                         username,
+                                        chain_identities: chainIdentitiesJson,
                                         duki_bps: 0,
                                         karma: 1,
                                         created_at: now,
@@ -142,6 +152,7 @@ export const Route = createFileRoute('/api/auth/login')({
                                     .onConflict((oc) =>
                                         oc.column('address').doUpdateSet({
                                             username,
+                                            chain_identities: chainIdentitiesJson,
                                             updated_at: now,
                                         })
                                     )

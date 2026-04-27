@@ -4,7 +4,8 @@
 -- Users
 CREATE TABLE IF NOT EXISTS users (
   address TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
-  username TEXT UNIQUE NOT NULL,
+  username TEXT UNIQUE NOT NULL,                 -- primary in-use identity
+  chain_identities TEXT NOT NULL DEFAULT '[]',   -- JSON: [{chainEid,username,tokenId}, …]
   karma INTEGER DEFAULT 1,
   about TEXT DEFAULT '',
   email TEXT DEFAULT '',
