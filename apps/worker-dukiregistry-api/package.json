@@ -15,7 +15,8 @@
 		"test:deploy": "npx tsx scripts/deploy-local.ts",
 		"test:e2e": "npx tsx scripts/test-e2e.ts",
 		"test:e2e:dukigen-sync": "npx tsx scripts/test-e2e-dukigen-sync.ts",
-		"test:schema": "npx wrangler d1 execute duker_registry --local --file=./schemas/001_duker_registry.sql"
+		"test:schema": "npx wrangler d1 execute duker_registry --local --file=./schemas/001_duker_registry.sql && npx wrangler d1 execute duker_registry --local --file=./schemas/002_dukigen_agent_metrics.sql",
+		"seed:metrics": "npx tsx scripts/seed-dukigen-metrics.ts"
 	},
 	"dependencies": {
 		"@bufbuild/protobuf": "^2.7.0",

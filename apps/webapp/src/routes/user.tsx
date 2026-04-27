@@ -406,6 +406,28 @@ function UserProfilePage() {
                                         </span>
                                     </td>
                                 </tr>
+                                {isOwnProfile && (
+                                    <tr>
+                                        <td style={labelStyle}></td>
+                                        <td style={valueStyle}>
+                                            <Link
+                                                to="/favorites"
+                                                search={{ id: username, agents: 't' }}
+                                                className="underline hover:opacity-80"
+                                                style={{ color: 'var(--link-color)' }}
+                                            >
+                                                favorite agents
+                                            </Link>
+                                            {'  '}
+                                            <span
+                                                className="italic"
+                                                style={{ color: 'var(--meta-color)', fontSize: '9pt' }}
+                                            >
+                                                (this browser only)
+                                            </span>
+                                        </td>
+                                    </tr>
+                                )}
                             </>
                         )}
 

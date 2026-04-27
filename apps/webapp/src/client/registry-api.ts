@@ -148,10 +148,9 @@ export async function notifyDukiRegistry(txHash: string, chainEid: number): Prom
 export const notifyDukigenTx = notifyDukiRegistry
 
 /**
- * List DUKIGEN agents (paginated). Used by the /market page to render the
- * agent grid. The worker caps `perPage` at 100 server-side, so for now a
- * single page-load pull is enough; if the registry grows we can page in the
- * UI without changing this signature.
+ * List DUKIGEN agents (paginated, sorted by created_at DESC). Kept around
+ * for any callers that need the raw newest-first list — /market uses the
+ * ranked endpoint below.
  */
 export async function getDukigenAgents(opts: { page?: number; perPage?: number } = {}): Promise<{
     agents: DukigenAgent[]
@@ -165,5 +164,45 @@ export async function getDukigenAgents(opts: { page?: number; perPage?: number }
         return { agents: resp.agents ?? [], total: Number(resp.total ?? 0) }
     } catch {
         return { agents: [], total: 0 }
+    }
+}
+
+// ── Ranked listing ─────────────────────────────────────────────────────────
+
+export type Timescale = 'all' | 'year' | 'month' | 'week'
+
+export type RankedAgentEntry = {
+    agent: DukigenAgent
+    credibility: number
+}
+
+export type RankedAgentsPage = {
+    items: RankedAgentEntry[]
+    nextCursor: string
+    hasMore: boolean
+}
+
+/**
+ * Fetch one page of agents ranked by credibility for the given timescale.
+ * The server returns rows already ordered (credibility DESC, agentId DESC) and
+ * supplies an opaque cursor for the next page — pass the cursor back verbatim.
+ */
+export async function listAgentsRanked(
+    timescale: Timescale,
+    cursor: string = '',
+    limit: number = 50,
+): Promise<RankedAgentsPage> {
+    try {
+        const resp = await dukigenClient.listAgentsRanked({ timescale, cursor, limit })
+        return {
+            items: (resp.items ?? []).map((it) => ({
+                agent: it.agent!,
+                credibility: Number(it.credibility ?? 0n),
+            })),
+            nextCursor: resp.nextCursor ?? '',
+            hasMore: Boolean(resp.hasMore),
+        }
+    } catch {
+        return { items: [], nextCursor: '', hasMore: false }
     }
 }

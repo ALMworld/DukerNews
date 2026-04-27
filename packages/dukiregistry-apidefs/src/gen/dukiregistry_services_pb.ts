@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file dukiregistry_services.proto.
  */
 export const file_dukiregistry_services: GenFile = /*@__PURE__*/
-  fileDesc("ChtkdWtpcmVnaXN0cnlfc2VydmljZXMucHJvdG8SDGR1a2lyZWdpc3RyeSI0Cg5HZXRVc2VybmFtZVJlcRIPCgdhZGRyZXNzGAEgASgJEhEKCWNoYWluX2VpZBgCIAEoDSJCCg9HZXRVc2VybmFtZVJlc3ASLwoKaWRlbnRpdGllcxgBIAMoCzIbLmR1a2lyZWdpc3RyeS5EdWtlcklkZW50aXR5IisKF0dldElkZW50aXRpZXNCeVRva2VuUmVxEhAKCHRva2VuX2lkGAEgASgJIjYKEE5vdGlmeUR1a2VyVHhSZXESDwoHdHhfaGFzaBgBIAEoCRIRCgljaGFpbl9laWQYAiABKA0iRQoRTm90aWZ5RHVrZXJUeFJlc3ASMAoGZXZlbnRzGAEgAygLMiAuZHVraXJlZ2lzdHJ5LkR1a2VyUmVnaXN0cnlFdmVudCJRCg1TeW5jRXZlbnRzUmVxEhEKCWNoYWluX2VpZBgBIAEoDRIUCgxsYXN0X2V2dF9zZXEYAiABKAQSFwoPbWF4X2Jsb2NrX3JhbmdlGAMgASgEIlUKDlN5bmNFdmVudHNSZXNwEhQKDHN5bmNlZF91cF90bxgBIAEoBBIWCg5ldmVudHNfaW5kZXhlZBgCIAEoDRIVCg1jaGFpbl9ldnRfc2VxGAMgASgEIh8KC0dldEFnZW50UmVxEhAKCGFnZW50X2lkGAEgASgEIi4KDEdldEFnZW50c1JlcRIMCgRwYWdlGAEgASgNEhAKCHBlcl9wYWdlGAIgASgNIkoKDUdldEFnZW50c1Jlc3ASKgoGYWdlbnRzGAEgAygLMhouZHVraXJlZ2lzdHJ5LkR1a2lnZW5BZ2VudBINCgV0b3RhbBgCIAEoDSI4ChJOb3RpZnlEdWtpZ2VuVHhSZXESDwoHdHhfaGFzaBgBIAEoCRIRCgljaGFpbl9laWQYAiABKA0iSQoTTm90aWZ5RHVraWdlblR4UmVzcBIyCgZldmVudHMYASADKAsyIi5kdWtpcmVnaXN0cnkuRHVraWdlblJlZ2lzdHJ5RXZlbnQiJAoQQ2hlY2tVc2VybmFtZVJlcRIQCgh1c2VybmFtZRgBIAEoCSJSChFDaGVja1VzZXJuYW1lUmVzcBIRCglhdmFpbGFibGUYASABKAgSKgoFb3duZXIYAiABKAsyGy5kdWtpcmVnaXN0cnkuRHVrZXJJZGVudGl0eTKyAwoURHVrZXJSZWdpc3RyeVNlcnZpY2USSgoLR2V0VXNlcm5hbWUSHC5kdWtpcmVnaXN0cnkuR2V0VXNlcm5hbWVSZXEaHS5kdWtpcmVnaXN0cnkuR2V0VXNlcm5hbWVSZXNwElAKDUNoZWNrVXNlcm5hbWUSHi5kdWtpcmVnaXN0cnkuQ2hlY2tVc2VybmFtZVJlcRofLmR1a2lyZWdpc3RyeS5DaGVja1VzZXJuYW1lUmVzcBJcChRHZXRJZGVudGl0aWVzQnlUb2tlbhIlLmR1a2lyZWdpc3RyeS5HZXRJZGVudGl0aWVzQnlUb2tlblJlcRodLmR1a2lyZWdpc3RyeS5HZXRVc2VybmFtZVJlc3ASUAoNTm90aWZ5RHVrZXJUeBIeLmR1a2lyZWdpc3RyeS5Ob3RpZnlEdWtlclR4UmVxGh8uZHVraXJlZ2lzdHJ5Lk5vdGlmeUR1a2VyVHhSZXNwEkwKD1N5bmNEdWtlckV2ZW50cxIbLmR1a2lyZWdpc3RyeS5TeW5jRXZlbnRzUmVxGhwuZHVraXJlZ2lzdHJ5LlN5bmNFdmVudHNSZXNwMskCChZEdWtpZ2VuUmVnaXN0cnlTZXJ2aWNlEkEKCEdldEFnZW50EhkuZHVraXJlZ2lzdHJ5LkdldEFnZW50UmVxGhouZHVraXJlZ2lzdHJ5LkR1a2lnZW5BZ2VudBJECglHZXRBZ2VudHMSGi5kdWtpcmVnaXN0cnkuR2V0QWdlbnRzUmVxGhsuZHVraXJlZ2lzdHJ5LkdldEFnZW50c1Jlc3ASVgoPTm90aWZ5RHVraWdlblR4EiAuZHVraXJlZ2lzdHJ5Lk5vdGlmeUR1a2lnZW5UeFJlcRohLmR1a2lyZWdpc3RyeS5Ob3RpZnlEdWtpZ2VuVHhSZXNwEk4KEVN5bmNEdWtpZ2VuRXZlbnRzEhsuZHVraXJlZ2lzdHJ5LlN5bmNFdmVudHNSZXEaHC5kdWtpcmVnaXN0cnkuU3luY0V2ZW50c1Jlc3BiBnByb3RvMw", [file_duker_registry, file_dukigen_registry]);
+  fileDesc("ChtkdWtpcmVnaXN0cnlfc2VydmljZXMucHJvdG8SDGR1a2lyZWdpc3RyeSI0Cg5HZXRVc2VybmFtZVJlcRIPCgdhZGRyZXNzGAEgASgJEhEKCWNoYWluX2VpZBgCIAEoDSJCCg9HZXRVc2VybmFtZVJlc3ASLwoKaWRlbnRpdGllcxgBIAMoCzIbLmR1a2lyZWdpc3RyeS5EdWtlcklkZW50aXR5IisKF0dldElkZW50aXRpZXNCeVRva2VuUmVxEhAKCHRva2VuX2lkGAEgASgJIjYKEE5vdGlmeUR1a2VyVHhSZXESDwoHdHhfaGFzaBgBIAEoCRIRCgljaGFpbl9laWQYAiABKA0iRQoRTm90aWZ5RHVrZXJUeFJlc3ASMAoGZXZlbnRzGAEgAygLMiAuZHVraXJlZ2lzdHJ5LkR1a2VyUmVnaXN0cnlFdmVudCJRCg1TeW5jRXZlbnRzUmVxEhEKCWNoYWluX2VpZBgBIAEoDRIUCgxsYXN0X2V2dF9zZXEYAiABKAQSFwoPbWF4X2Jsb2NrX3JhbmdlGAMgASgEIlUKDlN5bmNFdmVudHNSZXNwEhQKDHN5bmNlZF91cF90bxgBIAEoBBIWCg5ldmVudHNfaW5kZXhlZBgCIAEoDRIVCg1jaGFpbl9ldnRfc2VxGAMgASgEIh8KC0dldEFnZW50UmVxEhAKCGFnZW50X2lkGAEgASgEIi4KDEdldEFnZW50c1JlcRIMCgRwYWdlGAEgASgNEhAKCHBlcl9wYWdlGAIgASgNIkoKDUdldEFnZW50c1Jlc3ASKgoGYWdlbnRzGAEgAygLMhouZHVraXJlZ2lzdHJ5LkR1a2lnZW5BZ2VudBINCgV0b3RhbBgCIAEoDSJHChNMaXN0QWdlbnRzUmFua2VkUmVxEhEKCXRpbWVzY2FsZRgBIAEoCRIOCgZjdXJzb3IYAiABKAkSDQoFbGltaXQYAyABKA0iTQoLUmFua2VkQWdlbnQSKQoFYWdlbnQYASABKAsyGi5kdWtpcmVnaXN0cnkuRHVraWdlbkFnZW50EhMKC2NyZWRpYmlsaXR5GAIgASgEImcKFExpc3RBZ2VudHNSYW5rZWRSZXNwEigKBWl0ZW1zGAEgAygLMhkuZHVraXJlZ2lzdHJ5LlJhbmtlZEFnZW50EhMKC25leHRfY3Vyc29yGAIgASgJEhAKCGhhc19tb3JlGAMgASgIIjgKEk5vdGlmeUR1a2lnZW5UeFJlcRIPCgd0eF9oYXNoGAEgASgJEhEKCWNoYWluX2VpZBgCIAEoDSJJChNOb3RpZnlEdWtpZ2VuVHhSZXNwEjIKBmV2ZW50cxgBIAMoCzIiLmR1a2lyZWdpc3RyeS5EdWtpZ2VuUmVnaXN0cnlFdmVudCIkChBDaGVja1VzZXJuYW1lUmVxEhAKCHVzZXJuYW1lGAEgASgJIlIKEUNoZWNrVXNlcm5hbWVSZXNwEhEKCWF2YWlsYWJsZRgBIAEoCBIqCgVvd25lchgCIAEoCzIbLmR1a2lyZWdpc3RyeS5EdWtlcklkZW50aXR5MrIDChREdWtlclJlZ2lzdHJ5U2VydmljZRJKCgtHZXRVc2VybmFtZRIcLmR1a2lyZWdpc3RyeS5HZXRVc2VybmFtZVJlcRodLmR1a2lyZWdpc3RyeS5HZXRVc2VybmFtZVJlc3ASUAoNQ2hlY2tVc2VybmFtZRIeLmR1a2lyZWdpc3RyeS5DaGVja1VzZXJuYW1lUmVxGh8uZHVraXJlZ2lzdHJ5LkNoZWNrVXNlcm5hbWVSZXNwElwKFEdldElkZW50aXRpZXNCeVRva2VuEiUuZHVraXJlZ2lzdHJ5LkdldElkZW50aXRpZXNCeVRva2VuUmVxGh0uZHVraXJlZ2lzdHJ5LkdldFVzZXJuYW1lUmVzcBJQCg1Ob3RpZnlEdWtlclR4Eh4uZHVraXJlZ2lzdHJ5Lk5vdGlmeUR1a2VyVHhSZXEaHy5kdWtpcmVnaXN0cnkuTm90aWZ5RHVrZXJUeFJlc3ASTAoPU3luY0R1a2VyRXZlbnRzEhsuZHVraXJlZ2lzdHJ5LlN5bmNFdmVudHNSZXEaHC5kdWtpcmVnaXN0cnkuU3luY0V2ZW50c1Jlc3AypAMKFkR1a2lnZW5SZWdpc3RyeVNlcnZpY2USQQoIR2V0QWdlbnQSGS5kdWtpcmVnaXN0cnkuR2V0QWdlbnRSZXEaGi5kdWtpcmVnaXN0cnkuRHVraWdlbkFnZW50EkQKCUdldEFnZW50cxIaLmR1a2lyZWdpc3RyeS5HZXRBZ2VudHNSZXEaGy5kdWtpcmVnaXN0cnkuR2V0QWdlbnRzUmVzcBJZChBMaXN0QWdlbnRzUmFua2VkEiEuZHVraXJlZ2lzdHJ5Lkxpc3RBZ2VudHNSYW5rZWRSZXEaIi5kdWtpcmVnaXN0cnkuTGlzdEFnZW50c1JhbmtlZFJlc3ASVgoPTm90aWZ5RHVraWdlblR4EiAuZHVraXJlZ2lzdHJ5Lk5vdGlmeUR1a2lnZW5UeFJlcRohLmR1a2lyZWdpc3RyeS5Ob3RpZnlEdWtpZ2VuVHhSZXNwEk4KEVN5bmNEdWtpZ2VuRXZlbnRzEhsuZHVraXJlZ2lzdHJ5LlN5bmNFdmVudHNSZXEaHC5kdWtpcmVnaXN0cnkuU3luY0V2ZW50c1Jlc3BiBnByb3RvMw", [file_duker_registry, file_dukigen_registry]);
 
 /**
  * @generated from message dukiregistry.GetUsernameReq
@@ -249,6 +249,97 @@ export const GetAgentsRespSchema: GenMessage<GetAgentsResp> = /*@__PURE__*/
   messageDesc(file_dukiregistry_services, 9);
 
 /**
+ * ── Ranked listing (default /market view) ──
+ *
+ * Server joins dukigen_agent_metrics ⨝ dukigen_agents internally and returns
+ * the page already ordered by credibility desc for the requested timescale.
+ * Cursor is opaque (server-encoded compound key over credibility + agent_id)
+ * so callers don't need to know the schema to paginate.
+ *
+ * @generated from message dukiregistry.ListAgentsRankedReq
+ */
+export type ListAgentsRankedReq = Message<"dukiregistry.ListAgentsRankedReq"> & {
+  /**
+   * 'all' | 'year' | 'month' | 'week' — empty defaults to 'all'
+   *
+   * @generated from field: string timescale = 1;
+   */
+  timescale: string;
+
+  /**
+   * opaque; empty string = start from rank 1
+   *
+   * @generated from field: string cursor = 2;
+   */
+  cursor: string;
+
+  /**
+   * server caps at 100, default 50
+   *
+   * @generated from field: uint32 limit = 3;
+   */
+  limit: number;
+};
+
+/**
+ * Describes the message dukiregistry.ListAgentsRankedReq.
+ * Use `create(ListAgentsRankedReqSchema)` to create a new message.
+ */
+export const ListAgentsRankedReqSchema: GenMessage<ListAgentsRankedReq> = /*@__PURE__*/
+  messageDesc(file_dukiregistry_services, 10);
+
+/**
+ * @generated from message dukiregistry.RankedAgent
+ */
+export type RankedAgent = Message<"dukiregistry.RankedAgent"> & {
+  /**
+   * @generated from field: dukiregistry.DukigenAgent agent = 1;
+   */
+  agent?: DukigenAgent;
+
+  /**
+   * @generated from field: uint64 credibility = 2;
+   */
+  credibility: bigint;
+};
+
+/**
+ * Describes the message dukiregistry.RankedAgent.
+ * Use `create(RankedAgentSchema)` to create a new message.
+ */
+export const RankedAgentSchema: GenMessage<RankedAgent> = /*@__PURE__*/
+  messageDesc(file_dukiregistry_services, 11);
+
+/**
+ * @generated from message dukiregistry.ListAgentsRankedResp
+ */
+export type ListAgentsRankedResp = Message<"dukiregistry.ListAgentsRankedResp"> & {
+  /**
+   * @generated from field: repeated dukiregistry.RankedAgent items = 1;
+   */
+  items: RankedAgent[];
+
+  /**
+   * empty when no more pages
+   *
+   * @generated from field: string next_cursor = 2;
+   */
+  nextCursor: string;
+
+  /**
+   * @generated from field: bool has_more = 3;
+   */
+  hasMore: boolean;
+};
+
+/**
+ * Describes the message dukiregistry.ListAgentsRankedResp.
+ * Use `create(ListAgentsRankedRespSchema)` to create a new message.
+ */
+export const ListAgentsRankedRespSchema: GenMessage<ListAgentsRankedResp> = /*@__PURE__*/
+  messageDesc(file_dukiregistry_services, 12);
+
+/**
  * @generated from message dukiregistry.NotifyDukigenTxReq
  */
 export type NotifyDukigenTxReq = Message<"dukiregistry.NotifyDukigenTxReq"> & {
@@ -268,7 +359,7 @@ export type NotifyDukigenTxReq = Message<"dukiregistry.NotifyDukigenTxReq"> & {
  * Use `create(NotifyDukigenTxReqSchema)` to create a new message.
  */
 export const NotifyDukigenTxReqSchema: GenMessage<NotifyDukigenTxReq> = /*@__PURE__*/
-  messageDesc(file_dukiregistry_services, 10);
+  messageDesc(file_dukiregistry_services, 13);
 
 /**
  * @generated from message dukiregistry.NotifyDukigenTxResp
@@ -285,7 +376,7 @@ export type NotifyDukigenTxResp = Message<"dukiregistry.NotifyDukigenTxResp"> & 
  * Use `create(NotifyDukigenTxRespSchema)` to create a new message.
  */
 export const NotifyDukigenTxRespSchema: GenMessage<NotifyDukigenTxResp> = /*@__PURE__*/
-  messageDesc(file_dukiregistry_services, 11);
+  messageDesc(file_dukiregistry_services, 14);
 
 /**
  * @generated from message dukiregistry.CheckUsernameReq
@@ -304,7 +395,7 @@ export type CheckUsernameReq = Message<"dukiregistry.CheckUsernameReq"> & {
  * Use `create(CheckUsernameReqSchema)` to create a new message.
  */
 export const CheckUsernameReqSchema: GenMessage<CheckUsernameReq> = /*@__PURE__*/
-  messageDesc(file_dukiregistry_services, 12);
+  messageDesc(file_dukiregistry_services, 15);
 
 /**
  * @generated from message dukiregistry.CheckUsernameResp
@@ -330,7 +421,7 @@ export type CheckUsernameResp = Message<"dukiregistry.CheckUsernameResp"> & {
  * Use `create(CheckUsernameRespSchema)` to create a new message.
  */
 export const CheckUsernameRespSchema: GenMessage<CheckUsernameResp> = /*@__PURE__*/
-  messageDesc(file_dukiregistry_services, 13);
+  messageDesc(file_dukiregistry_services, 16);
 
 /**
  * @generated from service dukiregistry.DukerRegistryService
@@ -404,7 +495,7 @@ export const DukigenRegistryService: GenService<{
     output: typeof DukigenAgentSchema;
   },
   /**
-   * List agents (paginated)
+   * List agents (paginated, sorted by created_at DESC).
    *
    * @generated from rpc dukiregistry.DukigenRegistryService.GetAgents
    */
@@ -412,6 +503,16 @@ export const DukigenRegistryService: GenService<{
     methodKind: "unary";
     input: typeof GetAgentsReqSchema;
     output: typeof GetAgentsRespSchema;
+  },
+  /**
+   * List agents ranked by credibility for a given timescale (default /market view).
+   *
+   * @generated from rpc dukiregistry.DukigenRegistryService.ListAgentsRanked
+   */
+  listAgentsRanked: {
+    methodKind: "unary";
+    input: typeof ListAgentsRankedReqSchema;
+    output: typeof ListAgentsRankedRespSchema;
   },
   /**
    * Notify worker about a new DukigenRegistry tx (pull + index)

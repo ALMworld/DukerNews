@@ -12,6 +12,8 @@ import {
     NotifyDukerTxRespSchema,
     NotifyDukigenTxRespSchema,
     GetAgentsRespSchema,
+    ListAgentsRankedRespSchema,
+    RankedAgentSchema,
     DukerRegistryEventSchema,
     DukigenRegistryEventSchema,
     SyncEventsRespSchema,
@@ -223,6 +225,37 @@ function parseChainContractsRow(raw: unknown) {
     )
 }
 
+// ── ListAgentsRanked helpers ────────────────────────────────────────────
+
+const VALID_TIMESCALES = new Set(['all', 'year', 'month', 'week'])
+
+function normalizeTimescale(t: string): string {
+    const v = (t || '').toLowerCase()
+    return VALID_TIMESCALES.has(v) ? v : 'all'
+}
+
+type RankCursor = { credibility: number; agentId: string }
+
+// base64url-encoded JSON. agent_id stays a string because dukigen_agents
+// stores it as TEXT (uint256 doesn't survive Number).
+function encodeRankCursor(c: RankCursor): string {
+    const json = JSON.stringify({ c: c.credibility, a: c.agentId })
+    const b64 = btoa(json)
+    return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
+
+function decodeRankCursor(raw: string | undefined | null): RankCursor | null {
+    if (!raw) return null
+    try {
+        const padded = raw.replace(/-/g, '+').replace(/_/g, '/')
+        const json = atob(padded)
+        const obj = JSON.parse(json)
+        if (typeof obj?.a !== 'string' || typeof obj?.c !== 'number') return null
+        return { credibility: obj.c, agentId: obj.a }
+    } catch {
+        return null
+    }
+}
 
 
 export function registerGrpcRoutes(router: ConnectRouter) {
@@ -396,6 +429,80 @@ export function registerGrpcRoutes(router: ConnectRouter) {
                         agentWallet: row.agent_wallet ?? '',
                     })
                 ),
+            })
+        },
+
+        async listAgentsRanked(req) {
+            const timescale = normalizeTimescale(req.timescale)
+            const limit = Math.min(100, Math.max(1, req.limit || 50))
+            const cursor = decodeRankCursor(req.cursor)
+
+            // Compound-key keyset pagination: rows with (credibility, agent_id)
+            // strictly less than the cursor's pair come next. agent_id breaks
+            // credibility ties so duplicates and skips are impossible across
+            // pages, even when many agents share the same score.
+            const sql = cursor
+                ? `SELECT a.*, m.credibility AS metric_credibility
+                   FROM   dukigen_agent_metrics m
+                   JOIN   dukigen_agents a ON a.agent_id = m.agent_id
+                   WHERE  m.timescale = ?
+                     AND  (m.credibility < ?
+                           OR (m.credibility = ? AND m.agent_id < ?))
+                   ORDER BY m.credibility DESC, m.agent_id DESC
+                   LIMIT ?`
+                : `SELECT a.*, m.credibility AS metric_credibility
+                   FROM   dukigen_agent_metrics m
+                   JOIN   dukigen_agents a ON a.agent_id = m.agent_id
+                   WHERE  m.timescale = ?
+                   ORDER BY m.credibility DESC, m.agent_id DESC
+                   LIMIT ?`
+
+            const stmt = cursor
+                ? _db.prepare(sql).bind(
+                    timescale,
+                    cursor.credibility, cursor.credibility, cursor.agentId,
+                    limit + 1,
+                )
+                : _db.prepare(sql).bind(timescale, limit + 1)
+
+            const rows = (await stmt.all<any>()).results ?? []
+
+            const hasMore = rows.length > limit
+            const pageRows = hasMore ? rows.slice(0, limit) : rows
+
+            const items = pageRows.map((row: any) =>
+                create(RankedAgentSchema, {
+                    agent: create(DukigenAgentSchema, {
+                        agentId: BigInt(row.agent_id),
+                        name: row.name,
+                        agentUri: row.agent_uri,
+                        agentUriHash: row.agent_uri_hash ?? '',
+                        owner: row.owner,
+                        originChainEid: row.origin_chain_eid,
+                        approxBps: row.approx_bps ?? row.default_duki_bps ?? 0,
+                        productType: row.product_type,
+                        dukiType: row.duki_type,
+                        chainContracts: parseChainContractsRow(row.chain_contracts),
+                        pledgeUrl: row.pledge_url,
+                        website: row.website ?? '',
+                        agentWallet: row.agent_wallet ?? '',
+                    }),
+                    credibility: BigInt(row.metric_credibility ?? 0),
+                })
+            )
+
+            const last = pageRows[pageRows.length - 1]
+            const nextCursor = hasMore && last
+                ? encodeRankCursor({
+                    credibility: Number(last.metric_credibility ?? 0),
+                    agentId: String(last.agent_id),
+                })
+                : ''
+
+            return create(ListAgentsRankedRespSchema, {
+                items,
+                nextCursor,
+                hasMore,
             })
         },
 
