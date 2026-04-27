@@ -24,7 +24,7 @@ export const DEFAULT_CHAIN_ID: number =
 export const MIN_APPROVE_MICRO = BigInt(8_000_000)
 
 // ── Chain EID mapping (chain ID → LayerZero Endpoint ID) ─────────────────────
-const CHAIN_ID_TO_EID: Record<number, number> = {
+export const CHAIN_ID_TO_EID: Record<number, number> = {
     31337: 31337,       // local Anvil uses chainId as EID
     196: 30274,         // XLayer
     11155111: 11155111, // Sepolia (no LZ EID yet, use chainId)

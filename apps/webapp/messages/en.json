@@ -70,5 +70,6 @@
   "mint_err_name_length": "Username must be 2–192 bytes",
   "mint_err_bps_range": "DUKI distribution out of range",
   "mint_err_amount_low": "Minimum amount is 0.01 USDT",
-  "mint_err_mixed_script": "Cannot mix Latin and Cyrillic characters"
+  "mint_err_mixed_script": "Cannot mix Latin and Cyrillic characters",
+  "nav_market": "market"
 }

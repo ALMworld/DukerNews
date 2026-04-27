@@ -26,6 +26,7 @@ import {
     AgentMetadataSetPayloadSchema,
     AgentWalletSetPayloadSchema,
     AgentChainContractSetPayloadSchema,
+    ChainContractEntrySchema,
 } from '@repo/dukiregistry-apidefs'
 import type { DukerRegistryEvent, DukigenRegistryEvent } from '@repo/dukiregistry-apidefs'
 import {
@@ -86,10 +87,11 @@ function decodeDukigenEventData(evt: PulledDukigenEvent): DukigenRegistryEvent['
     switch (evt.eventType) {
         case DukigenEventType.AGENT_REGISTERED: {
             const d = decodeEventPayload<{
-                name: string; agentURI: string; website?: string;
+                name: string; agentURI: string; agentURIHash?: string; website?: string;
                 approxBps?: number | bigint; agentWallet?: string;
                 productType?: number | bigint; dukiType?: number | bigint;
-                pledgeUrl?: string; tags?: string[];
+                pledgeUrl?: string;
+                chainContracts?: readonly { chainEid: number | bigint; contractAddr: string }[];
             }>(dukigenRegistryAbi, 'AgentRegisteredData', evt.eventData)
             if (!d) return { case: undefined, value: undefined }
             return {
@@ -97,24 +99,33 @@ function decodeDukigenEventData(evt: PulledDukigenEvent): DukigenRegistryEvent['
                 value: create(AgentRegisteredPayloadSchema, {
                     name: d.name ?? '',
                     agentUri: d.agentURI ?? '',
+                    agentUriHash: d.agentURIHash ?? '',
                     website: d.website ?? '',
                     approxBps: Number(d.approxBps ?? 0),
                     agentWallet: d.agentWallet ?? '',
                     productType: Number(d.productType ?? 0),
                     dukiType: Number(d.dukiType ?? 0),
                     pledgeUrl: d.pledgeUrl ?? '',
-                    tags: d.tags ?? [],
+                    chainContracts: (d.chainContracts ?? []).map(c =>
+                        create(ChainContractEntrySchema, {
+                            chainEid: Number(c.chainEid),
+                            contractAddr: c.contractAddr ?? '',
+                        })
+                    ),
                 }),
             }
         }
         case DukigenEventType.AGENT_URI_UPDATED: {
-            const d = decodeEventPayload<{ newURI: string }>(
+            const d = decodeEventPayload<{ newURI: string; newURIHash?: string }>(
                 dukigenRegistryAbi, 'AgentURIUpdatedData', evt.eventData,
             )
             if (!d) return { case: undefined, value: undefined }
             return {
                 case: 'agentUriUpdated' as const,
-                value: create(AgentURIUpdatedPayloadSchema, { newUri: d.newURI ?? '' }),
+                value: create(AgentURIUpdatedPayloadSchema, {
+                    newUri: d.newURI ?? '',
+                    newUriHash: d.newURIHash ?? '',
+                }),
             }
         }
         case DukigenEventType.AGENT_APPROX_BPS_SET: {
@@ -132,7 +143,7 @@ function decodeDukigenEventData(evt: PulledDukigenEvent): DukigenRegistryEvent['
         case DukigenEventType.AGENT_WORKS_DATA_SET: {
             const d = decodeEventPayload<{
                 productType: number | bigint; dukiType: number | bigint;
-                pledgeUrl: string; tags: string[]; website: string;
+                pledgeUrl: string; website: string;
             }>(dukigenRegistryAbi, 'AgentWorksDataSetData', evt.eventData)
             if (!d) return { case: undefined, value: undefined }
             return {
@@ -141,7 +152,6 @@ function decodeDukigenEventData(evt: PulledDukigenEvent): DukigenRegistryEvent['
                     productType: Number(d.productType ?? 0),
                     dukiType: Number(d.dukiType ?? 0),
                     pledgeUrl: d.pledgeUrl ?? '',
-                    tags: d.tags ?? [],
                     website: d.website ?? '',
                 }),
             }
@@ -194,6 +204,23 @@ function hexToBytes(hex: string): Uint8Array {
         out[i] = parseInt(stripped.slice(i * 2, i * 2 + 2), 16)
     }
     return out
+}
+
+/**
+ * Parse the chain_contracts JSON column into proto ChainContractEntry[].
+ * Tolerates missing/null/malformed JSON — never throws.
+ */
+function parseChainContractsRow(raw: unknown) {
+    if (typeof raw !== 'string' || !raw) return []
+    let parsed: any
+    try { parsed = JSON.parse(raw) } catch { return [] }
+    if (!Array.isArray(parsed)) return []
+    return parsed.map((c: any) =>
+        create(ChainContractEntrySchema, {
+            chainEid: Number(c?.chainEid ?? 0),
+            contractAddr: typeof c?.contractAddr === 'string' ? c.contractAddr : '',
+        })
+    )
 }
 
 
@@ -325,14 +352,16 @@ export function registerGrpcRoutes(router: ConnectRouter) {
                 agentId: BigInt(row.agent_id),
                 name: row.name,
                 agentUri: row.agent_uri,
+                agentUriHash: row.agent_uri_hash ?? '',
                 owner: row.owner,
                 originChainEid: row.origin_chain_eid,
                 approxBps: row.approx_bps ?? row.default_duki_bps ?? 0,
                 productType: row.product_type,
                 dukiType: row.duki_type,
                 pledgeUrl: row.pledge_url,
-                tags: JSON.parse(row.tags || '[]'),
                 website: row.website ?? '',
+                agentWallet: row.agent_wallet ?? '',
+                chainContracts: parseChainContractsRow(row.chain_contracts),
             })
         },
 
@@ -355,9 +384,16 @@ export function registerGrpcRoutes(router: ConnectRouter) {
                         agentId: BigInt(row.agent_id),
                         name: row.name,
                         agentUri: row.agent_uri,
+                        agentUriHash: row.agent_uri_hash ?? '',
                         owner: row.owner,
                         originChainEid: row.origin_chain_eid,
                         approxBps: row.approx_bps ?? row.default_duki_bps ?? 0,
+                        productType: row.product_type,
+                        dukiType: row.duki_type,
+                        chainContracts: parseChainContractsRow(row.chain_contracts),
+                        pledgeUrl: row.pledge_url,
+                        website: row.website ?? '',
+                        agentWallet: row.agent_wallet ?? '',
                     })
                 ),
             })

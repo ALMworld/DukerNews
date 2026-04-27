@@ -14,6 +14,7 @@
 		"test": "run-vitest",
 		"test:deploy": "npx tsx scripts/deploy-local.ts",
 		"test:e2e": "npx tsx scripts/test-e2e.ts",
+		"test:e2e:dukigen-sync": "npx tsx scripts/test-e2e-dukigen-sync.ts",
 		"test:schema": "npx wrangler d1 execute duker_registry --local --file=./schemas/001_duker_registry.sql"
 	},
 	"dependencies": {

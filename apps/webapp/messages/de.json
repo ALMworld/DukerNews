@@ -60,5 +60,6 @@
   "submit_mint_btn": "Benutzernamen minten",
   "connect_step3_title": "Benutzernamen minten",
   "connect_step3_desc": "Wähle einen Namen und tätige deine erste DUKI-Transaktion",
-  "connect_step3_badge": "einmalig"
+  "connect_step3_badge": "einmalig",
+  "nav_market": "Markt"
 }

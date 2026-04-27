@@ -26,11 +26,11 @@ export interface DaoDeployment {
 }
 
 const LOCAL: DaoDeployment = {
-    dukerNews: '0xddE78e6202518FF4936b5302cC2891ec180E8bFf',
-    dukerNewsImpl: '0x5D42EBdBBa61412295D7b0302d6F50aC449Ddb4F',
+    dukerNews: '0x139e1D41943ee15dDe4DF876f9d0E7F85e26660A',
+    dukerNewsImpl: '0xD6b040736e948621c5b6E0a494473c47a6113eA8',
     treasury: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
-    stablecoin: '0x5302E909d1e93e30F05B5D6Eea766363D14F9892',
-    mockUsdt: '0x5302E909d1e93e30F05B5D6Eea766363D14F9892',
+    stablecoin: '0x12Bcb546bC60fF39F1Adfc7cE4605d5Bd6a6A876',
+    mockUsdt: '0x12Bcb546bC60fF39F1Adfc7cE4605d5Bd6a6A876',
 }
 
 const XLAYER: DaoDeployment = {

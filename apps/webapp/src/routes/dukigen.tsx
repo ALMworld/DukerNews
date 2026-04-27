@@ -3,11 +3,12 @@
  *
  * One-page form to register an on-chain works identity:
  *   - Agent name (brand name, spaces allowed)
- *   - Project URL (agentURI)
+ *   - Agent URI (registration JSON / metadata URL)
+ *   - Agent URI content hash / CID
+ *   - Website
  *   - Product type (Digital / Physical / Service)
  *   - DUKI type (Revenue / Profit)
  *   - Pledge URL (optional governance page)
- *   - Tags (comma-separated → string[])
  *   - dukiBps configuration
  *
  * Calls DukigenRegistry.register() with full works metadata.
@@ -16,14 +17,16 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
 import { useAccount, useChainId, useSwitchChain, useWriteContract, usePublicClient } from 'wagmi'
 import { useAuthStore } from '../lib/authStore'
-import { ADDRESSES, DEFAULT_CHAIN_ID, SUPPORTED_CHAINS, dukigenRegistryAbi } from '../lib/contracts'
-import { notifyDukigenTx } from '../client/registry-api'
+import { ADDRESSES, DEFAULT_CHAIN_ID, SUPPORTED_CHAINS, CHAIN_ID_TO_EID, dukigenRegistryAbi } from '../lib/contracts'
+import { notifyDukiRegistry } from '../client/registry-api'
 import { DukiBpsSlider } from '../components/DukiBpsSlider'
 import {
     FileDigit, Package, UserStar,
     TrendingUp, PieChart, Loader2,
     CheckCircle2, AlertCircle, Plus, ExternalLink, Link as LinkIcon,
+    X as XIcon, Network,
 } from 'lucide-react'
+import { isAddress } from 'viem'
 
 export const Route = createFileRoute('/dukigen')({
     component: DukigenPage,
@@ -47,6 +50,17 @@ const DUKI_OPTIONS = [
     { value: 2, label: 'Profit Share', icon: PieChart, desc: 'Periodically or via contract' },
 ] as const
 
+// ── Chain dropdown options for the chain-contracts list ─────────────────────
+// Built from SUPPORTED_CHAINS so we always reflect the chains the app actually
+// targets. The EID — not the chainId — is what the contract stores. A trailing
+// "Custom EID…" option lets users point at chains we haven't added yet.
+type ChainOption = { eid: number; name: string }
+const CHAIN_OPTIONS: ChainOption[] = SUPPORTED_CHAINS.map(c => ({
+    eid: CHAIN_ID_TO_EID[c.id] ?? c.id,
+    name: c.name,
+}))
+const CUSTOM_EID_SENTINEL = '__custom__'
+
 type Step = 'idle' | 'switching' | 'executing' | 'confirming' | 'done'
 
 function DukigenPage() {
@@ -62,12 +76,34 @@ function DukigenPage() {
 
     // ── Form state ──────────────────────────────────────────────
     const [agentName, setAgentName] = useState('')
+    const [website, setWebsite] = useState('')
     const [agentURI, setAgentURI] = useState('')
+    const [agentURIHash, setAgentURIHash] = useState('')
     const [productType, setProductType] = useState(1) // Digital
     const [dukiType, setDukiType] = useState(1) // Revenue
     const [pledgeUrl, setPledgeUrl] = useState('')
-    const [tagsInput, setTagsInput] = useState('')
     const [dukiBps, setDukiBps] = useState(5000)
+
+    // Per-chain deployed contracts. Each row carries its own `id` so React keys
+    // stay stable across edits — never reuse the array index because deletes
+    // shuffle remaining rows. `isCustom` flips the EID input from a select into
+    // a free-form numeric input so users can target chains we haven't added.
+    type ChainRow = {
+        id: number
+        chainEid: string
+        contractAddr: string
+        isCustom: boolean
+    }
+    const [chainRows, setChainRows] = useState<ChainRow[]>([])
+    const addChainRow = () =>
+        setChainRows((rows) => [
+            ...rows,
+            { id: Date.now() + Math.random(), chainEid: '', contractAddr: '', isCustom: false },
+        ])
+    const updateChainRow = (id: number, patch: Partial<ChainRow>) =>
+        setChainRows((rows) => rows.map((r) => (r.id === id ? { ...r, ...patch } : r)))
+    const removeChainRow = (id: number) =>
+        setChainRows((rows) => rows.filter((r) => r.id !== id))
 
     // ── Transaction state ───────────────────────────────────────
     const [step, setStep] = useState<Step>('idle')
@@ -118,14 +154,44 @@ function DukigenPage() {
 
         try {
             const addrs = ADDRESSES[chainId] ?? ADDRESSES[DEFAULT_CHAIN_ID]
-            const tags = tagsInput.split(',').map(t => t.trim()).filter(Boolean)
+
+            // Validate + normalize chain contract rows. Empty rows are dropped
+            // silently; partial rows (one field filled) are surfaced as errors
+            // so the user knows we'd otherwise mint with bad data.
+            const chainContracts: { chainEid: number; contractAddr: `0x${string}` }[] = []
+            for (const row of chainRows) {
+                const eidStr = row.chainEid.trim()
+                const addrStr = row.contractAddr.trim()
+                if (!eidStr && !addrStr) continue
+                if (!eidStr || !addrStr) {
+                    throw new Error('Each chain contract row needs both a chain EID and an address.')
+                }
+                const eid = Number(eidStr)
+                if (!Number.isInteger(eid) || eid <= 0 || eid > 0xffffff) {
+                    throw new Error(`Invalid chain EID "${eidStr}" — must be a positive integer ≤ 16777215.`)
+                }
+                if (!isAddress(addrStr)) {
+                    throw new Error(`Invalid contract address "${addrStr}".`)
+                }
+                chainContracts.push({ chainEid: eid, contractAddr: addrStr })
+            }
 
             setStep('executing')
             const hash = await writeContractAsync({
                 address: addrs.DukigenRegistry,
                 abi: dukigenRegistryAbi,
                 functionName: 'register',
-                args: [name, agentURI, dukiBps, dukiBps, 9900, productType, dukiType, pledgeUrl, tags],
+                args: [
+                    name,
+                    agentURI.trim(),
+                    agentURIHash.trim(),
+                    website.trim(),
+                    dukiBps,
+                    productType,
+                    dukiType,
+                    pledgeUrl.trim(),
+                    chainContracts,
+                ],
             })
             setTxHash(hash)
 
@@ -145,7 +211,7 @@ function DukigenPage() {
             setStep('done')
 
             // Notify the registry worker so it indexes the new agent
-            notifyDukigenTx(hash, chainId)  // fire-and-forget
+            notifyDukiRegistry(hash, chainId)  // fire-and-forget
         } catch (e: any) {
             // Try to decode revert reason
             let msg = e?.shortMessage || e?.message?.split('\n')[0] || 'Transaction failed'
@@ -193,7 +259,7 @@ function DukigenPage() {
                             color: META, textTransform: 'uppercase' as const, letterSpacing: '0.06em',
                         }}>
                             <LinkIcon size={10} style={{ display: 'inline', marginRight: 4, verticalAlign: 'middle' }} />
-                            Network
+                            Registration Network
                         </label>
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                             {SUPPORTED_CHAINS.map(c => {
@@ -238,13 +304,139 @@ function DukigenPage() {
                     />
                 </FieldGroup>
 
-                {/* Agent URI */}
-                <FieldGroup label="Project URL" hint="Your project's homepage or registration JSON">
+                {/* ── Deployed Contracts ── */}
+                {/* List of (chainEid, contractAddr) entries declaring where this   */}
+                {/* agent's product/dApp contracts are deployed across chains.      */}
+                {/* Distinct from the "Registration Network" above, which is the    */}
+                {/* single chain where the agent NFT itself is being minted.       */}
+                <FieldGroup
+                    label="Deployed Contracts"
+                    hint="Optional. Where this agent's contracts are deployed on each chain. You can add more later via setChainContract."
+                >
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {chainRows.map((row) => {
+                            // The select's value is either a known EID (as string) or the
+                            // custom sentinel. When the user picks Custom, we flip to a
+                            // numeric input that owns `chainEid` directly.
+                            const matchedKnown = !row.isCustom && CHAIN_OPTIONS.some(o => String(o.eid) === row.chainEid)
+                            const selectValue = row.isCustom
+                                ? CUSTOM_EID_SENTINEL
+                                : (matchedKnown ? row.chainEid : '')
+                            return (
+                                <div key={row.id} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                                    {row.isCustom ? (
+                                        <input
+                                            type="number"
+                                            inputMode="numeric"
+                                            value={row.chainEid}
+                                            onChange={e => updateChainRow(row.id, { chainEid: e.target.value })}
+                                            onBlur={() => {
+                                                // If the user typed an EID that matches a known chain,
+                                                // collapse back to the dropdown so the row reads cleanly.
+                                                if (CHAIN_OPTIONS.some(o => String(o.eid) === row.chainEid)) {
+                                                    updateChainRow(row.id, { isCustom: false })
+                                                }
+                                            }}
+                                            placeholder="EID"
+                                            disabled={saving || step === 'done'}
+                                            style={{ ...inputStyle, width: 140 }}
+                                        />
+                                    ) : (
+                                        <select
+                                            value={selectValue}
+                                            onChange={e => {
+                                                const v = e.target.value
+                                                if (v === CUSTOM_EID_SENTINEL) {
+                                                    updateChainRow(row.id, { isCustom: true, chainEid: '' })
+                                                } else {
+                                                    updateChainRow(row.id, { isCustom: false, chainEid: v })
+                                                }
+                                            }}
+                                            disabled={saving || step === 'done'}
+                                            style={{ ...inputStyle, width: 140 }}
+                                        >
+                                            <option value="" disabled>Chain…</option>
+                                            {CHAIN_OPTIONS.map(opt => (
+                                                <option key={opt.eid} value={String(opt.eid)}>
+                                                    {opt.name} ({opt.eid})
+                                                </option>
+                                            ))}
+                                            <option value={CUSTOM_EID_SENTINEL}>Custom EID…</option>
+                                        </select>
+                                    )}
+                                    <input
+                                        type="text"
+                                        value={row.contractAddr}
+                                        onChange={e => updateChainRow(row.id, { contractAddr: e.target.value })}
+                                        placeholder="0x…"
+                                        disabled={saving || step === 'done'}
+                                        style={{ ...inputStyle, flex: 1, fontFamily: 'monospace' }}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => removeChainRow(row.id)}
+                                        disabled={saving || step === 'done'}
+                                        aria-label="Remove deployed contract"
+                                        style={{
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            width: 32, height: 32, borderRadius: 8,
+                                            border: `1px solid ${BDR}`, background: 'transparent',
+                                            color: META, cursor: 'pointer', flexShrink: 0,
+                                        }}
+                                    >
+                                        <XIcon size={14} />
+                                    </button>
+                                </div>
+                            )
+                        })}
+                        <button
+                            type="button"
+                            onClick={addChainRow}
+                            disabled={saving || step === 'done'}
+                            style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                                padding: '8px 12px', borderRadius: 8, fontSize: 12,
+                                border: `1px dashed ${BDR}`, background: 'transparent',
+                                color: META, cursor: 'pointer',
+                            }}
+                        >
+                            <Network size={12} />
+                            <span>Add deployment</span>
+                        </button>
+                    </div>
+                </FieldGroup>
+
+                {/* Website */}
+                <FieldGroup label="Website" hint="Public homepage for the agent or product">
                     <input
                         type="url"
+                        value={website}
+                        onChange={e => setWebsite(e.target.value)}
+                        placeholder="https://yourproject.com"
+                        disabled={saving || step === 'done'}
+                        style={inputStyle}
+                    />
+                </FieldGroup>
+
+                {/* Agent URI */}
+                <FieldGroup label="Agent URI" hint="Registration JSON or metadata URL, such as ipfs://...">
+                    <input
+                        type="text"
                         value={agentURI}
                         onChange={e => setAgentURI(e.target.value)}
-                        placeholder="https://yourproject.com"
+                        placeholder="ipfs://bafy.../agent.json"
+                        disabled={saving || step === 'done'}
+                        style={inputStyle}
+                    />
+                </FieldGroup>
+
+                {/* Agent URI Hash */}
+                <FieldGroup label="Agent URI Hash" hint="Content hash, CID, or digest used to detect metadata changes">
+                    <input
+                        type="text"
+                        value={agentURIHash}
+                        onChange={e => setAgentURIHash(e.target.value)}
+                        placeholder="bafy... or sha256:..."
                         disabled={saving || step === 'done'}
                         style={inputStyle}
                     />
@@ -303,30 +495,6 @@ function DukigenPage() {
                         disabled={saving || step === 'done'}
                         style={inputStyle}
                     />
-                </FieldGroup>
-
-                {/* ── Tags ── */}
-                <FieldGroup label="Tags" hint="Comma-separated, e.g. ai, web3, oss">
-                    <input
-                        type="text"
-                        value={tagsInput}
-                        onChange={e => setTagsInput(e.target.value)}
-                        placeholder="ai, web3, oss"
-                        disabled={saving || step === 'done'}
-                        style={inputStyle}
-                    />
-                    {tagsInput && (
-                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
-                            {tagsInput.split(',').map(t => t.trim()).filter(Boolean).map((tag, i) => (
-                                <span key={i} style={{
-                                    fontSize: 11, padding: '2px 8px', borderRadius: 999,
-                                    background: 'var(--muted)', color: META, border: `1px solid ${BDR}`,
-                                }}>
-                                    {tag}
-                                </span>
-                            ))}
-                        </div>
-                    )}
                 </FieldGroup>
 
                 {/* ── Separator ── */}

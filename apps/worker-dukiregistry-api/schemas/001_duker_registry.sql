@@ -59,15 +59,19 @@ CREATE TABLE IF NOT EXISTS dukigen_agents (
     agent_id         TEXT    NOT NULL PRIMARY KEY,  -- uint256 as text
     name             TEXT    NOT NULL DEFAULT '',
     agent_uri        TEXT    NOT NULL DEFAULT '',
+    agent_uri_hash   TEXT    NOT NULL DEFAULT '',
     owner            TEXT    NOT NULL,   -- wallet address
     origin_chain_eid INTEGER NOT NULL,
+    approx_bps       INTEGER NOT NULL DEFAULT 0,
     default_duki_bps INTEGER NOT NULL DEFAULT 5000,
     min_duki_bps     INTEGER NOT NULL DEFAULT 5000,
     max_duki_bps     INTEGER NOT NULL DEFAULT 9900,
     product_type     INTEGER NOT NULL DEFAULT 0,
     duki_type        INTEGER NOT NULL DEFAULT 0,
     pledge_url       TEXT    NOT NULL DEFAULT '',
-    tags             TEXT    NOT NULL DEFAULT '[]', -- JSON array
+    website          TEXT    NOT NULL DEFAULT '',
+    agent_wallet     TEXT    NOT NULL DEFAULT '',
+    chain_contracts  TEXT    NOT NULL DEFAULT '[]',  -- JSON array of {chainEid, contractAddr}
     created_at       INTEGER NOT NULL,
     updated_at       INTEGER NOT NULL
 );

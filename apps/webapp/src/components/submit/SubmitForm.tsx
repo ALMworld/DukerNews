@@ -26,6 +26,10 @@ import { SubmitOnChainButton } from '../SubmitOnChainButton'
 import { SectionHeader } from './SectionHeader'
 import { useAppForm } from './form-context'
 import { useDukigenAgent } from '../../client/useDukigenAgent'
+import type { DukigenAgent } from '../../client/registry-api'
+import { useChainId } from 'wagmi'
+import { CHAIN_ID_TO_EID } from '../../lib/contracts'
+import { useBookmarks } from '../../lib/bookmarks'
 
 import {
     HeartHandshake,
@@ -36,6 +40,12 @@ import {
     CheckCircle2,
     AlertCircle,
     Boxes,
+    Globe,
+    Network,
+    Hash,
+    HeartPulse,
+    Lock,
+    Star,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -95,12 +105,14 @@ export default function SubmitForm() {
     const { dispatch, step, txHash, error: submitError, reset: _reset } = useChainHandle()
     const navigate = useNavigate()
     const queryClient = useQueryClient()
+    const chainId = useChainId()
 
     // ── DukiGen Agent lookup ────────────────────────────────
     const {
         agentIdInput, setAgentIdInput, loadAgent,
         agent: agentInfo, isLoading: agentLoading, error: agentError,
     } = useDukigenAgent()
+    const hasAgent = !!agentInfo
     const isSubmitting = step !== 'idle' && step !== 'done'
     const isConfirming = step === 'confirming'
     const isIndexing = step === 'indexing'
@@ -201,6 +213,26 @@ export default function SubmitForm() {
             await dispatch(txData, paymentValue.method !== 'direct')
         },
     })
+
+    // ── Inherit fields from the loaded agent ─────────────────────────────
+    // When an agent is loaded, the post inherits its productType, dukiType,
+    // governance URL, and current-chain deployed contract from the agent —
+    // these were the visual duplicates between the agent card and the form
+    // below it. The form values still get sent on submit so the post payload
+    // remains complete; we just stop asking the user for things the agent
+    // already declares.
+    useEffect(() => {
+        if (!agentInfo) return
+        form.setFieldValue('productType', Number(agentInfo.productType) as ProductType)
+        form.setFieldValue('dukiType', Number(agentInfo.dukiType) as DukiType)
+        if (agentInfo.pledgeUrl) form.setFieldValue('daoUrl', agentInfo.pledgeUrl)
+        // Pick the chainContract entry matching the user's current chain. EID
+        // is what's stored on-chain, so map chainId → EID with the same table
+        // the rest of the app uses.
+        const currentEid = CHAIN_ID_TO_EID[chainId] ?? chainId
+        const match = agentInfo.chainContracts?.find(c => Number(c.chainEid) === currentEid)
+        if (match?.contractAddr) form.setFieldValue('daoContract', match.contractAddr)
+    }, [agentInfo, chainId])
 
     return (
         <div className="py-2 px-2 sm:px-3">
@@ -370,13 +402,13 @@ export default function SubmitForm() {
                                         {agentInfo && <CheckCircle2 size={14} style={{ color: '#22c55e' }} />}
                                         {agentError && <AlertCircle size={14} style={{ color: '#ef4444' }} />}
                                         <a
-                                            href="/dukigen"
+                                            href="/market"
                                             target="_blank"
                                             rel="noreferrer"
                                             className="flex items-center gap-1 text-xs font-medium transition-opacity hover:opacity-80"
                                             style={{ color: 'var(--duki-400)', marginLeft: 'auto' }}
                                         >
-                                            Register new agent <ExternalLink size={10} />
+                                            Browse market <ExternalLink size={10} />
                                         </a>
                                     </div>
 
@@ -386,55 +418,28 @@ export default function SubmitForm() {
                                     )}
 
                                     {/* Agent preview card (read-only) */}
-                                    {agentInfo && (
-                                        <div
-                                            className="mt-2 rounded-lg border px-3 py-2 text-xs"
-                                            style={{ borderColor: 'var(--duki-500)', background: 'var(--muted)', color: 'var(--foreground)' }}
-                                        >
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <span className="font-semibold">{agentInfo.name}</span>
-                                                <span className="opacity-50">#{String(agentInfo.agentId)}</span>
-                                            </div>
-                                            {agentInfo.agentUri && (
-                                                <div className="truncate opacity-70" style={{ fontSize: 10 }}>
-                                                    {agentInfo.agentUri}
-                                                </div>
-                                            )}
-                                            <div className="flex items-center gap-3 mt-1.5 flex-wrap" style={{ color: 'var(--meta-color)' }}>
-                                                <span>
-                                                    {PRODUCT_LABELS[agentInfo.productType as ProductType] ?? 'Unknown'}
-                                                </span>
-                                                <span>·</span>
-                                                <span>{agentInfo.dukiType === 1 ? 'Revenue Share' : agentInfo.dukiType === 2 ? 'Profit Share' : '—'}</span>
-                                                <span>·</span>
-                                                <span>DUKI {(agentInfo.defaultDukiBps / 100).toFixed(1)}%</span>
-                                            </div>
-                                            {agentInfo.tags.length > 0 && (
-                                                <div className="flex gap-1 flex-wrap mt-1.5">
-                                                    {agentInfo.tags.map((tag, i) => (
-                                                        <span
-                                                            key={i}
-                                                            className="rounded-full border px-1.5 py-0.5"
-                                                            style={{ fontSize: 9, borderColor: 'var(--border)', color: 'var(--meta-color)' }}
-                                                        >
-                                                            {tag}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
+                                    {agentInfo && <AgentPreviewCard agent={agentInfo} />}
                                 </div>
 
 
-                                <form.AppField
-                                    name="productType"
-                                    children={(field) => (
-                                        <field.PillField label="Product Category" tooltip="What type of product or service is this?" options={CATEGORY_OPTIONS} />
-                                    )}
-                                />
+                                {/* Product Category — only when there's no agent.
+                                    With an agent loaded, productType is inherited
+                                    silently and shown in the agent card above. */}
+                                {!hasAgent && (
+                                    <form.AppField
+                                        name="productType"
+                                        children={(field) => (
+                                            <field.PillField label="Product Category" tooltip="What type of product or service is this?" options={CATEGORY_OPTIONS} />
+                                        )}
+                                    />
+                                )}
 
-                                {/* DUKI Contribution — merged row */}
+                                {/* DUKI Contribution — always shown.
+                                    This is post-specific (the % of *this* post's
+                                    payment that goes to DUKI), distinct from the
+                                    agent's indicative `approxBps` shown in the card.
+                                    With an agent loaded, the Revenue/Profit toggle
+                                    is hidden — that's an agent-level choice.       */}
                                 <form.Field name="dukiPercent">
                                     {(pctField) => (
                                         <form.Field name="dukiType">
@@ -442,9 +447,9 @@ export default function SubmitForm() {
                                                 const pct = pctField.state.value
                                                 const isRevenue = typeField.state.value === DukiType.REVENUE_SHARE
                                                 return (
-                                                    <div title="Percentage of revenue or profit pledged to DUKI — the decentralized universal kindness initiative">
+                                                    <div title="Percentage of revenue or profit pledged to DUKI for this post — distinct from the agent's indicative default.">
                                                         <label className="mb-0.5 flex items-center gap-1.5 text-xs" style={{ color: 'var(--meta-color)' }}>
-                                                            <span className="font-medium">DUKI Contribution</span>
+                                                            <span className="font-medium">Your DUKI Contribution</span>
                                                             {pct && (() => {
                                                                 const Icon = DUKI_ICONS[typeField.state.value]
                                                                 return Icon ? (
@@ -469,29 +474,38 @@ export default function SubmitForm() {
                                                                 style={{ ...inputStyle, width: '72px' }}
                                                             />
                                                             <span className="text-xs" style={{ color: 'var(--meta-color)' }}>% of</span>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => typeField.handleChange(DukiType.REVENUE_SHARE)}
-                                                                className={cn(
-                                                                    'text-xs font-medium transition-colors',
-                                                                    isRevenue ? '' : 'line-through opacity-40'
-                                                                )}
-                                                                style={{ color: isRevenue ? 'var(--duki-400)' : 'var(--meta-color)' }}
-                                                            >
-                                                                Revenue
-                                                            </button>
-                                                            <span className="text-xs" style={{ color: 'var(--meta-color)' }}>/</span>
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => typeField.handleChange(DukiType.PROFIT_SHARE)}
-                                                                className={cn(
-                                                                    'text-xs font-medium transition-colors',
-                                                                    !isRevenue ? '' : 'line-through opacity-40'
-                                                                )}
-                                                                style={{ color: !isRevenue ? 'var(--duki-400)' : 'var(--meta-color)' }}
-                                                            >
-                                                                Profit
-                                                            </button>
+                                                            {hasAgent ? (
+                                                                // Locked to agent's choice — show as a static label.
+                                                                <span className="text-xs font-medium" style={{ color: 'var(--duki-400)' }}>
+                                                                    {isRevenue ? 'Revenue' : 'Profit'}
+                                                                </span>
+                                                            ) : (
+                                                                <>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => typeField.handleChange(DukiType.REVENUE_SHARE)}
+                                                                        className={cn(
+                                                                            'text-xs font-medium transition-colors',
+                                                                            isRevenue ? '' : 'line-through opacity-40'
+                                                                        )}
+                                                                        style={{ color: isRevenue ? 'var(--duki-400)' : 'var(--meta-color)' }}
+                                                                    >
+                                                                        Revenue
+                                                                    </button>
+                                                                    <span className="text-xs" style={{ color: 'var(--meta-color)' }}>/</span>
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => typeField.handleChange(DukiType.PROFIT_SHARE)}
+                                                                        className={cn(
+                                                                            'text-xs font-medium transition-colors',
+                                                                            !isRevenue ? '' : 'line-through opacity-40'
+                                                                        )}
+                                                                        style={{ color: !isRevenue ? 'var(--duki-400)' : 'var(--meta-color)' }}
+                                                                    >
+                                                                        Profit
+                                                                    </button>
+                                                                </>
+                                                            )}
                                                         </div>
                                                     </div>
                                                 )
@@ -500,22 +514,35 @@ export default function SubmitForm() {
                                     )}
                                 </form.Field>
 
-                                <form.AppField
-                                    name="daoUrl"
-                                    children={(field) => (
-                                        <field.TextField label="DAO URL" hint="(project page)" tooltip="Link to the DAO or project governance page" placeholder="https://dao.example.com" type="url" />
-                                    )}
-                                />
-                                <form.AppField
-                                    name="daoContract"
-                                    children={(field) => (
-                                        <field.TextField label="DAO contract" hint="(optional)" tooltip="Smart contract address for the DAO or pledge" placeholder="0x…" />
-                                    )}
-                                />
+                                {/* DAO URL + DAO contract — only when no agent.
+                                    With an agent loaded these come from
+                                    agentInfo.pledgeUrl and the matching entry in
+                                    agentInfo.chainContracts (current chain). The
+                                    sync effect populates the form values silently,
+                                    so the on-chain payload still includes them. */}
+                                {!hasAgent && (
+                                    <>
+                                        <form.AppField
+                                            name="daoUrl"
+                                            children={(field) => (
+                                                <field.TextField label="DAO URL" hint="(project page)" tooltip="Link to the DAO or project governance page" placeholder="https://dao.example.com" type="url" />
+                                            )}
+                                        />
+                                        <form.AppField
+                                            name="daoContract"
+                                            children={(field) => (
+                                                <field.TextField label="DAO contract" hint="(optional)" tooltip="Smart contract address for the DAO or pledge" placeholder="0x…" />
+                                            )}
+                                        />
+                                    </>
+                                )}
+
+                                {/* Tags — always asked at post level. Distinct from
+                                    the agent record (which no longer carries tags). */}
                                 <form.AppField
                                     name="tags"
                                     children={(field) => (
-                                        <field.TextField label="Tags" hint={`(max ${MAX_DISPLAY_TAGS})`} tooltip="Comma-separated tags to help categorize your project" placeholder="ai, web3, oss" />
+                                        <field.TextField label="Tags" hint={`(max ${MAX_DISPLAY_TAGS})`} tooltip="Comma-separated tags to help categorize this post" placeholder="ai, web3, oss" />
                                     )}
                                 />
                             </>
@@ -589,4 +616,247 @@ export default function SubmitForm() {
             </form>
         </div>
     )
+}
+
+// ── AgentPreviewCard ────────────────────────────────────────────────────────
+// Read-only summary of the on-chain DukigenAgent the user just loaded.
+//
+// Layout: tight 2-row header (name+id+spec pills · "Inherited" tag), then
+// per-section rows divided by a hairline. Sections are conditional — if the
+// agent has no website, no row appears for it. The agent's `approxBps` is
+// labeled "Avg DUKI" rather than "DUKI X%" to avoid visual collision with
+// the "Your DUKI Contribution" form field below the card, which is a
+// different concept (post-level contribution vs agent's indicative average).
+//
+// Anything shown here is *inherited* into the post payload, so we don't ask
+// for it again in the form below — the parent component hides those inputs
+// when an agent is loaded.
+
+function AgentPreviewCard({ agent }: { agent: DukigenAgent }) {
+    const dukiTypeLabel =
+        agent.dukiType === 1 ? 'Revenue'
+        : agent.dukiType === 2 ? 'Profit'
+        : '—'
+    const productLabel = PRODUCT_LABELS[agent.productType as ProductType] ?? 'Unknown'
+    const ProductIcon = PRODUCT_ICONS[agent.productType as ProductType]
+    const DukiIcon = DUKI_ICONS[agent.dukiType as DukiType]
+
+    const META = 'var(--meta-color)'
+    const FG = 'var(--foreground)'
+    const ROW_DIVIDER = '1px solid color-mix(in srgb, var(--border) 60%, transparent)'
+
+    // Bookmark toggle so users can save an agent right from /submit without
+    // hopping over to /market.
+    const { isBookmarked, toggle } = useBookmarks()
+    const bookmarked = isBookmarked(agent.agentId)
+
+    const Row = ({ children }: { children: React.ReactNode }) => (
+        <div className="px-3 py-1.5" style={{ borderTop: ROW_DIVIDER, color: META }}>
+            {children}
+        </div>
+    )
+
+    // Each "property" pill below is a labeled key/value chip — the same
+    // language NFT marketplaces use for token attributes — so users
+    // immediately read the card as on-chain metadata, not editable form fields.
+    const Prop = ({ label, value, icon, title }: {
+        label: string
+        value: React.ReactNode
+        icon?: React.ReactNode
+        title?: string
+    }) => (
+        <span
+            title={title}
+            className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5"
+            style={{
+                fontSize: 10,
+                border: `1px solid ${ROW_DIVIDER.split(' ').pop() ?? 'var(--border)'}`,
+                background: 'color-mix(in srgb, var(--background) 40%, transparent)',
+            }}
+        >
+            <span style={{ color: META, opacity: 0.65 }}>{label}</span>
+            <span className="inline-flex items-center gap-1" style={{ color: FG, fontWeight: 500 }}>
+                {icon}
+                {value}
+            </span>
+        </span>
+    )
+
+    return (
+        <div
+            className="mt-2 overflow-hidden rounded-lg border text-xs"
+            style={{ borderColor: 'var(--duki-500)', background: 'var(--muted)', color: FG }}
+        >
+            {/* ── Banner: this card is on-chain NFT data, not an editable form. ── */}
+            {/*    Strip across the top makes the read-only framing impossible to    */}
+            {/*    miss. Bookmark star on the right is the only interactive element. */}
+            <div
+                className="flex items-center justify-between px-3 py-1"
+                style={{
+                    background: 'rgba(139,92,246,0.08)',
+                    borderBottom: ROW_DIVIDER,
+                    fontSize: 10, fontWeight: 600, letterSpacing: '0.06em',
+                    textTransform: 'uppercase', color: 'var(--duki-300)',
+                }}
+            >
+                <span className="inline-flex items-center gap-1.5">
+                    <Lock size={10} />
+                    NFT properties · read-only
+                </span>
+                <button
+                    type="button"
+                    onClick={() => toggle(agent.agentId)}
+                    aria-label={bookmarked ? 'Remove bookmark' : 'Bookmark this agent'}
+                    title={bookmarked ? 'Remove bookmark' : 'Bookmark this agent'}
+                    style={{
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        width: 22, height: 22, border: 'none', background: 'transparent',
+                        cursor: 'pointer', color: bookmarked ? '#f59e0b' : 'var(--duki-300)',
+                    }}
+                >
+                    <Star size={12} fill={bookmarked ? '#f59e0b' : 'transparent'} />
+                </button>
+            </div>
+
+            {/* ── Header: name · #id ── */}
+            <div className="px-3 py-2">
+                <div className="flex items-baseline gap-2 flex-wrap">
+                    <span className="font-semibold text-sm" style={{ color: FG }}>
+                        {agent.name || '(unnamed)'}
+                    </span>
+                    <span style={{ color: META, fontSize: 10 }}>
+                        #{String(agent.agentId)}
+                    </span>
+                </div>
+
+                {/* ── Property chips (the "tags") — basic NFT attributes ── */}
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                    <Prop
+                        label="Product"
+                        icon={ProductIcon ? <ProductIcon size={10} /> : null}
+                        value={productLabel}
+                    />
+                    <Prop
+                        label="DUKI"
+                        icon={DukiIcon ? <DukiIcon size={10} /> : <HeartHandshake size={10} />}
+                        value={`${dukiTypeLabel} share`}
+                    />
+                    <Prop
+                        label="Avg %"
+                        icon={<HeartPulse size={10} />}
+                        value={`${(agent.approxBps / 100).toFixed(1)}%`}
+                        title="Agent's indicative DUKI rate (averaged across deals). Distinct from the post's DUKI Contribution below."
+                    />
+                </div>
+            </div>
+
+            {/* ── Website + Pledge — only the row appears if at least one is set ── */}
+            {(agent.website || agent.pledgeUrl) && (
+                <Row>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                        {agent.website && (
+                            <a
+                                href={agent.website}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 hover:opacity-80 min-w-0"
+                                style={{ color: 'var(--duki-400)' }}
+                            >
+                                <Globe size={11} className="flex-shrink-0" />
+                                <span className="truncate" style={{ maxWidth: 280 }}>{stripScheme(agent.website)}</span>
+                            </a>
+                        )}
+                        {agent.pledgeUrl && (
+                            <a
+                                href={agent.pledgeUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 hover:opacity-80"
+                                style={{ color: 'var(--duki-400)' }}
+                                title={agent.pledgeUrl}
+                            >
+                                <ExternalLink size={11} />
+                                <span>Pledge</span>
+                            </a>
+                        )}
+                    </div>
+                </Row>
+            )}
+
+            {/* ── Agent URI + hash — collapsed into one compact row ── */}
+            {agent.agentUri && (
+                <Row>
+                    <div className="flex items-start gap-1.5">
+                        <FileText size={11} className="mt-0.5 flex-shrink-0" />
+                        <div className="min-w-0 flex-1">
+                            <div className="truncate font-mono" style={{ fontSize: 10 }} title={agent.agentUri}>
+                                {agent.agentUri}
+                            </div>
+                            {agent.agentUriHash && (
+                                <div
+                                    className="truncate font-mono opacity-60 inline-flex items-center gap-1"
+                                    style={{ fontSize: 9 }}
+                                    title={agent.agentUriHash}
+                                >
+                                    <Hash size={9} />
+                                    {agent.agentUriHash}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </Row>
+            )}
+
+            {/* ── Deployed contracts — chip list ── */}
+            {agent.chainContracts && agent.chainContracts.length > 0 && (
+                <Row>
+                    <div className="flex items-start gap-1.5">
+                        <Network size={11} className="mt-1 flex-shrink-0" />
+                        <div className="flex flex-wrap gap-1 min-w-0">
+                            {agent.chainContracts.map((c, i) => (
+                                <span
+                                    key={i}
+                                    className="rounded-md border px-1.5 py-0.5 inline-flex items-center gap-1.5 font-mono"
+                                    style={{
+                                        fontSize: 9,
+                                        borderColor: 'var(--border)',
+                                        background: 'color-mix(in srgb, var(--background) 40%, transparent)',
+                                    }}
+                                    title={c.contractAddr}
+                                >
+                                    <span className="opacity-60">{chainLabelForEid(Number(c.chainEid))}</span>
+                                    <span>{shortAddr(c.contractAddr)}</span>
+                                </span>
+                            ))}
+                        </div>
+                    </div>
+                </Row>
+            )}
+        </div>
+    )
+}
+
+// ── Card helpers ───────────────────────────────────────────────────────────
+
+/** Strip protocol from a URL for compact display. Keeps full URL on hover. */
+function stripScheme(url: string): string {
+    return url.replace(/^https?:\/\//, '')
+}
+
+/** Truncate an address to `0x1234…abcd`. Returns input unchanged if too short. */
+function shortAddr(addr: string): string {
+    if (!addr || addr.length < 12) return addr
+    return `${addr.slice(0, 6)}…${addr.slice(-4)}`
+}
+
+/** Friendly label for a known LayerZero EID, falling back to "eid N". */
+const EID_NAMES: Record<number, string> = {
+    31337: 'Anvil',
+    30101: 'Ethereum',
+    30319: 'World',
+    30274: 'XLayer',
+    11155111: 'Sepolia',
+}
+function chainLabelForEid(eid: number): string {
+    return EID_NAMES[eid] ?? `eid ${eid}`
 }

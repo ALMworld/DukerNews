@@ -70,5 +70,6 @@
   "mint_err_name_length": "用户名长度不合规 (2–192 bytes)",
   "mint_err_bps_range": "DUKI 分配比例超出范围",
   "mint_err_amount_low": "最低金额为 0.01 USDT",
-  "mint_err_mixed_script": "不能混用拉丁字母和西里尔字母"
+  "mint_err_mixed_script": "不能混用拉丁字母和西里尔字母",
+  "nav_market": "市场"
 }

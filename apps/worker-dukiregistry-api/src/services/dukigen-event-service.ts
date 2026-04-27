@@ -37,22 +37,48 @@ export async function materializeAgent(db: D1Database, evt: PulledDukigenEvent):
 
     switch (evt.eventType) {
         case DukigenEventType.AGENT_REGISTERED: {
-            const d = decodeEventPayload<{ name: string; agentURI: string }>(
+            const d = decodeEventPayload<{
+                name: string; agentURI: string; agentURIHash?: string; website?: string;
+                approxBps?: number | bigint; agentWallet?: string;
+                productType?: number | bigint; dukiType?: number | bigint; pledgeUrl?: string;
+                chainContracts?: readonly { chainEid: number | bigint; contractAddr: string }[];
+            }>(
                 dukigenRegistryAbi, 'AgentRegisteredData', evt.eventData,
             )
             const name = d?.name ?? ''
             const agentUri = d?.agentURI ?? ''
+            const agentUriHash = d?.agentURIHash ?? ''
+            const website = d?.website ?? ''
+            const approxBps = Number(d?.approxBps ?? 0)
+            const agentWallet = d?.agentWallet ?? evt.ego
+            const productType = Number(d?.productType ?? 0)
+            const dukiType = Number(d?.dukiType ?? 0)
+            const pledgeUrl = d?.pledgeUrl ?? ''
+            const chainContracts = (d?.chainContracts ?? []).map(c => ({
+                chainEid: Number(c.chainEid),
+                contractAddr: c.contractAddr,
+            }))
 
             await db.prepare(`
                 INSERT OR REPLACE INTO dukigen_agents
-                (agent_id, name, agent_uri, owner, origin_chain_eid, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                (agent_id, name, agent_uri, agent_uri_hash, owner, origin_chain_eid,
+                 approx_bps, product_type, duki_type, pledge_url, website, agent_wallet,
+                 chain_contracts, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `).bind(
                 evt.agentId.toString(),
                 name,
                 agentUri,
+                agentUriHash,
                 evt.ego,
                 evt.chainEid,
+                approxBps,
+                productType,
+                dukiType,
+                pledgeUrl,
+                website,
+                agentWallet,
+                JSON.stringify(chainContracts),
                 Number(evt.evtTime),
                 now,
             ).run()
@@ -60,15 +86,16 @@ export async function materializeAgent(db: D1Database, evt: PulledDukigenEvent):
         }
 
         case DukigenEventType.AGENT_URI_UPDATED: {
-            const d = decodeEventPayload<{ newURI: string }>(
+            const d = decodeEventPayload<{ newURI: string; newURIHash?: string }>(
                 dukigenRegistryAbi, 'AgentURIUpdatedData', evt.eventData,
             )
             const newUri = d?.newURI ?? ''
+            const newUriHash = d?.newURIHash ?? ''
 
             await db.prepare(`
-                UPDATE dukigen_agents SET agent_uri = ?, updated_at = ?
+                UPDATE dukigen_agents SET agent_uri = ?, agent_uri_hash = ?, updated_at = ?
                 WHERE agent_id = ?
-            `).bind(newUri, now, evt.agentId.toString()).run()
+            `).bind(newUri, newUriHash, now, evt.agentId.toString()).run()
             break
         }
 
@@ -88,31 +115,63 @@ export async function materializeAgent(db: D1Database, evt: PulledDukigenEvent):
         case DukigenEventType.AGENT_WORKS_DATA_SET: {
             const d = decodeEventPayload<{
                 productType: number | bigint; dukiType: number | bigint;
-                pledgeUrl: string; tags: string[];
+                pledgeUrl: string; website: string;
             }>(dukigenRegistryAbi, 'AgentWorksDataSetData', evt.eventData)
             const productType = Number(d?.productType ?? 0)
             const dukiType = Number(d?.dukiType ?? 0)
             const pledgeUrl = d?.pledgeUrl ?? ''
-            const tags = d?.tags ?? []
+            const website = d?.website ?? ''
 
             await db.prepare(`
-                UPDATE dukigen_agents SET product_type = ?, duki_type = ?, pledge_url = ?, tags = ?, updated_at = ?
+                UPDATE dukigen_agents SET product_type = ?, duki_type = ?, pledge_url = ?, website = ?, updated_at = ?
                 WHERE agent_id = ?
-            `).bind(productType, dukiType, pledgeUrl, JSON.stringify(tags), now, evt.agentId.toString()).run()
+            `).bind(productType, dukiType, pledgeUrl, website, now, evt.agentId.toString()).run()
             break
         }
 
         case DukigenEventType.AGENT_WALLET_SET: {
-            // eventData = abi.encode(AgentWalletSetData) = (address newWallet)
+            const d = decodeEventPayload<{ newWallet: string }>(
+                dukigenRegistryAbi, 'AgentWalletSetData', evt.eventData,
+            )
+            const newWallet = d?.newWallet ?? ''
+
             await db.prepare(`
-                UPDATE dukigen_agents SET updated_at = ?
+                UPDATE dukigen_agents SET agent_wallet = ?, updated_at = ?
                 WHERE agent_id = ?
-            `).bind(now, evt.agentId.toString()).run()
+            `).bind(newWallet, now, evt.agentId.toString()).run()
+            break
+        }
+
+        case DukigenEventType.AGENT_CHAIN_CONTRACT_SET: {
+            // Upsert one (chainEid, contractAddr) entry into the JSON-array column.
+            const d = decodeEventPayload<{ chainEid: number | bigint; contractAddr: string }>(
+                dukigenRegistryAbi, 'AgentChainContractSetData', evt.eventData,
+            )
+            if (!d) break
+            const chainEid = Number(d.chainEid)
+            const contractAddr = d.contractAddr ?? ''
+
+            const row = await db.prepare(
+                `SELECT chain_contracts FROM dukigen_agents WHERE agent_id = ?`
+            ).bind(evt.agentId.toString()).first<{ chain_contracts?: string }>()
+
+            const list: { chainEid: number; contractAddr: string }[] = (() => {
+                try { return row?.chain_contracts ? JSON.parse(row.chain_contracts) : [] }
+                catch { return [] }
+            })()
+            const idx = list.findIndex(c => Number(c.chainEid) === chainEid)
+            if (idx >= 0) list[idx].contractAddr = contractAddr
+            else list.push({ chainEid, contractAddr })
+
+            await db.prepare(`
+                UPDATE dukigen_agents SET chain_contracts = ?, updated_at = ?
+                WHERE agent_id = ?
+            `).bind(JSON.stringify(list), now, evt.agentId.toString()).run()
             break
         }
 
         default:
-            // METADATA_SET, CHAIN_CONTRACT_SET — log only for now
+            // METADATA_SET — log only for now
             break
     }
 }
@@ -126,4 +185,3 @@ export async function processDukigenEvents(db: D1Database, events: PulledDukigen
         await materializeAgent(db, evt)
     }
 }
-

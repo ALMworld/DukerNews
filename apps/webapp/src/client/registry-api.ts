@@ -137,10 +137,33 @@ export async function getDukigenAgent(agentId: string): Promise<DukigenAgent | n
  * Notify the registry worker about a DukigenRegistry tx so it indexes the events.
  * Fire-and-forget — errors are silently swallowed.
  */
-export async function notifyDukigenTx(txHash: string, chainEid: number): Promise<void> {
+export async function notifyDukiRegistry(txHash: string, chainEid: number): Promise<void> {
     try {
         await dukigenClient.notifyDukigenTx({ txHash, chainEid })
     } catch {
         // Best-effort; don't block the UI
+    }
+}
+
+export const notifyDukigenTx = notifyDukiRegistry
+
+/**
+ * List DUKIGEN agents (paginated). Used by the /market page to render the
+ * agent grid. The worker caps `perPage` at 100 server-side, so for now a
+ * single page-load pull is enough; if the registry grows we can page in the
+ * UI without changing this signature.
+ */
+export async function getDukigenAgents(opts: { page?: number; perPage?: number } = {}): Promise<{
+    agents: DukigenAgent[]
+    total: number
+}> {
+    try {
+        const resp = await dukigenClient.getAgents({
+            page: opts.page ?? 1,
+            perPage: opts.perPage ?? 100,
+        })
+        return { agents: resp.agents ?? [], total: Number(resp.total ?? 0) }
+    } catch {
+        return { agents: [], total: 0 }
     }
 }

@@ -13,6 +13,7 @@ const navLinks = [
   { to: '/comments', msg: () => m.nav_comments(), auth: false },
   // { to: '/voice', msg: () => m.nav_voice(), auth: false },
   // { to: '/jobs', msg: () => m.nav_jobs(), auth: false },
+  { to: '/market', msg: () => m.nav_market(), auth: false },
   { to: '/submit', msg: () => m.nav_submit(), auth: false },
 ]
 
