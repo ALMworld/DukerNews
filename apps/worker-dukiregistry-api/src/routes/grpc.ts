@@ -332,6 +332,9 @@ export function registerGrpcRoutes(router: ConnectRouter) {
         async syncDukerEvents(req) {
             const DEFAULT_MAX_BLOCK_RANGE = 10000n
             const maxRange = req.maxBlockRange > 0n ? req.maxBlockRange : DEFAULT_MAX_BLOCK_RANGE
+            const lastEvtSeq = req.lastEvtSeq > 0n
+                ? req.lastEvtSeq
+                : await getLastIndexedDukerEvtSeq(req.chainEid)
             const cfg = getChainConfig(req.chainEid)
             const client = createPublicClient({ transport: http(cfg.rpcUrl) })
 
@@ -342,7 +345,7 @@ export function registerGrpcRoutes(router: ConnectRouter) {
                 functionName: 'eventState',
             })
 
-            if (Number(chainEvtSeq) === 0 || Number(chainEvtSeq) <= Number(req.lastEvtSeq)) {
+            if (Number(chainEvtSeq) === 0 || Number(chainEvtSeq) <= Number(lastEvtSeq)) {
                 return create(SyncEventsRespSchema, {
                     syncedUpTo: chainEvtSeq as bigint,
                     eventsIndexed: 0,
@@ -351,19 +354,19 @@ export function registerGrpcRoutes(router: ConnectRouter) {
             }
 
             // Find best fromBlock from checkpoints
-            const fromBlock = findBestCheckpoint(checkpoints, Number(req.lastEvtSeq))
+            const fromBlock = findBestCheckpoint(checkpoints, Number(lastEvtSeq))
             const latestBlock = await client.getBlockNumber()
             const toBlock = fromBlock + maxRange < latestBlock ? fromBlock + maxRange : latestBlock
 
             // Pull and index events
             const events = await pullDukerEventsByBlockRange(req.chainEid, fromBlock, toBlock)
             // Filter to only events after lastEvtSeq
-            const newEvents = events.filter(e => Number(e.evtSeq) > Number(req.lastEvtSeq))
+            const newEvents = events.filter(e => Number(e.evtSeq) > Number(lastEvtSeq))
             await processDukerEvents(_db, newEvents)
 
             const syncedUpTo = newEvents.length > 0
                 ? BigInt(newEvents[newEvents.length - 1].evtSeq)
-                : req.lastEvtSeq
+                : lastEvtSeq
 
             return create(SyncEventsRespSchema, {
                 syncedUpTo,
@@ -513,4 +516,11 @@ function findBestCheckpoint(checkpoints: readonly bigint[], lastEvtSeq: number):
         if (cp > 0n && (earliest === 0n || cp < earliest)) earliest = cp
     }
     return earliest > 0n ? earliest : 0n
+}
+
+async function getLastIndexedDukerEvtSeq(chainEid: number): Promise<bigint> {
+    const row = await _db.prepare(
+        'SELECT COALESCE(MAX(evt_seq), 0) AS evt_seq FROM duker_registry_events WHERE chain_eid = ?'
+    ).bind(chainEid).first<{ evt_seq?: number | string | null }>()
+    return BigInt(row?.evt_seq ?? 0)
 }

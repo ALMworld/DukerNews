@@ -4,6 +4,7 @@
 
 export interface AuthRefreshResult {
     success: boolean
+    message?: string
     data?: any
 }
 

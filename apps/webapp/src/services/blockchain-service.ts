@@ -86,8 +86,10 @@ async function convertLogToEvent(args: DukerEventArgs, blockNumber?: bigint, txH
                     tokenId: bigint
                     username: string
                     amount: bigint
-                    dukiBps: number
+                    dealDukiBps?: number
+                    dukiBps?: number
                 }
+                const dukiBps = d.dealDukiBps ?? d.dukiBps ?? 0
                 // Build with create() so toBinary works later for DB storage
                 const eventData = create(EventDataSchema, {
                     payload: {
@@ -96,7 +98,7 @@ async function convertLogToEvent(args: DukerEventArgs, blockNumber?: bigint, txH
                             address: args.ego,
                             username: d.username,
                             mintAmount: BigInt(d.amount),
-                            dukiBps: Number(d.dukiBps),
+                            dukiBps: Number(dukiBps),
                             tokenId: BigInt(d.tokenId),
                         }),
                     },

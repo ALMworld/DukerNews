@@ -39,6 +39,45 @@ export interface DispatchResult extends Partial<DirectHandleResult> {
 
 // ─── Helpers ────────────────────────────────────────────────
 
+async function wait(ms: number): Promise<void> {
+    await new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+async function notifyTxWithRetry(txHash: string): Promise<PbEvent[]> {
+    let lastError: unknown = undefined
+    for (let attempt = 0; attempt < 4; attempt++) {
+        try {
+            const resp = await txClient.notifyTx({ txHash })
+            return resp.events
+        } catch (err) {
+            lastError = err
+        }
+        if (attempt < 3) await wait(1000 * (attempt + 1))
+    }
+    throw lastError instanceof Error ? lastError : new Error('notifyTx failed')
+}
+
+async function refreshMintAuth(dukiBps: number, txHash?: string): Promise<AuthRefreshResult | undefined> {
+    for (let attempt = 0; attempt < 4; attempt++) {
+        try {
+            const authResult = await refreshAuth(dukiBps, txHash)
+            if (authResult?.success && authResult.data?.username) {
+                return authResult
+            }
+        } catch {
+            // backend sync can lag slightly after the tx is mined
+        }
+
+        if (attempt < 3) await wait(1000 * (attempt + 1))
+    }
+
+    return undefined
+}
+
+function getMintTxHash(events: PbEvent[]): string | undefined {
+    return events.find((event) => event.evtType === EventType.USER_MINTED)?.txHash || events[0]?.txHash
+}
+
 /** Extract how much USDT this x402 request needs (0 = free operation) */
 function getPaymentAmount(txData: DukerTxReq): bigint {
     const p = txData.data?.payload
@@ -137,10 +176,14 @@ export function useChainHandle() {
                     setStep('confirming')
                     const dukiBps = txData.data?.payload?.case === 'userMinted'
                         ? txData.data.payload.value.dukiBps : 0
-                    let authResult: AuthRefreshResult | undefined
-                    try { authResult = await refreshAuth(dukiBps) } catch { /* best-effort */ }
+                    const txHash = getMintTxHash(resp.events)
+                    if (txHash) setTxHash(txHash)
+                    const authResult = await refreshMintAuth(dukiBps, txHash)
+                    if (!authResult?.success || !authResult.data?.username) {
+                        throw new Error('Mint confirmed on-chain, but backend sync has not caught up yet. Please try again in a few seconds.')
+                    }
                     setStep('done')
-                    return { authResult, events: resp.events }
+                    return { txHash, authResult, events: resp.events }
                 }
 
                 setStep('done')
@@ -178,15 +221,15 @@ export function useChainHandle() {
                 }
 
                 // Sync DukerNews events into the backend user DB.
-                try {
-                    await new Promise(r => setTimeout(r, 1000))
-                    await txClient.notifyTx({ txHash: result.txHash })
-                } catch { /* best-effort — worker will catch up */ }
+                await wait(1000)
+                await notifyTxWithRetry(result.txHash)
 
                 const dukiBps = txData.data?.payload?.case === 'userMinted'
                     ? txData.data.payload.value.dukiBps : 0
-                let authResult: AuthRefreshResult | undefined
-                try { authResult = await refreshAuth(dukiBps, result.txHash) } catch { /* best-effort */ }
+                const authResult = await refreshMintAuth(dukiBps, result.txHash)
+                if (!authResult?.success || !authResult.data?.username) {
+                    throw new Error('Mint confirmed on-chain, but backend sync has not caught up yet. Please try again in a few seconds.')
+                }
                 setStep('done')
                 return { ...result, events: [], authResult }
             }
@@ -196,9 +239,8 @@ export function useChainHandle() {
             setStep('confirming')
             let events: PbEvent[] = []
             try {
-                await new Promise(r => setTimeout(r, 1000))
-                const resp = await txClient.notifyTx({ txHash: result.txHash })
-                events = resp.events
+                await wait(1000)
+                events = await notifyTxWithRetry(result.txHash)
             } catch { /* best-effort — webhook will catch up */ }
 
             setStep('done')
@@ -214,6 +256,9 @@ export function useChainHandle() {
                 setStep('confirming')
                 try {
                     const authResult = await refreshAuth()
+                    if (!authResult?.success || !authResult.data?.username) {
+                        throw new Error(authResult?.message || 'No username found after registry sync')
+                    }
                     setStep('done')
                     return { txHash: '', events: [], authResult }
                 } catch {

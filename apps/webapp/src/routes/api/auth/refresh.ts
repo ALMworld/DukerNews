@@ -8,7 +8,7 @@ import {
     COOKIE_NAME,
     type JWTPayload,
 } from '../../../server/auth-utils'
-import { getRegistryIdentity } from '../../../server/registry-worker-client'
+import { getRegistryIdentity, syncRegistryIdentities } from '../../../server/registry-worker-client'
 import { DEFAULT_CHAIN_ID } from '../../../lib/contracts'
 import { getKysely } from '../../../lib/db'
 import { getEventsFromTx } from '../../../services/blockchain-service'
@@ -88,9 +88,26 @@ export const Route = createFileRoute('/api/auth/refresh')({
                     }
                 }
 
-                // Final fallback: registry lookup only for authenticated users
-                // whose local user row has not been materialized yet.
+                // Fallback: registry lookup for authenticated users whose local
+                // user row has not been materialized yet.
                 if (!username) {
+                    const identity = await getRegistryIdentity(address, chainEid)
+                    if (identity?.username) {
+                        username = identity.username
+                    }
+                }
+
+                // Recovery path: the mint may already exist in DukerRegistry
+                // even when a retry reverts with AlreadyHasIdentity or the
+                // DukerNews event sync missed the tx. Catch up registry logs
+                // for the target chain, then query the materialized identity.
+                if (!username) {
+                    try {
+                        await syncRegistryIdentities(chainEid)
+                    } catch (e) {
+                        console.warn('[auth/refresh] registry sync failed (non-blocking):', e)
+                    }
+
                     const identity = await getRegistryIdentity(address, chainEid)
                     if (identity?.username) {
                         username = identity.username

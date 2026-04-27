@@ -37,7 +37,7 @@ const INP = 'var(--input)'
 // ─────────────────────────────────────────────────────────────────────────────
 function MintPanel({ address }: { address: string }) {
     const navigate = useNavigate()
-    const { me, setMe } = useAuthStore()
+    const { authStatus, me, setMe, setAuthStatus, setConnectModalOpen } = useAuthStore()
     const queryClient = useQueryClient()
     const chainId = useChainId()
     const { switchChainAsync } = useSwitchChain()
@@ -105,6 +105,11 @@ function MintPanel({ address }: { address: string }) {
         const name = username.trim()
         reset()
 
+        if (authStatus !== 'authenticated' || !me?.ego) {
+            setConnectModalOpen(true)
+            return
+        }
+
         // Client-side validation (mirrors contract _validateMint)
         const nameErr = validateName(name)
         if (nameErr) return
@@ -143,13 +148,10 @@ function MintPanel({ address }: { address: string }) {
             const result = await dispatch(txData, payment.method === 'x402')
 
             // Update auth state
-            if (result.authResult?.data) {
+            if (result.authResult?.success && result.authResult.data?.username) {
+                setAuthStatus('authenticated')
                 setMe(result.authResult.data)
                 queryClient.setQueryData(queryKeys.authMe(), result.authResult.data)
-            } else if (me) {
-                const updated = { ...me, username: name }
-                setMe(updated)
-                queryClient.setQueryData(queryKeys.authMe(), updated)
             }
         } catch {
             // error is already set inside dispatch
@@ -167,7 +169,8 @@ function MintPanel({ address }: { address: string }) {
     // Compute disabled reason for the mint button
     const nameError = username.trim().length > 0 ? validateName(username.trim()) : ''
     const disabledReason = saving ? null
-        : !username.trim() ? 'Enter a username'
+        : authStatus !== 'authenticated' || !me?.ego ? 'Sign in to mint a username'
+            : !username.trim() ? 'Enter a username'
             : nameError ? nameError
                 : nameTaken ? `@${username.trim()} is already taken`
                     : payment.amount <= 0.01 ? 'Amount must be > 0.01 USDT'
@@ -303,7 +306,7 @@ function MintPanel({ address }: { address: string }) {
                         dukiBps={dukiBps}
                         amounts={[1, 2, 8, 16, 64]}
                         defaultAmount={1}
-                        showX402={true}
+                        showX402={false}
                         disabled={saving}
                         amountLabel="Amount (USDT)"
                         onChange={setPayment}
@@ -362,9 +365,15 @@ function MintPanel({ address }: { address: string }) {
 //  WelcomePage
 // ─────────────────────────────────────────────────────────────────────────────
 function WelcomePage() {
-    const { me, setConnectModalOpen } = useAuthStore()
+    const { authStatus, me, setConnectModalOpen } = useAuthStore()
     const { status: accountStatus } = useAccount()
     const address = me?.ego ?? ''
+
+    useEffect(() => {
+        if (authStatus === 'unauthenticated') {
+            setConnectModalOpen(true)
+        }
+    }, [authStatus, setConnectModalOpen])
 
     // Auto-open ConnectModal when authenticated but wallet truly disconnected
     // (wait for wagmi to finish reconnecting before deciding — avoids modal flash)
