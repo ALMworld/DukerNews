@@ -13,7 +13,7 @@
  *
  * Calls DukigenRegistry.register() with full works metadata.
  */
-import { Link, createFileRoute } from '@tanstack/react-router'
+import { Link, Outlet, createFileRoute, useRouterState } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { useAccount, useChainId, usePublicClient, useSwitchChain, useWriteContract } from 'wagmi'
 import {
@@ -65,6 +65,17 @@ const CUSTOM_EID_SENTINEL = '__custom__'
 type Step = 'idle' | 'switching' | 'executing' | 'confirming' | 'done'
 
 function DukigenPage() {
+    const pathname = useRouterState({ select: (state) => state.location.pathname })
+    const normalizedPath = pathname.replace(/\/+$/, '')
+
+    if (normalizedPath !== '/dukigen') {
+        return <Outlet />
+    }
+
+    return <DukigenCreatePage />
+}
+
+function DukigenCreatePage() {
     const { authStatus, me, setConnectModalOpen } = useAuthStore()
     const { address } = useAccount()
     const chainId = useChainId()
