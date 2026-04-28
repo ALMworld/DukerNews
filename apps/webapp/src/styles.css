@@ -501,3 +501,14 @@ pre {
   opacity: 0.4;
   cursor: not-allowed;
 }
+
+@keyframes feedSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(10px) translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) translateY(0);
+  }
+}

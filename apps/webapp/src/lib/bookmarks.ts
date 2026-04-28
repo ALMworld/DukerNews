@@ -16,7 +16,7 @@ const BOOKMARKS_KEY = 'dukigen.bookmarks.v1'
 // In-memory subscribers — Set so unsubscribe is O(1) and we never double-fire.
 const listeners = new Set<() => void>()
 
-function readRaw(): string[] {
+function readRaw(): Array<string> {
     if (typeof window === 'undefined') return []
     try {
         const raw = window.localStorage.getItem(BOOKMARKS_KEY)
@@ -28,7 +28,7 @@ function readRaw(): string[] {
     }
 }
 
-function writeRaw(ids: string[]): void {
+function writeRaw(ids: Array<string>): void {
     if (typeof window === 'undefined') return
     try {
         window.localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(ids))
@@ -38,12 +38,20 @@ function writeRaw(ids: string[]): void {
     listeners.forEach((fn) => fn())
 }
 
-export function getBookmarks(): string[] {
+export function getBookmarks(): Array<string> {
     return readRaw()
 }
 
 export function isBookmarked(agentId: string | bigint): boolean {
     return readRaw().includes(String(agentId))
+}
+
+/** Add a bookmark if it is not already present. */
+export function addBookmark(agentId: string | bigint): void {
+    const id = String(agentId)
+    const current = readRaw()
+    if (current.includes(id)) return
+    writeRaw([id, ...current])
 }
 
 /** Toggle and return the new state. */
@@ -66,7 +74,7 @@ export function toggleBookmark(agentId: string | bigint): boolean {
  * this re-render whenever any bookmark anywhere changes.
  */
 export function useBookmarks() {
-    const [bookmarks, setBookmarks] = useState<string[]>(() => readRaw())
+    const [bookmarks, setBookmarks] = useState<Array<string>>(() => readRaw())
 
     useEffect(() => {
         const onChange = () => setBookmarks(readRaw())

@@ -19,6 +19,7 @@ import { Route as SubmitRouteImport } from './routes/submit'
 import { Route as ShowRouteImport } from './routes/show'
 import { Route as PastRouteImport } from './routes/past'
 import { Route as NewestRouteImport } from './routes/newest'
+import { Route as Market_searchRouteImport } from './routes/market_search'
 import { Route as MarketRouteImport } from './routes/market'
 import { Route as JobsRouteImport } from './routes/jobs'
 import { Route as FormatdocRouteImport } from './routes/formatdoc'
@@ -89,6 +90,11 @@ const PastRoute = PastRouteImport.update({
 const NewestRoute = NewestRouteImport.update({
   id: '/newest',
   path: '/newest',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Market_searchRoute = Market_searchRouteImport.update({
+  id: '/market_search',
+  path: '/market_search',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MarketRoute = MarketRouteImport.update({
@@ -206,6 +212,7 @@ export interface FileRoutesByFullPath {
   '/formatdoc': typeof FormatdocRoute
   '/jobs': typeof JobsRoute
   '/market': typeof MarketRoute
+  '/market_search': typeof Market_searchRoute
   '/newest': typeof NewestRoute
   '/past': typeof PastRoute
   '/show': typeof ShowRoute
@@ -239,6 +246,7 @@ export interface FileRoutesByTo {
   '/formatdoc': typeof FormatdocRoute
   '/jobs': typeof JobsRoute
   '/market': typeof MarketRoute
+  '/market_search': typeof Market_searchRoute
   '/newest': typeof NewestRoute
   '/past': typeof PastRoute
   '/show': typeof ShowRoute
@@ -273,6 +281,7 @@ export interface FileRoutesById {
   '/formatdoc': typeof FormatdocRoute
   '/jobs': typeof JobsRoute
   '/market': typeof MarketRoute
+  '/market_search': typeof Market_searchRoute
   '/newest': typeof NewestRoute
   '/past': typeof PastRoute
   '/show': typeof ShowRoute
@@ -308,6 +317,7 @@ export interface FileRouteTypes {
     | '/formatdoc'
     | '/jobs'
     | '/market'
+    | '/market_search'
     | '/newest'
     | '/past'
     | '/show'
@@ -341,6 +351,7 @@ export interface FileRouteTypes {
     | '/formatdoc'
     | '/jobs'
     | '/market'
+    | '/market_search'
     | '/newest'
     | '/past'
     | '/show'
@@ -374,6 +385,7 @@ export interface FileRouteTypes {
     | '/formatdoc'
     | '/jobs'
     | '/market'
+    | '/market_search'
     | '/newest'
     | '/past'
     | '/show'
@@ -408,6 +420,7 @@ export interface RootRouteChildren {
   FormatdocRoute: typeof FormatdocRoute
   JobsRoute: typeof JobsRoute
   MarketRoute: typeof MarketRoute
+  Market_searchRoute: typeof Market_searchRoute
   NewestRoute: typeof NewestRoute
   PastRoute: typeof PastRoute
   ShowRoute: typeof ShowRoute
@@ -503,6 +516,13 @@ declare module '@tanstack/react-router' {
       path: '/newest'
       fullPath: '/newest'
       preLoaderRoute: typeof NewestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/market_search': {
+      id: '/market_search'
+      path: '/market_search'
+      fullPath: '/market_search'
+      preLoaderRoute: typeof Market_searchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/market': {
@@ -664,6 +684,7 @@ const rootRouteChildren: RootRouteChildren = {
   FormatdocRoute: FormatdocRoute,
   JobsRoute: JobsRoute,
   MarketRoute: MarketRoute,
+  Market_searchRoute: Market_searchRoute,
   NewestRoute: NewestRoute,
   PastRoute: PastRoute,
   ShowRoute: ShowRoute,

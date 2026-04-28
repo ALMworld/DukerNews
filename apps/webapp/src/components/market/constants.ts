@@ -1,0 +1,4 @@
+export const MARKET_PAGE_SIZE = 24
+export const FETCH_PAGE_SIZE = 100
+export const MAX_MARKET_PAGES = 64
+export const MAX_MARKET_ITEMS = MARKET_PAGE_SIZE * MAX_MARKET_PAGES

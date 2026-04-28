@@ -13,20 +13,21 @@
  *
  * Calls DukigenRegistry.register() with full works metadata.
  */
-import { createFileRoute } from '@tanstack/react-router'
-import { useState, useEffect } from 'react'
-import { useAccount, useChainId, useSwitchChain, useWriteContract, usePublicClient } from 'wagmi'
-import { useAuthStore } from '../lib/authStore'
-import { ADDRESSES, DEFAULT_CHAIN_ID, SUPPORTED_CHAINS, CHAIN_ID_TO_EID, dukigenRegistryAbi } from '../lib/contracts'
-import { notifyDukiRegistry } from '../client/registry-api'
-import { DukiBpsSlider } from '../components/DukiBpsSlider'
+import { Link, createFileRoute } from '@tanstack/react-router'
+import { useEffect, useState } from 'react'
+import { useAccount, useChainId, usePublicClient, useSwitchChain, useWriteContract } from 'wagmi'
 import {
-    FileDigit, Package, UserStar,
-    TrendingUp, PieChart, Loader2,
-    CheckCircle2, AlertCircle, Plus, ExternalLink, Link as LinkIcon,
-    X as XIcon, Network,
+    AlertCircle, CheckCircle2, ExternalLink,
+    FileDigit, Link as LinkIcon, Loader2,
+    Network, Package, PieChart, Plus, TrendingUp,
+    UserStar, X as XIcon,
 } from 'lucide-react'
 import { isAddress } from 'viem'
+import { useAuthStore } from '../lib/authStore'
+import { ADDRESSES, CHAIN_ID_TO_EID, DEFAULT_CHAIN_ID, SUPPORTED_CHAINS, dukigenRegistryAbi } from '../lib/contracts'
+import { notifyDukiRegistry } from '../client/registry-api'
+import { DukiBpsSlider } from '../components/DukiBpsSlider'
+import { addBookmark } from '../lib/bookmarks'
 
 export const Route = createFileRoute('/dukigen')({
     component: DukigenPage,
@@ -55,7 +56,7 @@ const DUKI_OPTIONS = [
 // targets. The EID — not the chainId — is what the contract stores. A trailing
 // "Custom EID…" option lets users point at chains we haven't added yet.
 type ChainOption = { eid: number; name: string }
-const CHAIN_OPTIONS: ChainOption[] = SUPPORTED_CHAINS.map(c => ({
+const CHAIN_OPTIONS: Array<ChainOption> = SUPPORTED_CHAINS.map(c => ({
     eid: CHAIN_ID_TO_EID[c.id] ?? c.id,
     name: c.name,
 }))
@@ -72,7 +73,7 @@ function DukigenPage() {
     const { writeContractAsync } = useWriteContract()
 
     const isLoggedIn = authStatus === 'authenticated' && !!me
-    const hasUsername = isLoggedIn && !!me?.username
+    const hasUsername = isLoggedIn && !!me.username
 
     // ── Form state ──────────────────────────────────────────────
     const [agentName, setAgentName] = useState('')
@@ -94,7 +95,7 @@ function DukigenPage() {
         contractAddr: string
         isCustom: boolean
     }
-    const [chainRows, setChainRows] = useState<ChainRow[]>([])
+    const [chainRows, setChainRows] = useState<Array<ChainRow>>([])
     const addChainRow = () =>
         setChainRows((rows) => [
             ...rows,
@@ -158,7 +159,7 @@ function DukigenPage() {
             // Validate + normalize chain contract rows. Empty rows are dropped
             // silently; partial rows (one field filled) are surfaced as errors
             // so the user knows we'd otherwise mint with bad data.
-            const chainContracts: { chainEid: number; contractAddr: `0x${string}` }[] = []
+            const chainContracts: Array<{ chainEid: number; contractAddr: `0x${string}` }> = []
             for (const row of chainRows) {
                 const eidStr = row.chainEid.trim()
                 const addrStr = row.contractAddr.trim()
@@ -205,7 +206,9 @@ function DukigenPage() {
                     && log.topics[1] === '0x0000000000000000000000000000000000000000000000000000000000000000'
             )
             if (transferLog?.topics[3]) {
-                setRegisteredId(BigInt(transferLog.topics[3]))
+                const mintedId = BigInt(transferLog.topics[3])
+                setRegisteredId(mintedId)
+                addBookmark(mintedId)
             }
 
             setStep('done')
@@ -523,6 +526,13 @@ function DukigenPage() {
                         <div>
                             <strong>Agent registered!</strong>
                             {registeredId && <span style={{ marginLeft: 8, opacity: 0.8 }}>ID: #{registeredId.toString()}</span>}
+                            <Link
+                                to="/market"
+                                search={{ sort: 'created_desc', q: registeredId?.toString() ?? agentName.trim() }}
+                                style={{ marginLeft: 8, color: '#22c55e', textDecoration: 'underline', display: 'inline-flex', alignItems: 'center', gap: 3 }}
+                            >
+                                View in market <ExternalLink size={12} />
+                            </Link>
                             {txHash && (
                                 <a
                                     href={`https://sepolia.etherscan.io/tx/${txHash}`}
