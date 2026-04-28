@@ -3,6 +3,7 @@
  *
  * Layout:  Square image → Title → Tag pills → Price-style metric → Seller row
  */
+import { Link } from '@tanstack/react-router'
 import { PRODUCT_LABELS } from '../../lib/constants'
 import type { RankedAgentEntry } from '../../client/registry-api'
 
@@ -22,7 +23,7 @@ function getStatus(agentId: bigint) {
     return Number(agentId) % 5 === 0 ? 'busy' : 'online'
 }
 
-export function AgentCard({ entry, onFavorite }: AgentCardProps) {
+export function AgentCard({ entry }: AgentCardProps) {
     const { agent, credibility } = entry
     const productLabel = PRODUCT_LABELS[agent.productType as keyof typeof PRODUCT_LABELS] ?? 'Agent'
     const snId = `SN-${String(agent.agentId).padStart(5, '0')}`
@@ -39,16 +40,9 @@ export function AgentCard({ entry, onFavorite }: AgentCardProps) {
     const wants = (Number(agent.agentId) * 3 + credibility) % 12 + 1
 
     return (
-        <a
-            href={agent.website || undefined}
-            target="_blank"
-            rel="noreferrer"
-            onClick={(e) => {
-                if (!agent.website) {
-                    e.preventDefault()
-                    onFavorite()
-                }
-            }}
+        <Link
+            to="/dukigen/$agentId"
+            params={{ agentId: String(agent.agentId) }}
             className="group flex flex-col overflow-hidden rounded-xl border border-border bg-card/50 no-underline transition-all hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5"
         >
             {/* ── Square image ── */}
@@ -106,7 +100,7 @@ export function AgentCard({ entry, onFavorite }: AgentCardProps) {
                     </span>
                 </div>
             </div>
-        </a>
+        </Link>
     )
 }
 

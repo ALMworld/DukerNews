@@ -18,3 +18,12 @@ enum DukiType {
   REVENUE_SHARE = 1;  // real-time DUKI minting on each payment
   PROFIT_SHARE  = 2;  // profit-share pledge, contributed separately
 }
+
+// ── Per-chain deployed contract entry ───────────────────────────────────
+// Mirrors the on-chain ChainContract struct used by DukigenAgent. Posts
+// inherit the agent's full deployment list verbatim, so the same shape
+// shows up on WorksPostData.
+message ChainContractEntry {
+  uint32 chain_eid     = 1;
+  string contract_addr = 2;
+}

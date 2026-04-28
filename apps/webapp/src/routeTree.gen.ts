@@ -30,6 +30,7 @@ import { Route as CommentsRouteImport } from './routes/comments'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as RpcSplatRouteImport } from './routes/rpc/$'
 import { Route as PostIdRouteImport } from './routes/post.$id'
+import { Route as DukigenAgentIdRouteImport } from './routes/dukigen.$agentId'
 import { Route as ApiSyncEventsRouteImport } from './routes/api/sync-events'
 import { Route as ApiSeedRouteImport } from './routes/api/seed'
 import { Route as ApiNotifyTxsRouteImport } from './routes/api/notify-txs'
@@ -147,6 +148,11 @@ const PostIdRoute = PostIdRouteImport.update({
   path: '/post/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DukigenAgentIdRoute = DukigenAgentIdRouteImport.update({
+  id: '/$agentId',
+  path: '/$agentId',
+  getParentRoute: () => DukigenRoute,
+} as any)
 const ApiSyncEventsRoute = ApiSyncEventsRouteImport.update({
   id: '/api/sync-events',
   path: '/api/sync-events',
@@ -207,7 +213,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/comments': typeof CommentsRoute
   '/dao': typeof DaoRoute
-  '/dukigen': typeof DukigenRoute
+  '/dukigen': typeof DukigenRouteWithChildren
   '/favorites': typeof FavoritesRoute
   '/formatdoc': typeof FormatdocRoute
   '/jobs': typeof JobsRoute
@@ -226,6 +232,7 @@ export interface FileRoutesByFullPath {
   '/api/notify-txs': typeof ApiNotifyTxsRoute
   '/api/seed': typeof ApiSeedRoute
   '/api/sync-events': typeof ApiSyncEventsRoute
+  '/dukigen/$agentId': typeof DukigenAgentIdRoute
   '/post/$id': typeof PostIdRoute
   '/rpc/$': typeof RpcSplatRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
@@ -241,7 +248,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/comments': typeof CommentsRoute
   '/dao': typeof DaoRoute
-  '/dukigen': typeof DukigenRoute
+  '/dukigen': typeof DukigenRouteWithChildren
   '/favorites': typeof FavoritesRoute
   '/formatdoc': typeof FormatdocRoute
   '/jobs': typeof JobsRoute
@@ -260,6 +267,7 @@ export interface FileRoutesByTo {
   '/api/notify-txs': typeof ApiNotifyTxsRoute
   '/api/seed': typeof ApiSeedRoute
   '/api/sync-events': typeof ApiSyncEventsRoute
+  '/dukigen/$agentId': typeof DukigenAgentIdRoute
   '/post/$id': typeof PostIdRoute
   '/rpc/$': typeof RpcSplatRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
@@ -276,7 +284,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/comments': typeof CommentsRoute
   '/dao': typeof DaoRoute
-  '/dukigen': typeof DukigenRoute
+  '/dukigen': typeof DukigenRouteWithChildren
   '/favorites': typeof FavoritesRoute
   '/formatdoc': typeof FormatdocRoute
   '/jobs': typeof JobsRoute
@@ -295,6 +303,7 @@ export interface FileRoutesById {
   '/api/notify-txs': typeof ApiNotifyTxsRoute
   '/api/seed': typeof ApiSeedRoute
   '/api/sync-events': typeof ApiSyncEventsRoute
+  '/dukigen/$agentId': typeof DukigenAgentIdRoute
   '/post/$id': typeof PostIdRoute
   '/rpc/$': typeof RpcSplatRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
@@ -331,6 +340,7 @@ export interface FileRouteTypes {
     | '/api/notify-txs'
     | '/api/seed'
     | '/api/sync-events'
+    | '/dukigen/$agentId'
     | '/post/$id'
     | '/rpc/$'
     | '/api/auth/login'
@@ -365,6 +375,7 @@ export interface FileRouteTypes {
     | '/api/notify-txs'
     | '/api/seed'
     | '/api/sync-events'
+    | '/dukigen/$agentId'
     | '/post/$id'
     | '/rpc/$'
     | '/api/auth/login'
@@ -399,6 +410,7 @@ export interface FileRouteTypes {
     | '/api/notify-txs'
     | '/api/seed'
     | '/api/sync-events'
+    | '/dukigen/$agentId'
     | '/post/$id'
     | '/rpc/$'
     | '/api/auth/login'
@@ -415,7 +427,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CommentsRoute: typeof CommentsRoute
   DaoRoute: typeof DaoRoute
-  DukigenRoute: typeof DukigenRoute
+  DukigenRoute: typeof DukigenRouteWithChildren
   FavoritesRoute: typeof FavoritesRoute
   FormatdocRoute: typeof FormatdocRoute
   JobsRoute: typeof JobsRoute
@@ -595,6 +607,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PostIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dukigen/$agentId': {
+      id: '/dukigen/$agentId'
+      path: '/$agentId'
+      fullPath: '/dukigen/$agentId'
+      preLoaderRoute: typeof DukigenAgentIdRouteImport
+      parentRoute: typeof DukigenRoute
+    }
     '/api/sync-events': {
       id: '/api/sync-events'
       path: '/api/sync-events'
@@ -675,11 +694,22 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface DukigenRouteChildren {
+  DukigenAgentIdRoute: typeof DukigenAgentIdRoute
+}
+
+const DukigenRouteChildren: DukigenRouteChildren = {
+  DukigenAgentIdRoute: DukigenAgentIdRoute,
+}
+
+const DukigenRouteWithChildren =
+  DukigenRoute._addFileChildren(DukigenRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CommentsRoute: CommentsRoute,
   DaoRoute: DaoRoute,
-  DukigenRoute: DukigenRoute,
+  DukigenRoute: DukigenRouteWithChildren,
   FavoritesRoute: FavoritesRoute,
   FormatdocRoute: FormatdocRoute,
   JobsRoute: JobsRoute,

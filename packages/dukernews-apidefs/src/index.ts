@@ -28,6 +28,10 @@ export * from './gen/schema_transcript_pb.js'
 // Re-export shared enums from dukiregistry-apidefs (single source of truth)
 export { ProductType, ProductTypeSchema, DukiType, DukiTypeSchema } from '@repo/dukiregistry-apidefs'
 
+// ChainContractEntry — local copy of the registry struct so dukernews
+// messages can embed it without cross-package imports.
+export { ChainContractEntrySchema, type ChainContractEntry } from './gen/dukigen_types_pb.js'
+
 // Export database schema and types
 export * from './db/index.js'
 export * from './utils/text.js'

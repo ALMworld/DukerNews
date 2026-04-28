@@ -1,0 +1,105 @@
+syntax = "proto3";
+
+package dukiregistry;
+
+// AlmWorldDukiMinter — DealDukiMinted event indexer.
+//
+// Mirrors the on-chain event:
+//   event DealDukiMinted(
+//     uint256 indexed sequence,
+//     address yangReceiver,
+//     address yinReceiver,
+//     address stablecoin,
+//     uint256 dukiAmount,
+//     uint256 almYangAmount,
+//     uint256 almYinAmount,
+//     address minter,
+//     uint256 agentId
+//   );
+//
+// All amounts are passed as strings because uint256 doesn't fit in proto
+// integer types. Stay textual end-to-end and let callers parse to BigInt
+// once at the edge.
+message DealDukiMintedEvent {
+  uint32 chain_eid       = 1;   // Chain (LayerZero EID) where the event was emitted
+  string sequence        = 2;   // Per-minter monotonic counter (uint256 as string)
+  string tx_hash         = 3;
+  uint64 block_number    = 4;
+  uint64 evt_time        = 5;   // Unix seconds (block timestamp)
+
+  string yang_receiver   = 6;   // Active receiver — gets ALM (and stablecoin settle in deal mints)
+  string yin_receiver    = 7;   // Passive receiver — empty/zero address for taiji mints
+  string stablecoin      = 8;   // Stablecoin paid in
+  string duki_amount     = 9;   // DUKI minted (d18, uint256 as string)
+  string alm_yang_amount = 10;  // ALM minted to yang (d18 as string)
+  string alm_yin_amount  = 11;  // ALM minted to yin  (d18 as string; "0" for taiji)
+  string minter          = 12;  // tx.origin / msg.sender that paid stablecoin
+  uint64 agent_id        = 13;  // dApp agent that originated the payment (0 = direct)
+}
+
+// ── Webhook: external service tells the worker about a tx that contains
+// DealDukiMinted events. The worker pulls the receipt and indexes them.
+message NotifyMinterTxReq {
+  string tx_hash   = 1;
+  uint32 chain_eid = 2;
+}
+
+message NotifyMinterTxResp {
+  repeated DealDukiMintedEvent events = 1;
+}
+
+// ── Catch-up sync via eth_getLogs over a block range.
+//   from_block = 0 → resume from the worker's last indexed block.
+//   to_block   = 0 → up to head.
+message SyncMinterEventsReq {
+  uint32 chain_eid       = 1;
+  uint64 from_block      = 2;
+  uint64 to_block        = 3;
+  uint64 max_block_range = 4;  // 0 = use server default
+}
+
+message SyncMinterEventsResp {
+  uint64 synced_up_to_block = 1;  // Highest block processed
+  uint32 events_indexed     = 2;  // New rows inserted (existing rows ignored)
+}
+
+// ── Query: deals that paid this agent.
+message GetAgentDealsReq {
+  uint64 agent_id = 1;
+  uint32 chain_eid = 2;  // 0 = all chains
+  string cursor    = 3;  // opaque (server-encoded over (block_number, sequence))
+  uint32 limit     = 4;  // server caps at 100, default 20
+}
+
+message GetAgentDealsResp {
+  repeated DealDukiMintedEvent events = 1;
+  string next_cursor = 2;
+  bool   has_more    = 3;
+}
+
+// ── Query: most recent deals across all agents (market activity feed).
+message GetRecentDealsReq {
+  uint32 chain_eid = 1;  // 0 = all chains
+  string cursor    = 2;
+  uint32 limit     = 3;
+}
+
+message GetRecentDealsResp {
+  repeated DealDukiMintedEvent events = 1;
+  string next_cursor = 2;
+  bool   has_more    = 3;
+}
+
+service AlmWorldMinterService {
+  // Webhook — accept a tx hash, pull its receipt, index any DealDukiMinted logs.
+  rpc NotifyMinterTx(NotifyMinterTxReq) returns (NotifyMinterTxResp);
+
+  // Backfill / catch-up via eth_getLogs over a block range.
+  rpc SyncMinterEvents(SyncMinterEventsReq) returns (SyncMinterEventsResp);
+
+  // Deals paid to a specific agent (newest first).
+  rpc GetAgentDeals(GetAgentDealsReq) returns (GetAgentDealsResp);
+
+  // Most recent deals across all agents (market activity feed).
+  rpc GetRecentDeals(GetRecentDealsReq) returns (GetRecentDealsResp);
+}

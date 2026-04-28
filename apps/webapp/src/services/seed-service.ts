@@ -19,6 +19,7 @@ import {
     PbEventSchema,
     PbPostDataSchema,
     WorksPostDataSchema,
+    ChainContractEntrySchema,
     type PbEvent,
 } from '@repo/dukernews-apidefs'
 
@@ -136,11 +137,14 @@ export function algoliaToEvents(item: AlgoliaItem, maxComments: number = 200): P
                                 case: 'works' as const,
                                 value: create(WorksPostDataSchema, {
                                     dukiType: seededRandom(item.id) > 0.5 ? DukiType.REVENUE_SHARE : DukiType.PROFIT_SHARE,
-                                    dukiValues: [Math.round((0.5 + seededRandom(item.id) * 9.5) * 100)],
-                                    dukiPledgeUrl: `https://dao.example.org/project/${item.id}`,
-                                    daoContractAddress: seededRandom(item.id) > 0.7
-                                        ? `0x${item.id.toString(16).padStart(40, 'a')}`
-                                        : '',
+                                    approxBps: Math.round((0.5 + seededRandom(item.id) * 9.5) * 100),
+                                    pledgeUrl: `https://dao.example.org/project/${item.id}`,
+                                    chainContracts: seededRandom(item.id) > 0.7
+                                        ? [create(ChainContractEntrySchema, {
+                                            chainEid: 31337,
+                                            contractAddr: `0x${item.id.toString(16).padStart(40, 'a')}`,
+                                        })]
+                                        : [],
                                     productType: [ProductType.DIGITAL, ProductType.PHYSICAL, ProductType.SERVICE][Math.floor(seededRandom(item.id + 3) * 3)],
                                     productTags: (() => {
                                         const r3 = seededRandom(item.id + 2)

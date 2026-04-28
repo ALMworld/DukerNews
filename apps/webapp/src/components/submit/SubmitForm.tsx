@@ -8,7 +8,7 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { create } from '@bufbuild/protobuf'
-import { PostKind, DukiType, ProductType, type PbPostData, PbPostDataSchema, WorksPostDataSchema } from '@repo/dukernews-apidefs'
+import { PostKind, DukiType, ProductType, type PbPostData, PbPostDataSchema, WorksPostDataSchema, ChainContractEntrySchema } from '@repo/dukernews-apidefs'
 import {
     MAX_DISPLAY_TAGS,
     DUKI_ICONS,
@@ -27,9 +27,7 @@ import { SectionHeader } from './SectionHeader'
 import { useAppForm } from './form-context'
 import { useDukigenAgent } from '../../client/useDukigenAgent'
 import type { DukigenAgent } from '../../client/registry-api'
-import { useChainId } from 'wagmi'
-import { CHAIN_ID_TO_EID } from '../../lib/contracts'
-import { useBookmarks } from '../../lib/bookmarks'
+import { getChainNameForEid } from '../../lib/contracts'
 
 import {
     HeartHandshake,
@@ -45,7 +43,6 @@ import {
     Hash,
     HeartPulse,
     Lock,
-    Star,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -55,12 +52,6 @@ interface SubmitFormValues {
     url: string
     text: string
     locale: SupportedLocale
-    productType: ProductType
-    // productType is only for works
-    dukiType: DukiType
-    dukiPercent: string
-    daoUrl: string
-    daoContract: string
     tags: string
 
     // voice
@@ -75,12 +66,6 @@ const KIND_OPTIONS = [
     PostKind.WORKS,
     // PostKind.VOICE,  // commented out for now
 ] as const
-
-const CATEGORY_OPTIONS = [
-    { value: ProductType.DIGITAL, label: <span className="flex items-center gap-1">{PRODUCT_ICONS[ProductType.DIGITAL] && (() => { const I = PRODUCT_ICONS[ProductType.DIGITAL]!; return <I size={12} />; })()}{PRODUCT_LABELS[ProductType.DIGITAL]}</span>, tooltip: 'Software, apps, SaaS, digital goods' },
-    { value: ProductType.PHYSICAL, label: <span className="flex items-center gap-1">{PRODUCT_ICONS[ProductType.PHYSICAL] && (() => { const I = PRODUCT_ICONS[ProductType.PHYSICAL]!; return <I size={12} />; })()}{PRODUCT_LABELS[ProductType.PHYSICAL]}</span>, tooltip: 'Hardware, manufactured goods, physical products' },
-    { value: ProductType.SERVICE, label: <span className="flex items-center gap-1">{PRODUCT_ICONS[ProductType.SERVICE] && (() => { const I = PRODUCT_ICONS[ProductType.SERVICE]!; return <I size={12} />; })()}{PRODUCT_LABELS[ProductType.SERVICE]}</span>, tooltip: 'Consulting, freelancing, professional services' },
-]
 
 const inputCls =
     'rounded border border-[color:var(--border)] text-sm px-2 py-1.5 outline-none transition-colors focus:border-[color:var(--duki-500)]'
@@ -105,7 +90,6 @@ export default function SubmitForm() {
     const { dispatch, step, txHash, error: submitError, reset: _reset } = useChainHandle()
     const navigate = useNavigate()
     const queryClient = useQueryClient()
-    const chainId = useChainId()
 
     // ── DukiGen Agent lookup ────────────────────────────────
     const {
@@ -142,11 +126,6 @@ export default function SubmitForm() {
             url: '',
             text: '',
             locale: userLocale,
-            productType: ProductType.DIGITAL as ProductType,
-            dukiType: DukiType.REVENUE_SHARE as DukiType,
-            dukiPercent: '',
-            daoUrl: '',
-            daoContract: '',
             tags: '',
         } satisfies SubmitFormValues,
         onSubmit: async ({ value }) => {
@@ -154,9 +133,14 @@ export default function SubmitForm() {
             if (!requireAuth()) return
 
             const isWorks = value.kind === PostKind.WORKS
+            // Works posts inherit product/duki/pledge from the loaded agent. No
+            // agent → no Works payload to construct, and the submit button is
+            // already disabled in that case.
+            if (isWorks && !agentInfo) return
+
             let postData: PbPostData | undefined = undefined
 
-            if (isWorks) {
+            if (isWorks && agentInfo) {
                 const productTags = value.tags
                     .split(',')
                     .map((t) => t.trim().toLowerCase())
@@ -166,14 +150,15 @@ export default function SubmitForm() {
                     payload: {
                         case: 'works',
                         value: create(WorksPostDataSchema, {
-                            dukiType: value.dukiType,
-                            dukiValues: value.dukiPercent
-                                ? [Math.round(parseFloat(value.dukiPercent) * 100)]
-                                : [],
-                            daoUrl: value.daoUrl.trim(),
-                            daoContractAddress: value.daoContract.trim(),
+                            dukiType: Number(agentInfo.dukiType) as DukiType,
+                            approxBps: agentInfo.approxBps,
+                            pledgeUrl: agentInfo.pledgeUrl,
+                            chainContracts: agentInfo.chainContracts.map(c => create(ChainContractEntrySchema, {
+                                chainEid: c.chainEid,
+                                contractAddr: c.contractAddr,
+                            })),
                             productTags,
-                            productType: value.productType,
+                            productType: Number(agentInfo.productType) as ProductType,
                         }),
                     },
                 })
@@ -213,26 +198,6 @@ export default function SubmitForm() {
             await dispatch(txData, paymentValue.method !== 'direct')
         },
     })
-
-    // ── Inherit fields from the loaded agent ─────────────────────────────
-    // When an agent is loaded, the post inherits its productType, dukiType,
-    // governance URL, and current-chain deployed contract from the agent —
-    // these were the visual duplicates between the agent card and the form
-    // below it. The form values still get sent on submit so the post payload
-    // remains complete; we just stop asking the user for things the agent
-    // already declares.
-    useEffect(() => {
-        if (!agentInfo) return
-        form.setFieldValue('productType', Number(agentInfo.productType) as ProductType)
-        form.setFieldValue('dukiType', Number(agentInfo.dukiType) as DukiType)
-        if (agentInfo.pledgeUrl) form.setFieldValue('daoUrl', agentInfo.pledgeUrl)
-        // Pick the chainContract entry matching the user's current chain. EID
-        // is what's stored on-chain, so map chainId → EID with the same table
-        // the rest of the app uses.
-        const currentEid = CHAIN_ID_TO_EID[chainId] ?? chainId
-        const match = agentInfo.chainContracts?.find(c => Number(c.chainEid) === currentEid)
-        if (match?.contractAddr) form.setFieldValue('daoContract', match.contractAddr)
-    }, [agentInfo, chainId])
 
     return (
         <div className="py-2 px-2 sm:px-3">
@@ -364,12 +329,16 @@ export default function SubmitForm() {
                             <>
                                 <SectionHeader icon={HeartHandshake} label="DUKI · Works Details" />
 
-                                {/* ── DukiGen Agent ID ── */}
+                                {/* ── DukiGen Agent ID — required.
+                                    Everything else under DUKI · Works Details
+                                    (productType, dukiType, approxBps, pledgeUrl,
+                                    chainContracts) is inherited verbatim from the
+                                    agent. The post adds only its own tags. */}
                                 <div>
                                     <label className="mb-0.5 flex items-center gap-1.5 text-xs" style={{ color: 'var(--meta-color)' }}>
                                         <Boxes size={11} />
                                         <span className="font-medium">DukiGen Agent ID</span>
-                                        <span className="opacity-60">(optional)</span>
+                                        <span style={{ color: 'var(--duki-400)' }}>*</span>
                                     </label>
                                     <div className="flex items-center gap-2">
                                         <input
@@ -417,134 +386,22 @@ export default function SubmitForm() {
                                         <p className="mt-1 text-xs" style={{ color: '#ef4444' }}>{agentError}</p>
                                     )}
 
-                                    {/* Agent preview card (read-only) */}
-                                    {agentInfo && <AgentPreviewCard agent={agentInfo} />}
+                                    {/* Agent preview card (read-only). The post's
+                                        own Tags input lives inside the card as
+                                        the one editable Works field — keeps the
+                                        post-level metadata visually grouped with
+                                        the agent metadata it complements. */}
+                                    {agentInfo && (
+                                        <AgentPreviewCard agent={agentInfo}>
+                                            <form.AppField
+                                                name="tags"
+                                                children={(field) => (
+                                                    <field.TextField label="Tags" hint={`(max ${MAX_DISPLAY_TAGS})`} tooltip="Comma-separated tags to help categorize this post" placeholder="ai, web3, oss" />
+                                                )}
+                                            />
+                                        </AgentPreviewCard>
+                                    )}
                                 </div>
-
-
-                                {/* Product Category — only when there's no agent.
-                                    With an agent loaded, productType is inherited
-                                    silently and shown in the agent card above. */}
-                                {!hasAgent && (
-                                    <form.AppField
-                                        name="productType"
-                                        children={(field) => (
-                                            <field.PillField label="Product Category" tooltip="What type of product or service is this?" options={CATEGORY_OPTIONS} />
-                                        )}
-                                    />
-                                )}
-
-                                {/* DUKI Contribution — always shown.
-                                    This is post-specific (the % of *this* post's
-                                    payment that goes to DUKI), distinct from the
-                                    agent's indicative `approxBps` shown in the card.
-                                    With an agent loaded, the Revenue/Profit toggle
-                                    is hidden — that's an agent-level choice.       */}
-                                <form.Field name="dukiPercent">
-                                    {(pctField) => (
-                                        <form.Field name="dukiType">
-                                            {(typeField) => {
-                                                const pct = pctField.state.value
-                                                const isRevenue = typeField.state.value === DukiType.REVENUE_SHARE
-                                                return (
-                                                    <div title="Percentage of revenue or profit pledged to DUKI for this post — distinct from the agent's indicative default.">
-                                                        <label className="mb-0.5 flex items-center gap-1.5 text-xs" style={{ color: 'var(--meta-color)' }}>
-                                                            <span className="font-medium">Your DUKI Contribution</span>
-                                                            {pct && (() => {
-                                                                const Icon = DUKI_ICONS[typeField.state.value]
-                                                                return Icon ? (
-                                                                    <span className="flex items-center gap-0.5" style={{ color: 'var(--duki-400)' }}>
-                                                                        <Icon size={10} />
-                                                                        {pct}%
-                                                                    </span>
-                                                                ) : null
-                                                            })()}
-                                                        </label>
-                                                        <div className="flex items-center gap-1.5 flex-wrap">
-                                                            <input
-                                                                type="number"
-                                                                step="0.01"
-                                                                min="0"
-                                                                max="100"
-                                                                value={pctField.state.value}
-                                                                onChange={(e) => pctField.handleChange(e.target.value)}
-                                                                onBlur={pctField.handleBlur}
-                                                                placeholder="2.5"
-                                                                className={inputCls}
-                                                                style={{ ...inputStyle, width: '72px' }}
-                                                            />
-                                                            <span className="text-xs" style={{ color: 'var(--meta-color)' }}>% of</span>
-                                                            {hasAgent ? (
-                                                                // Locked to agent's choice — show as a static label.
-                                                                <span className="text-xs font-medium" style={{ color: 'var(--duki-400)' }}>
-                                                                    {isRevenue ? 'Revenue' : 'Profit'}
-                                                                </span>
-                                                            ) : (
-                                                                <>
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => typeField.handleChange(DukiType.REVENUE_SHARE)}
-                                                                        className={cn(
-                                                                            'text-xs font-medium transition-colors',
-                                                                            isRevenue ? '' : 'line-through opacity-40'
-                                                                        )}
-                                                                        style={{ color: isRevenue ? 'var(--duki-400)' : 'var(--meta-color)' }}
-                                                                    >
-                                                                        Revenue
-                                                                    </button>
-                                                                    <span className="text-xs" style={{ color: 'var(--meta-color)' }}>/</span>
-                                                                    <button
-                                                                        type="button"
-                                                                        onClick={() => typeField.handleChange(DukiType.PROFIT_SHARE)}
-                                                                        className={cn(
-                                                                            'text-xs font-medium transition-colors',
-                                                                            !isRevenue ? '' : 'line-through opacity-40'
-                                                                        )}
-                                                                        style={{ color: !isRevenue ? 'var(--duki-400)' : 'var(--meta-color)' }}
-                                                                    >
-                                                                        Profit
-                                                                    </button>
-                                                                </>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                )
-                                            }}
-                                        </form.Field>
-                                    )}
-                                </form.Field>
-
-                                {/* DAO URL + DAO contract — only when no agent.
-                                    With an agent loaded these come from
-                                    agentInfo.pledgeUrl and the matching entry in
-                                    agentInfo.chainContracts (current chain). The
-                                    sync effect populates the form values silently,
-                                    so the on-chain payload still includes them. */}
-                                {!hasAgent && (
-                                    <>
-                                        <form.AppField
-                                            name="daoUrl"
-                                            children={(field) => (
-                                                <field.TextField label="DAO URL" hint="(project page)" tooltip="Link to the DAO or project governance page" placeholder="https://dao.example.com" type="url" />
-                                            )}
-                                        />
-                                        <form.AppField
-                                            name="daoContract"
-                                            children={(field) => (
-                                                <field.TextField label="DAO contract" hint="(optional)" tooltip="Smart contract address for the DAO or pledge" placeholder="0x…" />
-                                            )}
-                                        />
-                                    </>
-                                )}
-
-                                {/* Tags — always asked at post level. Distinct from
-                                    the agent record (which no longer carries tags). */}
-                                <form.AppField
-                                    name="tags"
-                                    children={(field) => (
-                                        <field.TextField label="Tags" hint={`(max ${MAX_DISPLAY_TAGS})`} tooltip="Comma-separated tags to help categorize this post" placeholder="ai, web3, oss" />
-                                    )}
-                                />
                             </>
                         )
                     }
@@ -564,20 +421,29 @@ export default function SubmitForm() {
                         amountSubLabel="pay the world to pay attention"
                         onChange={setPaymentValue}
                     >
-                        {/* Submit button */}
-                        <div className="flex items-center gap-3 pt-1">
-                            <SubmitOnChainButton
-                                label={
-                                    paymentValue.method === 'direct'
-                                        ? `Submit On-Chain${paymentValue.amount > 0 ? ` ($${paymentValue.amount})` : ''}`
-                                        : `Submit via x402${paymentValue.amount > 0 ? ` ($${paymentValue.amount})` : ''}`
-                                }
-                                step={step}
-                                successMessage="Post submitted on-chain!"
-                                type="submit"
-                                disabled={isConfirmed}
-                            />
-                        </div>
+                        {/* Submit button — Works requires an agent. */}
+                        <form.Subscribe selector={(s) => s.values.kind}>
+                            {(kind) => {
+                                const needsAgent = kind === PostKind.WORKS && !hasAgent
+                                return (
+                                    <div className="flex items-center gap-3 pt-1">
+                                        <SubmitOnChainButton
+                                            label={
+                                                needsAgent
+                                                    ? 'Load a DukiGen Agent first'
+                                                    : paymentValue.method === 'direct'
+                                                        ? `Submit On-Chain${paymentValue.amount > 0 ? ` ($${paymentValue.amount})` : ''}`
+                                                        : `Submit via x402${paymentValue.amount > 0 ? ` ($${paymentValue.amount})` : ''}`
+                                            }
+                                            step={step}
+                                            successMessage="Post submitted on-chain!"
+                                            type="submit"
+                                            disabled={isConfirmed || needsAgent}
+                                        />
+                                    </div>
+                                )
+                            }}
+                        </form.Subscribe>
 
                         {/* Tx status */}
                         {txHash && (
@@ -632,7 +498,7 @@ export default function SubmitForm() {
 // for it again in the form below — the parent component hides those inputs
 // when an agent is loaded.
 
-function AgentPreviewCard({ agent }: { agent: DukigenAgent }) {
+function AgentPreviewCard({ agent, children }: { agent: DukigenAgent; children?: React.ReactNode }) {
     const dukiTypeLabel =
         agent.dukiType === 1 ? 'Revenue'
         : agent.dukiType === 2 ? 'Profit'
@@ -644,11 +510,6 @@ function AgentPreviewCard({ agent }: { agent: DukigenAgent }) {
     const META = 'var(--meta-color)'
     const FG = 'var(--foreground)'
     const ROW_DIVIDER = '1px solid color-mix(in srgb, var(--border) 60%, transparent)'
-
-    // Bookmark toggle so users can save an agent right from /submit without
-    // hopping over to /market.
-    const { isBookmarked, toggle } = useBookmarks()
-    const bookmarked = isBookmarked(agent.agentId)
 
     const Row = ({ children }: { children: React.ReactNode }) => (
         <div className="px-3 py-1.5" style={{ borderTop: ROW_DIVIDER, color: META }}>
@@ -685,15 +546,20 @@ function AgentPreviewCard({ agent }: { agent: DukigenAgent }) {
     return (
         <div
             className="mt-2 overflow-hidden rounded-lg border text-xs"
-            style={{ borderColor: 'var(--duki-500)', background: 'var(--muted)', color: FG }}
+            style={{
+                // Soft border in the same family as the rest of the form so the
+                // card reads as part of the page, not a stamped overlay. The
+                // duki-300/Lock banner still carries the "this is NFT data"
+                // signal without needing a loud frame.
+                borderColor: 'color-mix(in srgb, var(--border) 70%, transparent)',
+                background: 'var(--muted)', color: FG,
+            }}
         >
-            {/* ── Banner: this card is on-chain NFT data, not an editable form. ── */}
-            {/*    Strip across the top makes the read-only framing impossible to    */}
-            {/*    miss. Bookmark star on the right is the only interactive element. */}
+            {/* ── Banner: this card is on-chain NFT data. ── */}
             <div
-                className="flex items-center justify-between px-3 py-1"
+                className="flex items-center px-3 py-1"
                 style={{
-                    background: 'rgba(139,92,246,0.08)',
+                    background: 'rgba(139,92,246,0.06)',
                     borderBottom: ROW_DIVIDER,
                     fontSize: 10, fontWeight: 600, letterSpacing: '0.06em',
                     textTransform: 'uppercase', color: 'var(--duki-300)',
@@ -701,21 +567,8 @@ function AgentPreviewCard({ agent }: { agent: DukigenAgent }) {
             >
                 <span className="inline-flex items-center gap-1.5">
                     <Lock size={10} />
-                    NFT properties · read-only
+                    NFT properties
                 </span>
-                <button
-                    type="button"
-                    onClick={() => toggle(agent.agentId)}
-                    aria-label={bookmarked ? 'Remove bookmark' : 'Bookmark this agent'}
-                    title={bookmarked ? 'Remove bookmark' : 'Bookmark this agent'}
-                    style={{
-                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                        width: 22, height: 22, border: 'none', background: 'transparent',
-                        cursor: 'pointer', color: bookmarked ? '#f59e0b' : 'var(--duki-300)',
-                    }}
-                >
-                    <Star size={12} fill={bookmarked ? '#f59e0b' : 'transparent'} />
-                </button>
             </div>
 
             {/* ── Header: name · #id ── */}
@@ -824,7 +677,7 @@ function AgentPreviewCard({ agent }: { agent: DukigenAgent }) {
                                     }}
                                     title={c.contractAddr}
                                 >
-                                    <span className="opacity-60">{chainLabelForEid(Number(c.chainEid))}</span>
+                                    <span className="opacity-60">{getChainNameForEid(Number(c.chainEid))}</span>
                                     <span>{shortAddr(c.contractAddr)}</span>
                                 </span>
                             ))}
@@ -832,6 +685,11 @@ function AgentPreviewCard({ agent }: { agent: DukigenAgent }) {
                     </div>
                 </Row>
             )}
+
+            {/* ── Editable post-level extras (e.g. Tags) ── */}
+            {/*    Lives inside the card so the post's only Works-specific input  */}
+            {/*    sits with the agent metadata it complements, not floating below. */}
+            {children && <Row>{children}</Row>}
         </div>
     )
 }
@@ -849,14 +707,3 @@ function shortAddr(addr: string): string {
     return `${addr.slice(0, 6)}…${addr.slice(-4)}`
 }
 
-/** Friendly label for a known LayerZero EID, falling back to "eid N". */
-const EID_NAMES: Record<number, string> = {
-    31337: 'Anvil',
-    30101: 'Ethereum',
-    30319: 'World',
-    30274: 'XLayer',
-    11155111: 'Sepolia',
-}
-function chainLabelForEid(eid: number): string {
-    return EID_NAMES[eid] ?? `eid ${eid}`
-}

@@ -35,13 +35,17 @@ message PbUser {
 
 // ─── Post Data (oneof payload per post type) ────────────
 
+// All non-tag fields here are inherited verbatim from the post's DukigenAgent
+// — same names and same shapes as DukigenAgent so callers can read either
+// without having to remember which side they're on. Only `product_tags` is
+// post-specific (the agent record carries no tags).
 message WorksPostData {
-  dukiregistry.DukiType    duki_type            = 1;  // Donation model (REVENUE_SHARE or PROFIT_SHARE)
-  repeated int32           duki_values          = 2;  // Donation values (basis pts: 250 = 2.50%)
-  string                   duki_pledge_url      = 3;  // Pledge URL (DUKI-compliant DAO or project page)
-  repeated string          product_tags         = 4;  // Product tags (e.g. ["ai", "web3", "oss"])
-  string                   dao_contract_address = 5;  // DAO contract address (on-chain)
-  dukiregistry.ProductType product_type         = 6;  // What kind of product
+  dukiregistry.DukiType                duki_type        = 1;
+  uint32                               approx_bps       = 2;
+  string                               pledge_url       = 3;
+  repeated string                      product_tags     = 4;
+  repeated dukiregistry.ChainContractEntry chain_contracts = 5;
+  dukiregistry.ProductType             product_type     = 6;
 }
 
 message VoicePostData {

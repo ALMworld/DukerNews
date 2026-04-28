@@ -9,7 +9,7 @@ import { createConnectTransport } from '@connectrpc/connect-web'
 import { QueryService } from '@repo/dukernews-apidefs'
 import { getKysely } from '../../../lib/db'
 import { MIGRATED } from '../../../lib/grpc-goapi-transport'
-import { DEFAULT_CHAIN_ID } from '../../../lib/contracts'
+import { DEFAULT_CHAIN_ID, getEidForChain } from '../../../lib/contracts'
 import { getRegistryIdentities, pickPrimaryIdentity } from '../../../server/registry-worker-client'
 import {
     consumeNonce,
@@ -21,12 +21,6 @@ import {
     getJwtExpirySecs,
     type JWTPayload,
 } from '../../../server/auth-utils'
-
-const CHAIN_ID_TO_EID: Record<number, number> = {
-    31337: 31337,
-    196: 30274,
-    11155111: 11155111,
-}
 
 export const Route = createFileRoute('/api/auth/login')({
     server: {
@@ -123,7 +117,7 @@ export const Route = createFileRoute('/api/auth/login')({
                     // pull every chain identity for this address from the registry
                     // worker, pick a primary, and cache the merged list locally.
                     if (!username) {
-                        const chainEid = CHAIN_ID_TO_EID[DEFAULT_CHAIN_ID] ?? DEFAULT_CHAIN_ID
+                        const chainEid = getEidForChain(DEFAULT_CHAIN_ID)
                         const identities = await getRegistryIdentities(address.toLowerCase(), 0)
                         const primary = pickPrimaryIdentity(identities, chainEid)
                         if (primary) {

@@ -30,18 +30,20 @@ interface WorksBadgeProps {
 export function WorksBadge({ data }: WorksBadgeProps) {
     const {
         dukiType,
-        dukiValues,
+        approxBps,
         productTags,
         productType,
-        daoUrl,
-        daoContractAddress,
+        pledgeUrl,
+        chainContracts,
     } = data
 
     const DukiIcon = DUKI_ICONS[dukiType] ?? null
-    const formattedValues = dukiValues
-        .map(bp => (bp / 100).toFixed(bp % 100 === 0 ? 0 : 1) + '%')
-        .join(' · ')
-    const link = daoUrl || daoContractAddress || null
+    const formattedApprox = approxBps
+        ? (approxBps / 100).toFixed(approxBps % 100 === 0 ? 0 : 1) + '%'
+        : ''
+    // Prefer the off-chain pledge URL; otherwise link to the first deployed
+    // contract entry. Both are agent-inherited.
+    const link = pledgeUrl || chainContracts[0]?.contractAddr || null
     const tags = productTags.slice(0, MAX_DISPLAY_TAGS)
     const TypeIcon = PRODUCT_ICONS[productType] ?? null
     const typeLabel = PRODUCT_LABELS[productType] ?? ''
@@ -49,7 +51,7 @@ export function WorksBadge({ data }: WorksBadgeProps) {
     return (
         <>
             {/* Duki donation values */}
-            {DukiIcon && formattedValues && (
+            {DukiIcon && formattedApprox && (
                 <>
                     {link ? (
                         <a
@@ -58,17 +60,17 @@ export function WorksBadge({ data }: WorksBadgeProps) {
                             rel="noopener noreferrer"
                             className="meta-link no-underline inline-flex items-center gap-0.5"
                             style={{ color: 'inherit', transform: 'translateY(1px)' }}
-                            title={`${dukiType === DukiType.REVENUE_SHARE ? 'Revenue' : 'Profit'}: ${formattedValues}`}
+                            title={`${dukiType === DukiType.REVENUE_SHARE ? 'Revenue' : 'Profit'}: ${formattedApprox}`}
                         >
-                            <DukiIcon size={META_ICON_SIZE} />{formattedValues}
+                            <DukiIcon size={META_ICON_SIZE} />{formattedApprox}
                         </a>
                     ) : (
                         <span
                             className="meta-link inline-flex items-center gap-0.5"
                             style={{ color: 'inherit', transform: 'translateY(1px)' }}
-                            title={`${dukiType === DukiType.REVENUE_SHARE ? 'Revenue' : 'Profit'}: ${formattedValues}`}
+                            title={`${dukiType === DukiType.REVENUE_SHARE ? 'Revenue' : 'Profit'}: ${formattedApprox}`}
                         >
-                            <DukiIcon size={META_ICON_SIZE} />{formattedValues}
+                            <DukiIcon size={META_ICON_SIZE} />{formattedApprox}
                         </span>
                     )}
                 </>

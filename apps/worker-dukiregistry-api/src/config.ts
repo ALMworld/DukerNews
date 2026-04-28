@@ -6,7 +6,7 @@
  */
 
 import { almDeployments, type AlmDeployment } from 'contract-duki-alm-world/deployments'
-import { dukerRegistryAbi, dukigenRegistryAbi } from 'contract-duki-alm-world'
+import { dukerRegistryAbi, dukigenRegistryAbi, almWorldDukiMinterAbi } from 'contract-duki-alm-world'
 
 // ── Chain config ──────────────────────────────────────────────
 
@@ -14,6 +14,7 @@ export interface ChainConfig {
     rpcUrl: string
     dukerRegistryAddress: `0x${string}`
     dukigenRegistryAddress: `0x${string}`
+    almWorldDukiMinterAddress: `0x${string}`
 }
 
 /**
@@ -28,6 +29,7 @@ function buildChainConfigs(): Record<number, ChainConfig> {
             rpcUrl: d.rpcUrl ?? '',
             dukerRegistryAddress: d.dukerRegistry,
             dukigenRegistryAddress: d.dukigenRegistry,
+            almWorldDukiMinterAddress: d.almWorldDukiMinter,
         }
     }
     return configs
@@ -53,4 +55,8 @@ export const DUKER_EVENT_ABI = dukerRegistryAbi.filter(
 
 export const DUKIGEN_EVENT_ABI = dukigenRegistryAbi.filter(
     (item) => item.type === 'event' && item.name === 'DukigenEvent'
+)
+
+export const DEAL_DUKI_MINTED_ABI = almWorldDukiMinterAbi.filter(
+    (item) => item.type === 'event' && item.name === 'DealDukiMinted'
 )

@@ -24,7 +24,7 @@ import {
 } from 'lucide-react'
 import { isAddress } from 'viem'
 import { useAuthStore } from '../lib/authStore'
-import { ADDRESSES, CHAIN_ID_TO_EID, DEFAULT_CHAIN_ID, SUPPORTED_CHAINS, dukigenRegistryAbi } from '../lib/contracts'
+import { ADDRESSES, DEFAULT_CHAIN_ID, SUPPORTED_CHAINS, dukigenRegistryAbi } from '../lib/contracts'
 import { notifyDukiRegistry } from '../client/registry-api'
 import { DukiBpsSlider } from '../components/DukiBpsSlider'
 import { addBookmark } from '../lib/bookmarks'
@@ -57,7 +57,7 @@ const DUKI_OPTIONS = [
 // "Custom EID…" option lets users point at chains we haven't added yet.
 type ChainOption = { eid: number; name: string }
 const CHAIN_OPTIONS: Array<ChainOption> = SUPPORTED_CHAINS.map(c => ({
-    eid: CHAIN_ID_TO_EID[c.id] ?? c.id,
+    eid: c.eid,
     name: c.name,
 }))
 const CUSTOM_EID_SENTINEL = '__custom__'

@@ -24,7 +24,12 @@ export const DEFAULT_CHAIN_ID: number =
 export const MIN_APPROVE_MICRO = BigInt(8_000_000)
 
 // ── Chain EID mapping (chain ID → LayerZero Endpoint ID) ─────────────────────
-export const CHAIN_ID_TO_EID: Record<number, number> = {
+// Single source of truth for the chain↔EID relation. The full chain metadata
+// lives in `SUPPORTED_CHAINS` below (with `eid` on each entry); this map is
+// the bootstrapping table SUPPORTED_CHAINS itself uses, plus the lookup that
+// `getEidForChain` exposes to callers. EID names come from
+// `getChainNameForEid`, also derived from SUPPORTED_CHAINS.
+const CHAIN_ID_TO_EID: Record<number, number> = {
     31337: 31337,       // local Anvil uses chainId as EID
     196: 30274,         // XLayer
     11155111: 11155111, // Sepolia (no LZ EID yet, use chainId)
@@ -72,12 +77,23 @@ export type StablecoinMeta = {
 // ── Chain metadata for UI chain selector ──────────────────────────────────────
 export type ChainMeta = {
     id: number
+    /** LayerZero Endpoint ID — what's stored on-chain; equals `id` for chains without an LZ EID. */
+    eid: number
     name: string
     stablecoins: StablecoinMeta[]
     explorerUrl: string
     isHome: boolean  // true = main deployment chain, both methods; false = x402 only
     /** Native gas token symbol — OKB on XLayer, ETH on Ethereum/Sepolia */
     nativeCurrency: { symbol: string; decimals: number }
+}
+
+// Friendly labels for EIDs we don't operate on directly (e.g. agents may
+// reference Ethereum or World even though we don't transact there). These are
+// only used by `getChainNameForEid` as a fallback when the EID isn't in
+// SUPPORTED_CHAINS.
+const EXTRA_EID_NAMES: Record<number, string> = {
+    30101: 'Ethereum',
+    30319: 'World',
 }
 
 // ── Demo display override ────────────────────────────────────────────────────
@@ -105,6 +121,7 @@ export const DEMO_DISPLAY = DEMO_MODE
 export const SUPPORTED_CHAINS: ChainMeta[] = [
     {
         id: XLAYER_CHAIN_ID,
+        eid: CHAIN_ID_TO_EID[XLAYER_CHAIN_ID] ?? XLAYER_CHAIN_ID,
         name: 'XLayer',
         stablecoins: [
             { symbol: 'USDT', name: 'USD₮0', address: '0x779Ded0c9e1022225f8E0630b35a9b54bE713736' as Address, decimals: 6 },
@@ -115,6 +132,7 @@ export const SUPPORTED_CHAINS: ChainMeta[] = [
     },
     {
         id: SEPOLIA_CHAIN_ID,
+        eid: CHAIN_ID_TO_EID[SEPOLIA_CHAIN_ID] ?? SEPOLIA_CHAIN_ID,
         name: DEMO_DISPLAY.chainName,
         stablecoins: [
             { symbol: DEMO_DISPLAY.stablecoinSymbol, name: DEMO_DISPLAY.stablecoinName, address: '0x60Aad2540Cc4CE0FA6188a796fD9B8e48917004c' as Address, decimals: 6 },
@@ -125,6 +143,7 @@ export const SUPPORTED_CHAINS: ChainMeta[] = [
     },
     {
         id: LOCAL_CHAIN_ID,
+        eid: CHAIN_ID_TO_EID[LOCAL_CHAIN_ID] ?? LOCAL_CHAIN_ID,
         name: 'Anvil',
         stablecoins: almDeployments[CHAIN_ID_TO_EID[LOCAL_CHAIN_ID] ?? LOCAL_CHAIN_ID]?.mockUsdt
             ? [{ symbol: 'USDT (Mock)', name: 'Mock USDT', address: almDeployments[CHAIN_ID_TO_EID[LOCAL_CHAIN_ID] ?? LOCAL_CHAIN_ID].mockUsdt! as Address, decimals: 6 }]
@@ -156,6 +175,18 @@ export function getDefaultStablecoin(chainId: number): StablecoinMeta {
 export function getStablecoins(chainId: number): StablecoinMeta[] {
     const chain = SUPPORTED_CHAINS.find(c => c.id === chainId)
     return chain?.stablecoins ?? []
+}
+
+/** Resolve a chainId to its LayerZero EID. Falls back to chainId itself for unknown chains. */
+export function getEidForChain(chainId: number): number {
+    return SUPPORTED_CHAINS.find(c => c.id === chainId)?.eid ?? CHAIN_ID_TO_EID[chainId] ?? chainId
+}
+
+/** Friendly label for an EID — uses SUPPORTED_CHAINS first, then known fallbacks, then `eid N`. */
+export function getChainNameForEid(eid: number): string {
+    return SUPPORTED_CHAINS.find(c => c.eid === eid)?.name
+        ?? EXTRA_EID_NAMES[eid]
+        ?? `eid ${eid}`
 }
 
 // ── ABIs ────────────────────────────────────────────────────────────────────

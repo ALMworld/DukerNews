@@ -108,15 +108,21 @@ export async function syncDukerEvents(chainEid: number, lastEvtSeq: number = 0):
 
 import { createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
-import { DukigenRegistryService, type DukigenAgent } from '@repo/dukiregistry-apidefs'
+import {
+    DukigenRegistryService,
+    AlmWorldMinterService,
+    type DukigenAgent,
+    type DealDukiMintedEvent,
+} from '@repo/dukiregistry-apidefs'
 
 const dukigenTransport = createConnectTransport({
     baseUrl: REGISTRY_WORKER_URL,
 })
 
 export const dukigenClient = createClient(DukigenRegistryService, dukigenTransport)
+export const minterClient = createClient(AlmWorldMinterService, dukigenTransport)
 
-export type { DukigenAgent }
+export type { DukigenAgent, DealDukiMintedEvent }
 
 /**
  * Fetch a DukiGen agent by token ID using the generated ConnectRPC client.
@@ -204,5 +210,70 @@ export async function listAgentsRanked(
         }
     } catch {
         return { items: [], nextCursor: '', hasMore: false }
+    }
+}
+
+// ── AlmWorldMinterService (DealDukiMinted feed) ─────────────────────────
+
+export type DealEventsPage = {
+    events: DealDukiMintedEvent[]
+    nextCursor: string
+    hasMore: boolean
+}
+
+const EMPTY_DEAL_PAGE: DealEventsPage = { events: [], nextCursor: '', hasMore: false }
+
+/** Fetch deals paid to a specific agent (newest first). */
+export async function getAgentDeals(
+    agentId: string | bigint,
+    opts: { chainEid?: number; cursor?: string; limit?: number } = {},
+): Promise<DealEventsPage> {
+    try {
+        const resp = await minterClient.getAgentDeals({
+            agentId: BigInt(agentId),
+            chainEid: opts.chainEid ?? 0,
+            cursor: opts.cursor ?? '',
+            limit: opts.limit ?? 20,
+        })
+        return {
+            events: resp.events ?? [],
+            nextCursor: resp.nextCursor ?? '',
+            hasMore: Boolean(resp.hasMore),
+        }
+    } catch {
+        return EMPTY_DEAL_PAGE
+    }
+}
+
+/** Fetch the most recent deals across all agents (market activity feed). */
+export async function getRecentDeals(
+    opts: { chainEid?: number; cursor?: string; limit?: number } = {},
+): Promise<DealEventsPage> {
+    try {
+        const resp = await minterClient.getRecentDeals({
+            chainEid: opts.chainEid ?? 0,
+            cursor: opts.cursor ?? '',
+            limit: opts.limit ?? 20,
+        })
+        return {
+            events: resp.events ?? [],
+            nextCursor: resp.nextCursor ?? '',
+            hasMore: Boolean(resp.hasMore),
+        }
+    } catch {
+        return EMPTY_DEAL_PAGE
+    }
+}
+
+/**
+ * Webhook the worker after a successful AlmWorldDukiMinter tx so it can pull
+ * the receipt and index the DealDukiMinted logs. Fire-and-forget — errors are
+ * logged but don't block the UI flow.
+ */
+export async function notifyMinterTx(txHash: string, chainEid: number): Promise<void> {
+    try {
+        await minterClient.notifyMinterTx({ txHash, chainEid })
+    } catch (err) {
+        console.warn('[registry-api] NotifyMinterTx error (non-blocking):', err)
     }
 }

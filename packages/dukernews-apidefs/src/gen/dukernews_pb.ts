@@ -4,7 +4,7 @@
 
 import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
-import type { DukiType, ProductType } from "./dukigen_types_pb";
+import type { ChainContractEntry, DukiType, ProductType } from "./dukigen_types_pb";
 import { file_dukigen_types } from "./dukigen_types_pb";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file dukernews.proto.
  */
 export const file_dukernews: GenFile = /*@__PURE__*/
-  fileDesc("Cg9kdWtlcm5ld3MucHJvdG8SBWR1a2VyIpgBCgZQYlVzZXISDwoHYWRkcmVzcxgBIAEoCRIQCgh1c2VybmFtZRgCIAEoCRINCgVrYXJtYRgDIAEoBRINCgVhYm91dBgEIAEoCRINCgVlbWFpbBgFIAEoCRIWCg5sYXRlc3RfZXZ0X3NlcRgGIAEoAxISCgpjcmVhdGVkX2F0GAcgASgDEhIKCnVwZGF0ZWRfYXQYCCABKAMizQEKDVdvcmtzUG9zdERhdGESKQoJZHVraV90eXBlGAEgASgOMhYuZHVraXJlZ2lzdHJ5LkR1a2lUeXBlEhMKC2R1a2lfdmFsdWVzGAIgAygFEhcKD2R1a2lfcGxlZGdlX3VybBgDIAEoCRIUCgxwcm9kdWN0X3RhZ3MYBCADKAkSHAoUZGFvX2NvbnRyYWN0X2FkZHJlc3MYBSABKAkSLwoMcHJvZHVjdF90eXBlGAYgASgOMhkuZHVraXJlZ2lzdHJ5LlByb2R1Y3RUeXBlIg8KDVZvaWNlUG9zdERhdGEiZQoKUGJQb3N0RGF0YRIlCgV3b3JrcxgBIAEoCzIULmR1a2VyLldvcmtzUG9zdERhdGFIABIlCgV2b2ljZRgCIAEoCzIULmR1a2VyLlZvaWNlUG9zdERhdGFIAEIJCgdwYXlsb2FkIqgDCgZQYlBvc3QSCgoCaWQYASABKAMSDwoHYWRkcmVzcxgCIAEoCRIQCgh1c2VybmFtZRgDIAEoCRINCgV0aXRsZRgEIAEoCRILCgN1cmwYBSABKAkSDgoGZG9tYWluGAYgASgJEgwKBHRleHQYByABKAkSEAoIdGl0bGVfZW4YCCABKAkSDgoGdXJsX2VuGAkgASgJEg8KB3RleHRfZW4YCiABKAkSHQoEa2luZBgLIAEoDjIPLmR1a2VyLlBvc3RLaW5kEg4KBmxvY2FsZRgMIAEoCRIOCgZwb2ludHMYDSABKAUSFQoNY29tbWVudF9jb3VudBgOIAEoBRINCgVmbGFncxgPIAEoBRIMCgRkZWFkGBAgASgIEhYKDmxhdGVzdF9ldnRfc2VxGBEgASgDEhIKCmNyZWF0ZWRfYXQYEiABKAMSEgoKdXBkYXRlZF9hdBgTIAEoAxIkCglwb3N0X2RhdGEYFCABKAsyES5kdWtlci5QYlBvc3REYXRhEhQKDGJvb3N0X2Ftb3VudBgVIAEoAxITCgt0b3RhbF9ib29zdBgWIAEoAyKuAgoJUGJDb21tZW50EgoKAmlkGAEgASgDEg8KB3Bvc3RfaWQYAiABKAMSEAoIdXNlcm5hbWUYAyABKAkSDAoEdGV4dBgEIAEoCRIOCgZsb2NhbGUYBSABKAkSEQoJcGFyZW50X2lkGAYgASgDEhUKDWFuY2VzdG9yX3BhdGgYByABKAkSDQoFZGVwdGgYCCABKAUSDgoGcG9pbnRzGAkgASgFEgwKBGRlYWQYCiABKAgSEgoKY3JlYXRlZF9hdBgLIAEoAxISCgpwb3N0X3RpdGxlGAwgASgJEhYKDmxhdGVzdF9ldnRfc2VxGA0gASgDEhIKCnVwZGF0ZWRfYXQYDiABKAMSFAoMYm9vc3RfYW1vdW50GA8gASgDEhMKC3RvdGFsX2Jvb3N0GBAgASgDIl8KBlBiVm90ZRIPCgdhZGRyZXNzGAEgASgJEiAKCGFnZ190eXBlGAIgASgOMg4uZHVrZXIuQWdnVHlwZRIOCgZhZ2dfaWQYAyABKAMSEgoKY3JlYXRlZF9hdBgEIAEoAyJfCgZQYkxpa2USDwoHYWRkcmVzcxgBIAEoCRIgCghhZ2dfdHlwZRgCIAEoDjIOLmR1a2VyLkFnZ1R5cGUSDgoGYWdnX2lkGAMgASgDEhIKCmNyZWF0ZWRfYXQYBCABKAMqOwoIUG9zdEtpbmQSGQoVUE9TVF9LSU5EX1VOU1BFQ0lGSUVEEAASCQoFV09SS1MQARIJCgVWT0lDRRACKl8KB0FnZ1R5cGUSGAoUQUdHX1RZUEVfVU5TUEVDSUZJRUQQABIRCg1BR0dfVFlQRV9VU0VSEAESEQoNQUdHX1RZUEVfUE9TVBACEhQKEEFHR19UWVBFX0NPTU1FTlQQA0J1Cgljb20uZHVrZXJCDkR1a2VybmV3c1Byb3RvUAFaJGdpdGh1Yi5jb20vYnVmYnVpbGQvYnVmLWV4YW1wbGVzL2dlbqICA0RYWKoCBUR1a2VyygIFRHVrZXLiAhFEdWtlclxHUEJNZXRhZGF0YeoCBUR1a2VyYgZwcm90bzM", [file_dukigen_types]);
+  fileDesc("Cg9kdWtlcm5ld3MucHJvdG8SBWR1a2VyIpgBCgZQYlVzZXISDwoHYWRkcmVzcxgBIAEoCRIQCgh1c2VybmFtZRgCIAEoCRINCgVrYXJtYRgDIAEoBRINCgVhYm91dBgEIAEoCRINCgVlbWFpbBgFIAEoCRIWCg5sYXRlc3RfZXZ0X3NlcRgGIAEoAxISCgpjcmVhdGVkX2F0GAcgASgDEhIKCnVwZGF0ZWRfYXQYCCABKAMi5AEKDVdvcmtzUG9zdERhdGESKQoJZHVraV90eXBlGAEgASgOMhYuZHVraXJlZ2lzdHJ5LkR1a2lUeXBlEhIKCmFwcHJveF9icHMYAiABKA0SEgoKcGxlZGdlX3VybBgDIAEoCRIUCgxwcm9kdWN0X3RhZ3MYBCADKAkSOQoPY2hhaW5fY29udHJhY3RzGAUgAygLMiAuZHVraXJlZ2lzdHJ5LkNoYWluQ29udHJhY3RFbnRyeRIvCgxwcm9kdWN0X3R5cGUYBiABKA4yGS5kdWtpcmVnaXN0cnkuUHJvZHVjdFR5cGUiDwoNVm9pY2VQb3N0RGF0YSJlCgpQYlBvc3REYXRhEiUKBXdvcmtzGAEgASgLMhQuZHVrZXIuV29ya3NQb3N0RGF0YUgAEiUKBXZvaWNlGAIgASgLMhQuZHVrZXIuVm9pY2VQb3N0RGF0YUgAQgkKB3BheWxvYWQiqAMKBlBiUG9zdBIKCgJpZBgBIAEoAxIPCgdhZGRyZXNzGAIgASgJEhAKCHVzZXJuYW1lGAMgASgJEg0KBXRpdGxlGAQgASgJEgsKA3VybBgFIAEoCRIOCgZkb21haW4YBiABKAkSDAoEdGV4dBgHIAEoCRIQCgh0aXRsZV9lbhgIIAEoCRIOCgZ1cmxfZW4YCSABKAkSDwoHdGV4dF9lbhgKIAEoCRIdCgRraW5kGAsgASgOMg8uZHVrZXIuUG9zdEtpbmQSDgoGbG9jYWxlGAwgASgJEg4KBnBvaW50cxgNIAEoBRIVCg1jb21tZW50X2NvdW50GA4gASgFEg0KBWZsYWdzGA8gASgFEgwKBGRlYWQYECABKAgSFgoObGF0ZXN0X2V2dF9zZXEYESABKAMSEgoKY3JlYXRlZF9hdBgSIAEoAxISCgp1cGRhdGVkX2F0GBMgASgDEiQKCXBvc3RfZGF0YRgUIAEoCzIRLmR1a2VyLlBiUG9zdERhdGESFAoMYm9vc3RfYW1vdW50GBUgASgDEhMKC3RvdGFsX2Jvb3N0GBYgASgDIq4CCglQYkNvbW1lbnQSCgoCaWQYASABKAMSDwoHcG9zdF9pZBgCIAEoAxIQCgh1c2VybmFtZRgDIAEoCRIMCgR0ZXh0GAQgASgJEg4KBmxvY2FsZRgFIAEoCRIRCglwYXJlbnRfaWQYBiABKAMSFQoNYW5jZXN0b3JfcGF0aBgHIAEoCRINCgVkZXB0aBgIIAEoBRIOCgZwb2ludHMYCSABKAUSDAoEZGVhZBgKIAEoCBISCgpjcmVhdGVkX2F0GAsgASgDEhIKCnBvc3RfdGl0bGUYDCABKAkSFgoObGF0ZXN0X2V2dF9zZXEYDSABKAMSEgoKdXBkYXRlZF9hdBgOIAEoAxIUCgxib29zdF9hbW91bnQYDyABKAMSEwoLdG90YWxfYm9vc3QYECABKAMiXwoGUGJWb3RlEg8KB2FkZHJlc3MYASABKAkSIAoIYWdnX3R5cGUYAiABKA4yDi5kdWtlci5BZ2dUeXBlEg4KBmFnZ19pZBgDIAEoAxISCgpjcmVhdGVkX2F0GAQgASgDIl8KBlBiTGlrZRIPCgdhZGRyZXNzGAEgASgJEiAKCGFnZ190eXBlGAIgASgOMg4uZHVrZXIuQWdnVHlwZRIOCgZhZ2dfaWQYAyABKAMSEgoKY3JlYXRlZF9hdBgEIAEoAyo7CghQb3N0S2luZBIZChVQT1NUX0tJTkRfVU5TUEVDSUZJRUQQABIJCgVXT1JLUxABEgkKBVZPSUNFEAIqXwoHQWdnVHlwZRIYChRBR0dfVFlQRV9VTlNQRUNJRklFRBAAEhEKDUFHR19UWVBFX1VTRVIQARIRCg1BR0dfVFlQRV9QT1NUEAISFAoQQUdHX1RZUEVfQ09NTUVOVBADQnUKCWNvbS5kdWtlckIORHVrZXJuZXdzUHJvdG9QAVokZ2l0aHViLmNvbS9idWZidWlsZC9idWYtZXhhbXBsZXMvZ2VuogIDRFhYqgIFRHVrZXLKAgVEdWtlcuICEUR1a2VyXEdQQk1ldGFkYXRh6gIFRHVrZXJiBnByb3RvMw", [file_dukigen_types]);
 
 /**
  * @generated from message duker.PbUser
@@ -83,47 +83,40 @@ export const PbUserSchema: GenMessage<PbUser> = /*@__PURE__*/
   messageDesc(file_dukernews, 0);
 
 /**
+ * All non-tag fields here are inherited verbatim from the post's DukigenAgent
+ * — same names and same shapes as DukigenAgent so callers can read either
+ * without having to remember which side they're on. Only `product_tags` is
+ * post-specific (the agent record carries no tags).
+ *
  * @generated from message duker.WorksPostData
  */
 export type WorksPostData = Message<"duker.WorksPostData"> & {
   /**
-   * Donation model (REVENUE_SHARE or PROFIT_SHARE)
-   *
    * @generated from field: dukiregistry.DukiType duki_type = 1;
    */
   dukiType: DukiType;
 
   /**
-   * Donation values (basis pts: 250 = 2.50%)
-   *
-   * @generated from field: repeated int32 duki_values = 2;
+   * @generated from field: uint32 approx_bps = 2;
    */
-  dukiValues: number[];
+  approxBps: number;
 
   /**
-   * Pledge URL (DUKI-compliant DAO or project page)
-   *
-   * @generated from field: string duki_pledge_url = 3;
+   * @generated from field: string pledge_url = 3;
    */
-  dukiPledgeUrl: string;
+  pledgeUrl: string;
 
   /**
-   * Product tags (e.g. ["ai", "web3", "oss"])
-   *
    * @generated from field: repeated string product_tags = 4;
    */
   productTags: string[];
 
   /**
-   * DAO contract address (on-chain)
-   *
-   * @generated from field: string dao_contract_address = 5;
+   * @generated from field: repeated dukiregistry.ChainContractEntry chain_contracts = 5;
    */
-  daoContractAddress: string;
+  chainContracts: ChainContractEntry[];
 
   /**
-   * What kind of product
-   *
    * @generated from field: dukiregistry.ProductType product_type = 6;
    */
   productType: ProductType;

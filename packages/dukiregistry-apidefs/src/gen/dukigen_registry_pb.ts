@@ -4,7 +4,7 @@
 
 import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
-import type { DukiType, ProductType } from "./dukigen_types_pb";
+import type { ChainContractEntry, DukiType, ProductType } from "./dukigen_types_pb";
 import { file_dukigen_types } from "./dukigen_types_pb";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -12,33 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file dukigen_registry.proto.
  */
 export const file_dukigen_registry: GenFile = /*@__PURE__*/
-  fileDesc("ChZkdWtpZ2VuX3JlZ2lzdHJ5LnByb3RvEgxkdWtpcmVnaXN0cnkiPgoSQ2hhaW5Db250cmFjdEVudHJ5EhEKCWNoYWluX2VpZBgBIAEoDRIVCg1jb250cmFjdF9hZGRyGAIgASgJIrcCChZBZ2VudFJlZ2lzdGVyZWRQYXlsb2FkEgwKBG5hbWUYASABKAkSEQoJYWdlbnRfdXJpGAIgASgJEg8KB3dlYnNpdGUYAyABKAkSEgoKYXBwcm94X2JwcxgEIAEoDRIUCgxhZ2VudF93YWxsZXQYBSABKAkSLwoMcHJvZHVjdF90eXBlGAYgASgOMhkuZHVraXJlZ2lzdHJ5LlByb2R1Y3RUeXBlEikKCWR1a2lfdHlwZRgHIAEoDjIWLmR1a2lyZWdpc3RyeS5EdWtpVHlwZRISCgpwbGVkZ2VfdXJsGAggASgJEhYKDmFnZW50X3VyaV9oYXNoGAogASgJEjkKD2NoYWluX2NvbnRyYWN0cxgLIAMoCzIgLmR1a2lyZWdpc3RyeS5DaGFpbkNvbnRyYWN0RW50cnkiPwoWQWdlbnRVUklVcGRhdGVkUGF5bG9hZBIPCgduZXdfdXJpGAEgASgJEhQKDG5ld191cmlfaGFzaBgCIAEoCSIuChhBZ2VudEFwcHJveEJwc1NldFBheWxvYWQSEgoKYXBwcm94X2JwcxgBIAEoDSKbAQoYQWdlbnRXb3Jrc0RhdGFTZXRQYXlsb2FkEi8KDHByb2R1Y3RfdHlwZRgBIAEoDjIZLmR1a2lyZWdpc3RyeS5Qcm9kdWN0VHlwZRIpCglkdWtpX3R5cGUYAiABKA4yFi5kdWtpcmVnaXN0cnkuRHVraVR5cGUSEgoKcGxlZGdlX3VybBgDIAEoCRIPCgd3ZWJzaXRlGAUgASgJIjUKF0FnZW50TWV0YWRhdGFTZXRQYXlsb2FkEgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoDCIrChVBZ2VudFdhbGxldFNldFBheWxvYWQSEgoKbmV3X3dhbGxldBgBIAEoCSJIChxBZ2VudENoYWluQ29udHJhY3RTZXRQYXlsb2FkEhEKCWNoYWluX2VpZBgBIAEoDRIVCg1jb250cmFjdF9hZGRyGAIgASgJIr8FChREdWtpZ2VuUmVnaXN0cnlFdmVudBIRCgljaGFpbl9laWQYASABKA0SDwoHZXZ0X3NlcRgCIAEoBBIQCghhZ2VudF9pZBgDIAEoBBIyCgpldmVudF90eXBlGAQgASgOMh4uZHVraXJlZ2lzdHJ5LkR1a2lnZW5FdmVudFR5cGUSCwoDZWdvGAUgASgJEhAKCGV2dF90aW1lGAYgASgEEg8KB3R4X2hhc2gYByABKAkSFAoMYmxvY2tfbnVtYmVyGAggASgEEkAKEGFnZW50X3JlZ2lzdGVyZWQYCSABKAsyJC5kdWtpcmVnaXN0cnkuQWdlbnRSZWdpc3RlcmVkUGF5bG9hZEgAEkEKEWFnZW50X3VyaV91cGRhdGVkGAogASgLMiQuZHVraXJlZ2lzdHJ5LkFnZW50VVJJVXBkYXRlZFBheWxvYWRIABJGChRhZ2VudF9hcHByb3hfYnBzX3NldBgLIAEoCzImLmR1a2lyZWdpc3RyeS5BZ2VudEFwcHJveEJwc1NldFBheWxvYWRIABJGChRhZ2VudF93b3Jrc19kYXRhX3NldBgMIAEoCzImLmR1a2lyZWdpc3RyeS5BZ2VudFdvcmtzRGF0YVNldFBheWxvYWRIABJDChJhZ2VudF9tZXRhZGF0YV9zZXQYDSABKAsyJS5kdWtpcmVnaXN0cnkuQWdlbnRNZXRhZGF0YVNldFBheWxvYWRIABI/ChBhZ2VudF93YWxsZXRfc2V0GA4gASgLMiMuZHVraXJlZ2lzdHJ5LkFnZW50V2FsbGV0U2V0UGF5bG9hZEgAEk4KGGFnZW50X2NoYWluX2NvbnRyYWN0X3NldBgPIAEoCzIqLmR1a2lyZWdpc3RyeS5BZ2VudENoYWluQ29udHJhY3RTZXRQYXlsb2FkSABCDAoKZXZlbnRfZGF0YSLoAgoMRHVraWdlbkFnZW50EhAKCGFnZW50X2lkGAEgASgEEgwKBG5hbWUYAiABKAkSEQoJYWdlbnRfdXJpGAMgASgJEg0KBW93bmVyGAQgASgJEhgKEG9yaWdpbl9jaGFpbl9laWQYBSABKA0SEgoKYXBwcm94X2JwcxgGIAEoDRIvCgxwcm9kdWN0X3R5cGUYByABKA4yGS5kdWtpcmVnaXN0cnkuUHJvZHVjdFR5cGUSKQoJZHVraV90eXBlGAggASgOMhYuZHVraXJlZ2lzdHJ5LkR1a2lUeXBlEhIKCnBsZWRnZV91cmwYCSABKAkSDwoHd2Vic2l0ZRgLIAEoCRIUCgxhZ2VudF93YWxsZXQYDCABKAkSFgoOYWdlbnRfdXJpX2hhc2gYDSABKAkSOQoPY2hhaW5fY29udHJhY3RzGA4gAygLMiAuZHVraXJlZ2lzdHJ5LkNoYWluQ29udHJhY3RFbnRyeSrjAQoQRHVraWdlbkV2ZW50VHlwZRIiCh5EVUtJR0VOX0VWRU5UX1RZUEVfVU5TUEVDSUZJRUQQABIUChBBR0VOVF9SRUdJU1RFUkVEEAESFQoRQUdFTlRfVVJJX1VQREFURUQQAhIYChRBR0VOVF9BUFBST1hfQlBTX1NFVBADEhgKFEFHRU5UX1dPUktTX0RBVEFfU0VUEAQSFgoSQUdFTlRfTUVUQURBVEFfU0VUEAUSFAoQQUdFTlRfV0FMTEVUX1NFVBAGEhwKGEFHRU5UX0NIQUlOX0NPTlRSQUNUX1NFVBAHYgZwcm90bzM", [file_dukigen_types]);
-
-/**
- * One (chainEid, contractAddr) entry — the proto mirror of the on-chain
- * ChainContract struct. Used as a repeated field in agent registrations
- * and in the materialized DukigenAgent view.
- *
- * @generated from message dukiregistry.ChainContractEntry
- */
-export type ChainContractEntry = Message<"dukiregistry.ChainContractEntry"> & {
-  /**
-   * @generated from field: uint32 chain_eid = 1;
-   */
-  chainEid: number;
-
-  /**
-   * @generated from field: string contract_addr = 2;
-   */
-  contractAddr: string;
-};
-
-/**
- * Describes the message dukiregistry.ChainContractEntry.
- * Use `create(ChainContractEntrySchema)` to create a new message.
- */
-export const ChainContractEntrySchema: GenMessage<ChainContractEntry> = /*@__PURE__*/
-  messageDesc(file_dukigen_registry, 0);
+  fileDesc("ChZkdWtpZ2VuX3JlZ2lzdHJ5LnByb3RvEgxkdWtpcmVnaXN0cnkitwIKFkFnZW50UmVnaXN0ZXJlZFBheWxvYWQSDAoEbmFtZRgBIAEoCRIRCglhZ2VudF91cmkYAiABKAkSDwoHd2Vic2l0ZRgDIAEoCRISCgphcHByb3hfYnBzGAQgASgNEhQKDGFnZW50X3dhbGxldBgFIAEoCRIvCgxwcm9kdWN0X3R5cGUYBiABKA4yGS5kdWtpcmVnaXN0cnkuUHJvZHVjdFR5cGUSKQoJZHVraV90eXBlGAcgASgOMhYuZHVraXJlZ2lzdHJ5LkR1a2lUeXBlEhIKCnBsZWRnZV91cmwYCCABKAkSFgoOYWdlbnRfdXJpX2hhc2gYCiABKAkSOQoPY2hhaW5fY29udHJhY3RzGAsgAygLMiAuZHVraXJlZ2lzdHJ5LkNoYWluQ29udHJhY3RFbnRyeSI/ChZBZ2VudFVSSVVwZGF0ZWRQYXlsb2FkEg8KB25ld191cmkYASABKAkSFAoMbmV3X3VyaV9oYXNoGAIgASgJIi4KGEFnZW50QXBwcm94QnBzU2V0UGF5bG9hZBISCgphcHByb3hfYnBzGAEgASgNIpsBChhBZ2VudFdvcmtzRGF0YVNldFBheWxvYWQSLwoMcHJvZHVjdF90eXBlGAEgASgOMhkuZHVraXJlZ2lzdHJ5LlByb2R1Y3RUeXBlEikKCWR1a2lfdHlwZRgCIAEoDjIWLmR1a2lyZWdpc3RyeS5EdWtpVHlwZRISCgpwbGVkZ2VfdXJsGAMgASgJEg8KB3dlYnNpdGUYBSABKAkiNQoXQWdlbnRNZXRhZGF0YVNldFBheWxvYWQSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgMIisKFUFnZW50V2FsbGV0U2V0UGF5bG9hZBISCgpuZXdfd2FsbGV0GAEgASgJIkgKHEFnZW50Q2hhaW5Db250cmFjdFNldFBheWxvYWQSEQoJY2hhaW5fZWlkGAEgASgNEhUKDWNvbnRyYWN0X2FkZHIYAiABKAkivwUKFER1a2lnZW5SZWdpc3RyeUV2ZW50EhEKCWNoYWluX2VpZBgBIAEoDRIPCgdldnRfc2VxGAIgASgEEhAKCGFnZW50X2lkGAMgASgEEjIKCmV2ZW50X3R5cGUYBCABKA4yHi5kdWtpcmVnaXN0cnkuRHVraWdlbkV2ZW50VHlwZRILCgNlZ28YBSABKAkSEAoIZXZ0X3RpbWUYBiABKAQSDwoHdHhfaGFzaBgHIAEoCRIUCgxibG9ja19udW1iZXIYCCABKAQSQAoQYWdlbnRfcmVnaXN0ZXJlZBgJIAEoCzIkLmR1a2lyZWdpc3RyeS5BZ2VudFJlZ2lzdGVyZWRQYXlsb2FkSAASQQoRYWdlbnRfdXJpX3VwZGF0ZWQYCiABKAsyJC5kdWtpcmVnaXN0cnkuQWdlbnRVUklVcGRhdGVkUGF5bG9hZEgAEkYKFGFnZW50X2FwcHJveF9icHNfc2V0GAsgASgLMiYuZHVraXJlZ2lzdHJ5LkFnZW50QXBwcm94QnBzU2V0UGF5bG9hZEgAEkYKFGFnZW50X3dvcmtzX2RhdGFfc2V0GAwgASgLMiYuZHVraXJlZ2lzdHJ5LkFnZW50V29ya3NEYXRhU2V0UGF5bG9hZEgAEkMKEmFnZW50X21ldGFkYXRhX3NldBgNIAEoCzIlLmR1a2lyZWdpc3RyeS5BZ2VudE1ldGFkYXRhU2V0UGF5bG9hZEgAEj8KEGFnZW50X3dhbGxldF9zZXQYDiABKAsyIy5kdWtpcmVnaXN0cnkuQWdlbnRXYWxsZXRTZXRQYXlsb2FkSAASTgoYYWdlbnRfY2hhaW5fY29udHJhY3Rfc2V0GA8gASgLMiouZHVraXJlZ2lzdHJ5LkFnZW50Q2hhaW5Db250cmFjdFNldFBheWxvYWRIAEIMCgpldmVudF9kYXRhIugCCgxEdWtpZ2VuQWdlbnQSEAoIYWdlbnRfaWQYASABKAQSDAoEbmFtZRgCIAEoCRIRCglhZ2VudF91cmkYAyABKAkSDQoFb3duZXIYBCABKAkSGAoQb3JpZ2luX2NoYWluX2VpZBgFIAEoDRISCgphcHByb3hfYnBzGAYgASgNEi8KDHByb2R1Y3RfdHlwZRgHIAEoDjIZLmR1a2lyZWdpc3RyeS5Qcm9kdWN0VHlwZRIpCglkdWtpX3R5cGUYCCABKA4yFi5kdWtpcmVnaXN0cnkuRHVraVR5cGUSEgoKcGxlZGdlX3VybBgJIAEoCRIPCgd3ZWJzaXRlGAsgASgJEhQKDGFnZW50X3dhbGxldBgMIAEoCRIWCg5hZ2VudF91cmlfaGFzaBgNIAEoCRI5Cg9jaGFpbl9jb250cmFjdHMYDiADKAsyIC5kdWtpcmVnaXN0cnkuQ2hhaW5Db250cmFjdEVudHJ5KuMBChBEdWtpZ2VuRXZlbnRUeXBlEiIKHkRVS0lHRU5fRVZFTlRfVFlQRV9VTlNQRUNJRklFRBAAEhQKEEFHRU5UX1JFR0lTVEVSRUQQARIVChFBR0VOVF9VUklfVVBEQVRFRBACEhgKFEFHRU5UX0FQUFJPWF9CUFNfU0VUEAMSGAoUQUdFTlRfV09SS1NfREFUQV9TRVQQBBIWChJBR0VOVF9NRVRBREFUQV9TRVQQBRIUChBBR0VOVF9XQUxMRVRfU0VUEAYSHAoYQUdFTlRfQ0hBSU5fQ09OVFJBQ1RfU0VUEAdiBnByb3RvMw", [file_dukigen_types]);
 
 /**
  * Data for AGENT_REGISTERED (eventType=1)
@@ -102,7 +76,7 @@ export type AgentRegisteredPayload = Message<"dukiregistry.AgentRegisteredPayloa
  * Use `create(AgentRegisteredPayloadSchema)` to create a new message.
  */
 export const AgentRegisteredPayloadSchema: GenMessage<AgentRegisteredPayload> = /*@__PURE__*/
-  messageDesc(file_dukigen_registry, 1);
+  messageDesc(file_dukigen_registry, 0);
 
 /**
  * Data for AGENT_URI_UPDATED (eventType=2)
@@ -126,7 +100,7 @@ export type AgentURIUpdatedPayload = Message<"dukiregistry.AgentURIUpdatedPayloa
  * Use `create(AgentURIUpdatedPayloadSchema)` to create a new message.
  */
 export const AgentURIUpdatedPayloadSchema: GenMessage<AgentURIUpdatedPayload> = /*@__PURE__*/
-  messageDesc(file_dukigen_registry, 2);
+  messageDesc(file_dukigen_registry, 1);
 
 /**
  * Data for AGENT_APPROX_BPS_SET (eventType=3)
@@ -145,7 +119,7 @@ export type AgentApproxBpsSetPayload = Message<"dukiregistry.AgentApproxBpsSetPa
  * Use `create(AgentApproxBpsSetPayloadSchema)` to create a new message.
  */
 export const AgentApproxBpsSetPayloadSchema: GenMessage<AgentApproxBpsSetPayload> = /*@__PURE__*/
-  messageDesc(file_dukigen_registry, 3);
+  messageDesc(file_dukigen_registry, 2);
 
 /**
  * Data for AGENT_WORKS_DATA_SET (eventType=4)
@@ -179,7 +153,7 @@ export type AgentWorksDataSetPayload = Message<"dukiregistry.AgentWorksDataSetPa
  * Use `create(AgentWorksDataSetPayloadSchema)` to create a new message.
  */
 export const AgentWorksDataSetPayloadSchema: GenMessage<AgentWorksDataSetPayload> = /*@__PURE__*/
-  messageDesc(file_dukigen_registry, 4);
+  messageDesc(file_dukigen_registry, 3);
 
 /**
  * Data for AGENT_METADATA_SET (eventType=5)
@@ -203,7 +177,7 @@ export type AgentMetadataSetPayload = Message<"dukiregistry.AgentMetadataSetPayl
  * Use `create(AgentMetadataSetPayloadSchema)` to create a new message.
  */
 export const AgentMetadataSetPayloadSchema: GenMessage<AgentMetadataSetPayload> = /*@__PURE__*/
-  messageDesc(file_dukigen_registry, 5);
+  messageDesc(file_dukigen_registry, 4);
 
 /**
  * Data for AGENT_WALLET_SET (eventType=6)
@@ -222,7 +196,7 @@ export type AgentWalletSetPayload = Message<"dukiregistry.AgentWalletSetPayload"
  * Use `create(AgentWalletSetPayloadSchema)` to create a new message.
  */
 export const AgentWalletSetPayloadSchema: GenMessage<AgentWalletSetPayload> = /*@__PURE__*/
-  messageDesc(file_dukigen_registry, 6);
+  messageDesc(file_dukigen_registry, 5);
 
 /**
  * Data for AGENT_CHAIN_CONTRACT_SET (eventType=7)
@@ -246,7 +220,7 @@ export type AgentChainContractSetPayload = Message<"dukiregistry.AgentChainContr
  * Use `create(AgentChainContractSetPayloadSchema)` to create a new message.
  */
 export const AgentChainContractSetPayloadSchema: GenMessage<AgentChainContractSetPayload> = /*@__PURE__*/
-  messageDesc(file_dukigen_registry, 7);
+  messageDesc(file_dukigen_registry, 6);
 
 /**
  * ── Indexed DukigenEvent row ────────────────────────────────────────────
@@ -352,7 +326,7 @@ export type DukigenRegistryEvent = Message<"dukiregistry.DukigenRegistryEvent"> 
  * Use `create(DukigenRegistryEventSchema)` to create a new message.
  */
 export const DukigenRegistryEventSchema: GenMessage<DukigenRegistryEvent> = /*@__PURE__*/
-  messageDesc(file_dukigen_registry, 8);
+  messageDesc(file_dukigen_registry, 7);
 
 /**
  * ── Agent record (materialized view from events) ────────────────────────
@@ -431,7 +405,7 @@ export type DukigenAgent = Message<"dukiregistry.DukigenAgent"> & {
  * Use `create(DukigenAgentSchema)` to create a new message.
  */
 export const DukigenAgentSchema: GenMessage<DukigenAgent> = /*@__PURE__*/
-  messageDesc(file_dukigen_registry, 9);
+  messageDesc(file_dukigen_registry, 8);
 
 /**
  * ── DukigenRegistry Event Types ─────────────────────────────────────────

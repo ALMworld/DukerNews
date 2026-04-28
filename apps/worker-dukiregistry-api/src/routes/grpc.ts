@@ -7,10 +7,16 @@ import { create } from '@bufbuild/protobuf'
 import {
     DukerRegistryService,
     DukigenRegistryService,
+    AlmWorldMinterService,
     GetUsernameRespSchema,
     CheckUsernameRespSchema,
     NotifyDukerTxRespSchema,
     NotifyDukigenTxRespSchema,
+    NotifyMinterTxRespSchema,
+    SyncMinterEventsRespSchema,
+    GetAgentDealsRespSchema,
+    GetRecentDealsRespSchema,
+    DealDukiMintedEventSchema,
     GetAgentsRespSchema,
     ListAgentsRankedRespSchema,
     RankedAgentSchema,
@@ -39,6 +45,14 @@ import { pullTxReceipt, pullDukerEventsByBlockRange, pullDukigenEventsByBlockRan
 import type { PulledDukerEvent, PulledDukigenEvent } from '../services/chain-puller'
 import { processDukerEvents } from '../services/duker-event-service'
 import { processDukigenEvents } from '../services/dukigen-event-service'
+import {
+    pullMinterEventsFromTx,
+    pullDealDukiMintedByBlockRange,
+    processMinterEvents,
+    getLastBlockIndexed,
+    setLastBlockIndexed,
+    type PulledDealDukiMintedEvent,
+} from '../services/minter-event-service'
 import { decodeEventPayload } from '../services/event-payload'
 import { createPublicClient, http } from 'viem'
 import { getChainConfig } from '../config'
@@ -570,6 +584,200 @@ export function registerGrpcRoutes(router: ConnectRouter) {
             })
         },
     })
+
+    // ── AlmWorldMinterService ────────────────────────────────
+    //
+    // Indexes DealDukiMinted events from AlmWorldDukiMinter contracts. Two
+    // ingest paths share the same persistence layer:
+    //   • notifyMinterTx — the dApp's webhook hits this with a tx hash right
+    //     after a successful mint. Cheap, single receipt fetch.
+    //   • syncMinterEvents — eth_getLogs over a block range, used for backfill
+    //     and as a safety net if a webhook is missed. Resumes from
+    //     minter_sync_state.last_block_indexed when from_block is 0.
+
+    router.service(AlmWorldMinterService, {
+        async notifyMinterTx(req) {
+            const events = await pullMinterEventsFromTx(req.chainEid, req.txHash)
+            await processMinterEvents(_db, events)
+            return create(NotifyMinterTxRespSchema, {
+                events: events.map(toDealDukiMintedProto),
+            })
+        },
+
+        async syncMinterEvents(req) {
+            const cfg = getChainConfig(req.chainEid)
+            const client = createPublicClient({ transport: http(cfg.rpcUrl) })
+
+            const headBlock = req.toBlock > 0n ? req.toBlock : await client.getBlockNumber()
+
+            // Resume from D1's last-indexed cursor if the caller didn't pin a
+            // start block. +1 so we don't re-pull the previous tail block.
+            const cursor = req.fromBlock > 0n
+                ? req.fromBlock
+                : (await getLastBlockIndexed(_db, req.chainEid)) + 1n
+            let fromBlock = cursor < 1n ? 1n : cursor
+
+            if (fromBlock > headBlock) {
+                return create(SyncMinterEventsRespSchema, {
+                    syncedUpToBlock: headBlock,
+                    eventsIndexed: 0,
+                })
+            }
+
+            const maxRange = req.maxBlockRange > 0n ? req.maxBlockRange : DEFAULT_MAX_BLOCK_RANGE
+            let totalIndexed = 0
+            let lastProcessedBlock = fromBlock - 1n
+
+            for (let i = 0; i < MAX_CHUNKS_PER_REQUEST; i++) {
+                if (fromBlock > headBlock) break
+                const tentativeTo = fromBlock + maxRange - 1n
+                const toBlock = tentativeTo < headBlock ? tentativeTo : headBlock
+
+                const events = await pullDealDukiMintedByBlockRange(req.chainEid, fromBlock, toBlock)
+                if (events.length > 0) {
+                    await processMinterEvents(_db, events)
+                    totalIndexed += events.length
+                }
+                lastProcessedBlock = toBlock
+                fromBlock = toBlock + 1n
+            }
+
+            await setLastBlockIndexed(_db, req.chainEid, lastProcessedBlock)
+            return create(SyncMinterEventsRespSchema, {
+                syncedUpToBlock: lastProcessedBlock,
+                eventsIndexed: totalIndexed,
+            })
+        },
+
+        async getAgentDeals(req) {
+            const page = await queryDeals(_db, {
+                agentId: req.agentId.toString(),
+                chainEid: req.chainEid,
+                cursor: req.cursor,
+                limit: req.limit,
+            })
+            return create(GetAgentDealsRespSchema, page)
+        },
+
+        async getRecentDeals(req) {
+            const page = await queryDeals(_db, {
+                agentId: null,
+                chainEid: req.chainEid,
+                cursor: req.cursor,
+                limit: req.limit,
+            })
+            return create(GetRecentDealsRespSchema, page)
+        },
+    })
+}
+
+// ── Minter helpers ──────────────────────────────────────────────────────
+
+function toDealDukiMintedProto(evt: PulledDealDukiMintedEvent) {
+    return create(DealDukiMintedEventSchema, {
+        chainEid: evt.chainEid,
+        sequence: evt.sequence.toString(),
+        txHash: evt.txHash,
+        blockNumber: evt.blockNumber,
+        evtTime: evt.evtTime,
+        yangReceiver: evt.yangReceiver,
+        yinReceiver: evt.yinReceiver,
+        stablecoin: evt.stablecoin,
+        dukiAmount: evt.dukiAmount.toString(),
+        almYangAmount: evt.almYangAmount.toString(),
+        almYinAmount: evt.almYinAmount.toString(),
+        minter: evt.minter,
+        agentId: evt.agentId,
+    })
+}
+
+type DealCursor = { blockNumber: number; sequence: string }
+
+function encodeDealCursor(c: DealCursor): string {
+    return btoa(JSON.stringify({ b: c.blockNumber, s: c.sequence }))
+        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
+
+function decodeDealCursor(raw: string | undefined | null): DealCursor | null {
+    if (!raw) return null
+    try {
+        const padded = raw.replace(/-/g, '+').replace(/_/g, '/')
+        const obj = JSON.parse(atob(padded))
+        if (typeof obj?.b !== 'number' || typeof obj?.s !== 'string') return null
+        return { blockNumber: obj.b, sequence: obj.s }
+    } catch {
+        return null
+    }
+}
+
+interface QueryDealsArgs {
+    agentId: string | null   // null = all agents (recent feed)
+    chainEid: number          // 0 = all chains
+    cursor: string
+    limit: number
+}
+
+async function queryDeals(db: D1Database, args: QueryDealsArgs) {
+    const limit = Math.min(100, Math.max(1, args.limit || 20))
+    const cursor = decodeDealCursor(args.cursor)
+
+    // Compound-key keyset pagination: rows strictly before (block_number, sequence)
+    // come next. block_number breaks ties between agents on the same chain;
+    // sequence as TEXT compares lexicographically — fine for the recent-window
+    // case where all sequences are roughly the same width.
+    const where: string[] = []
+    const params: unknown[] = []
+    if (args.agentId !== null) {
+        where.push('agent_id = ?')
+        params.push(args.agentId)
+    }
+    if (args.chainEid > 0) {
+        where.push('chain_eid = ?')
+        params.push(args.chainEid)
+    }
+    if (cursor) {
+        where.push('(block_number < ? OR (block_number = ? AND sequence < ?))')
+        params.push(cursor.blockNumber, cursor.blockNumber, cursor.sequence)
+    }
+
+    const sql = `
+        SELECT chain_eid, sequence, tx_hash, block_number, evt_time,
+               yang_receiver, yin_receiver, stablecoin,
+               duki_amount, alm_yang_amount, alm_yin_amount,
+               minter, agent_id
+        FROM   deal_duki_minted_events
+        ${where.length > 0 ? 'WHERE ' + where.join(' AND ') : ''}
+        ORDER BY block_number DESC, sequence DESC
+        LIMIT ?
+    `
+    const rows = (await db.prepare(sql).bind(...params, limit + 1).all<any>()).results ?? []
+
+    const hasMore = rows.length > limit
+    const pageRows = hasMore ? rows.slice(0, limit) : rows
+    const events = pageRows.map((r: any) =>
+        create(DealDukiMintedEventSchema, {
+            chainEid: r.chain_eid,
+            sequence: String(r.sequence),
+            txHash: r.tx_hash,
+            blockNumber: BigInt(r.block_number),
+            evtTime: BigInt(r.evt_time),
+            yangReceiver: r.yang_receiver,
+            yinReceiver: r.yin_receiver,
+            stablecoin: r.stablecoin,
+            dukiAmount: r.duki_amount,
+            almYangAmount: r.alm_yang_amount,
+            almYinAmount: r.alm_yin_amount,
+            minter: r.minter,
+            agentId: BigInt(r.agent_id),
+        })
+    )
+
+    const last = pageRows[pageRows.length - 1]
+    const nextCursor = hasMore && last
+        ? encodeDealCursor({ blockNumber: Number(last.block_number), sequence: String(last.sequence) })
+        : ''
+
+    return { events, nextCursor, hasMore }
 }
 
 // ── Helpers ──────────────────────────────────────────────────

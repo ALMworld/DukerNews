@@ -10,7 +10,7 @@ import { useQuery } from '@tanstack/react-query'
 import { ArrowRight, Loader2, Plus, Activity } from 'lucide-react'
 import { MarketStats, type MarketStatsData } from '@/components/market/MarketStats'
 import { AgentCard } from '@/components/market/AgentCard'
-import { ActivityFeed } from '@/components/market/ActivityFeed'
+import { DealDukiMintFeed } from '@/components/market/DealDukiMintFeed'
 import { TrendingAgents } from '@/components/market/TrendingAgents'
 import { EmptyState } from '@/components/market/EmptyState'
 import { FETCH_PAGE_SIZE, MAX_MARKET_ITEMS } from '@/components/market/constants'
@@ -83,7 +83,7 @@ function MarketLandingPage() {
                 </div>
 
                 <div className="w-full lg:w-[320px] xl:w-[340px] flex-shrink-0 flex">
-                    <ActivityFeed entries={entries} />
+                    <DealDukiMintFeed />
                 </div>
             </div>
 

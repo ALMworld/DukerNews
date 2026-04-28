@@ -2,14 +2,42 @@
 // @generated from file dukigen_types.proto (package dukiregistry, syntax proto3)
 /* eslint-disable */
 
-import type { GenEnum, GenFile } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
+import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file dukigen_types.proto.
  */
 export const file_dukigen_types: GenFile = /*@__PURE__*/
-  fileDesc("ChNkdWtpZ2VuX3R5cGVzLnByb3RvEgxkdWtpcmVnaXN0cnkqUwoLUHJvZHVjdFR5cGUSHAoYUFJPRFVDVF9UWVBFX1VOU1BFQ0lGSUVEEAASCwoHRElHSVRBTBABEgwKCFBIWVNJQ0FMEAISCwoHU0VSVklDRRADKkoKCER1a2lUeXBlEhkKFURVS0lfVFlQRV9VTlNQRUNJRklFRBAAEhEKDVJFVkVOVUVfU0hBUkUQARIQCgxQUk9GSVRfU0hBUkUQAkKbAQoQY29tLmR1a2lyZWdpc3RyeUIRRHVraWdlblR5cGVzUHJvdG9QAVokZ2l0aHViLmNvbS9idWZidWlsZC9idWYtZXhhbXBsZXMvZ2VuogIDRFhYqgIMRHVraXJlZ2lzdHJ5ygIMRHVraXJlZ2lzdHJ54gIYRHVraXJlZ2lzdHJ5XEdQQk1ldGFkYXRh6gIMRHVraXJlZ2lzdHJ5YgZwcm90bzM");
+  fileDesc("ChNkdWtpZ2VuX3R5cGVzLnByb3RvEgxkdWtpcmVnaXN0cnkiPgoSQ2hhaW5Db250cmFjdEVudHJ5EhEKCWNoYWluX2VpZBgBIAEoDRIVCg1jb250cmFjdF9hZGRyGAIgASgJKlMKC1Byb2R1Y3RUeXBlEhwKGFBST0RVQ1RfVFlQRV9VTlNQRUNJRklFRBAAEgsKB0RJR0lUQUwQARIMCghQSFlTSUNBTBACEgsKB1NFUlZJQ0UQAypKCghEdWtpVHlwZRIZChVEVUtJX1RZUEVfVU5TUEVDSUZJRUQQABIRCg1SRVZFTlVFX1NIQVJFEAESEAoMUFJPRklUX1NIQVJFEAJCmwEKEGNvbS5kdWtpcmVnaXN0cnlCEUR1a2lnZW5UeXBlc1Byb3RvUAFaJGdpdGh1Yi5jb20vYnVmYnVpbGQvYnVmLWV4YW1wbGVzL2dlbqICA0RYWKoCDER1a2lyZWdpc3RyecoCDER1a2lyZWdpc3RyeeICGER1a2lyZWdpc3RyeVxHUEJNZXRhZGF0YeoCDER1a2lyZWdpc3RyeWIGcHJvdG8z");
+
+/**
+ * ── Per-chain deployed contract entry ───────────────────────────────────
+ * Mirrors the on-chain ChainContract struct used by DukigenAgent. Posts
+ * inherit the agent's full deployment list verbatim, so the same shape
+ * shows up on WorksPostData.
+ *
+ * @generated from message dukiregistry.ChainContractEntry
+ */
+export type ChainContractEntry = Message<"dukiregistry.ChainContractEntry"> & {
+  /**
+   * @generated from field: uint32 chain_eid = 1;
+   */
+  chainEid: number;
+
+  /**
+   * @generated from field: string contract_addr = 2;
+   */
+  contractAddr: string;
+};
+
+/**
+ * Describes the message dukiregistry.ChainContractEntry.
+ * Use `create(ChainContractEntrySchema)` to create a new message.
+ */
+export const ChainContractEntrySchema: GenMessage<ChainContractEntry> = /*@__PURE__*/
+  messageDesc(file_dukigen_types, 0);
 
 /**
  * ── Product category for DUKIGEN agents ─────────────────────────────────

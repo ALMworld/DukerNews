@@ -13,16 +13,10 @@ import {
     pickPrimaryIdentity,
     syncRegistryIdentities,
 } from '../../../server/registry-worker-client'
-import { DEFAULT_CHAIN_ID } from '../../../lib/contracts'
+import { DEFAULT_CHAIN_ID, getEidForChain } from '../../../lib/contracts'
 import { getKysely } from '../../../lib/db'
 import { getEventsFromTx } from '../../../services/blockchain-service'
 import { applyEvents } from '../../../services/events-service'
-
-const CHAIN_ID_TO_EID: Record<number, number> = {
-    31337: 31337,
-    196: 30274,
-    11155111: 11155111,
-}
 
 export const Route = createFileRoute('/api/auth/refresh')({
     server: {
@@ -60,7 +54,7 @@ export const Route = createFileRoute('/api/auth/refresh')({
                 }
 
                 const address = payload.ego
-                const chainEid = CHAIN_ID_TO_EID[DEFAULT_CHAIN_ID] ?? DEFAULT_CHAIN_ID
+                const chainEid = getEidForChain(DEFAULT_CHAIN_ID)
 
                 // First sync DukerNews events when the mint tx is known.
                 if (txHash) {
