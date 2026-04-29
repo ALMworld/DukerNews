@@ -38,8 +38,8 @@ import {
     pullMinterEventsFromTx,
     pullDealDukiMintedByBlockRange,
     processMinterEvents,
-    getLastBlockIndexed,
-    setLastBlockIndexed,
+    getLastBlockNumber,
+    setLastBlockNumber,
     type PulledDealDukiMintedEvent,
 } from '../services/minter-event-service'
 import { createPublicClient, http } from 'viem'
@@ -118,8 +118,8 @@ export function registerGrpcRoutes(router: ConnectRouter) {
 
     router.service(DukerRegistryService, {
         async getUsername(req) {
-            let query = 'SELECT * FROM duker_users WHERE ego = ? COLLATE NOCASE AND status = ?'
-            const params: any[] = [req.address, 'active']
+            let query = 'SELECT * FROM duker_users WHERE ego = ? COLLATE NOCASE AND active = ?'
+            const params: any[] = [req.address, 1]
 
             if (req.chainEid > 0) {
                 query += ' AND chain_eid = ?'
@@ -135,8 +135,8 @@ export function registerGrpcRoutes(router: ConnectRouter) {
 
         async checkUsername(req) {
             const row = await _db.prepare(
-                'SELECT * FROM duker_users WHERE username = ? COLLATE NOCASE AND status = ? LIMIT 1'
-            ).bind(req.username, 'active').first<any>()
+                'SELECT * FROM duker_users WHERE username = ? COLLATE NOCASE AND active = ? LIMIT 1'
+            ).bind(req.username, 1).first<any>()
 
             if (row) {
                 return create(CheckUsernameRespSchema, {
@@ -149,8 +149,8 @@ export function registerGrpcRoutes(router: ConnectRouter) {
 
         async getIdentitiesByToken(req) {
             const result = await _db.prepare(
-                'SELECT * FROM duker_users WHERE token_id = ? AND status = ? ORDER BY chain_eid ASC'
-            ).bind(req.tokenId, 'active').all<any>()
+                'SELECT * FROM duker_users WHERE token_id = ? AND active = ? ORDER BY chain_eid ASC'
+            ).bind(req.tokenId, 1).all<any>()
 
             return create(GetUsernameRespSchema, {
                 identities: (result.results ?? []).map(rowToIdentity),
@@ -403,6 +403,7 @@ async function syncDukerContract(chainEid: number) {
         return create(BlockchainSyncRespSchema, {
             lastEvtSeq,
             eventsIndexed: 0,
+            lastBlockNumber: 0n,
         })
     }
 
@@ -423,6 +424,7 @@ async function syncDukerContract(chainEid: number) {
     return create(BlockchainSyncRespSchema, {
         lastEvtSeq: result.syncedUpTo,
         eventsIndexed: result.eventsIndexed,
+        lastBlockNumber: latestBlock,
     })
 }
 
@@ -441,6 +443,7 @@ async function syncDukigenContract(chainEid: number) {
         return create(BlockchainSyncRespSchema, {
             lastEvtSeq,
             eventsIndexed: 0,
+            lastBlockNumber: 0n,
         })
     }
 
@@ -461,29 +464,43 @@ async function syncDukigenContract(chainEid: number) {
     return create(BlockchainSyncRespSchema, {
         lastEvtSeq: result.syncedUpTo,
         eventsIndexed: result.eventsIndexed,
+        lastBlockNumber: latestBlock,
     })
 }
 
 async function syncMinterContract(chainEid: number) {
     const cfg = getChainConfig(chainEid)
+    if (!cfg.almWorldDukiMinterAddress || cfg.almWorldDukiMinterAddress === '0x0000000000000000000000000000000000000000') {
+        return create(BlockchainSyncRespSchema, {
+            lastEvtSeq: 0n,
+            eventsIndexed: 0,
+        })
+    }
+
     const client = createPublicClient({ transport: http(cfg.rpcUrl) })
 
     const headBlock = await client.getBlockNumber()
 
     // Resume from D1's last-indexed cursor +1 so we don't re-pull the tail block.
-    const cursor = (await getLastBlockIndexed(_db, chainEid)) + 1n
+    const syncState = await _db.prepare(
+        'SELECT last_block_number, last_evt_seq FROM sync_state WHERE chain_eid = ? AND contract_address = ? COLLATE NOCASE'
+    ).bind(chainEid, cfg.almWorldDukiMinterAddress).first<{ last_block_number: number, last_evt_seq: number }>()
+
+    const cursor = BigInt(syncState?.last_block_number ?? 0) + 1n
     let fromBlock = cursor < 1n ? 1n : cursor
 
     if (fromBlock > headBlock) {
         return create(BlockchainSyncRespSchema, {
-            lastEvtSeq: headBlock,
+            lastEvtSeq: BigInt(syncState?.last_evt_seq ?? 0),
             eventsIndexed: 0,
+            lastBlockNumber: headBlock,
         })
     }
 
     let totalIndexed = 0
     let lastProcessedBlock = fromBlock - 1n
 
+    let lastEvtSeqProcessed = BigInt(syncState?.last_evt_seq ?? 0)
     for (let i = 0; i < MAX_CHUNKS_PER_REQUEST; i++) {
         if (fromBlock > headBlock) break
         const tentativeTo = fromBlock + DEFAULT_MAX_BLOCK_RANGE - 1n
@@ -493,15 +510,17 @@ async function syncMinterContract(chainEid: number) {
         if (events.length > 0) {
             await processMinterEvents(_db, events)
             totalIndexed += events.length
+            lastEvtSeqProcessed = events[events.length - 1].evt_seq
         }
         lastProcessedBlock = toBlock
         fromBlock = toBlock + 1n
     }
 
-    await setLastBlockIndexed(_db, chainEid, lastProcessedBlock)
+    await setLastBlockNumber(_db, chainEid, cfg.almWorldDukiMinterAddress, lastProcessedBlock, lastEvtSeqProcessed)
     return create(BlockchainSyncRespSchema, {
-        lastEvtSeq: lastProcessedBlock,
+        lastEvtSeq: lastEvtSeqProcessed,
         eventsIndexed: totalIndexed,
+        lastBlockNumber: lastProcessedBlock,
     })
 }
 
@@ -510,7 +529,7 @@ async function syncMinterContract(chainEid: number) {
 function toDealDukiMintedProto(evt: PulledDealDukiMintedEvent) {
     return create(DealDukiMintedEventSchema, {
         chainEid: evt.chainEid,
-        sequence: evt.sequence.toString(),
+        sequence: evt.evt_seq.toString(),
         txHash: evt.txHash,
         blockNumber: evt.blockNumber,
         evtTime: evt.evtTime,
@@ -556,9 +575,9 @@ async function queryDeals(db: D1Database, args: QueryDealsArgs) {
     const limit = Math.min(100, Math.max(1, args.limit || 20))
     const cursor = decodeDealCursor(args.cursor)
 
-    // Compound-key keyset pagination: rows strictly before (block_number, sequence)
+    // Compound-key keyset pagination: rows strictly before (block_number, evt_seq)
     // come next. block_number breaks ties between agents on the same chain;
-    // sequence as TEXT compares lexicographically — fine for the recent-window
+    // evt_seq as TEXT compares lexicographically — fine for the recent-window
     // case where all sequences are roughly the same width.
     const where: string[] = []
     const params: unknown[] = []
@@ -575,18 +594,18 @@ async function queryDeals(db: D1Database, args: QueryDealsArgs) {
         params.push(args.chainEid)
     }
     if (cursor) {
-        where.push('(block_number < ? OR (block_number = ? AND sequence < ?))')
+        where.push('(block_number < ? OR (block_number = ? AND evt_seq < ?))')
         params.push(cursor.blockNumber, cursor.blockNumber, cursor.sequence)
     }
 
     const sql = `
-        SELECT chain_eid, sequence, tx_hash, block_number, evt_time,
+        SELECT chain_eid, evt_seq, tx_hash, block_number, evt_time,
                yang_receiver, yin_receiver, stablecoin,
                duki_amount, alm_yang_amount, alm_yin_amount,
                minter, agent_id
         FROM   deal_duki_minted_events
         ${where.length > 0 ? 'WHERE ' + where.join(' AND ') : ''}
-        ORDER BY block_number DESC, sequence DESC
+        ORDER BY block_number DESC, evt_seq DESC
         LIMIT ?
     `
     const rows = (await db.prepare(sql).bind(...params, limit + 1).all<any>()).results ?? []
@@ -596,7 +615,7 @@ async function queryDeals(db: D1Database, args: QueryDealsArgs) {
     const events = pageRows.map((r: any) =>
         create(DealDukiMintedEventSchema, {
             chainEid: r.chain_eid,
-            sequence: String(r.sequence),
+            sequence: String(r.evt_seq),
             txHash: r.tx_hash,
             blockNumber: BigInt(r.block_number),
             evtTime: BigInt(r.evt_time),
@@ -613,7 +632,7 @@ async function queryDeals(db: D1Database, args: QueryDealsArgs) {
 
     const last = pageRows[pageRows.length - 1]
     const nextCursor = hasMore && last
-        ? encodeDealCursor({ blockNumber: Number(last.block_number), sequence: String(last.sequence) })
+        ? encodeDealCursor({ blockNumber: Number(last.block_number), sequence: String(last.evt_seq) })
         : ''
 
     return { events, nextCursor, hasMore }

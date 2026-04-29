@@ -53,6 +53,7 @@ message BlockchainSyncReq {
 message BlockchainSyncResp {
   uint64 last_evt_seq    = 1;  // Latest evt_seq (or block) synced to
   uint32 events_indexed  = 2;  // Number of new events indexed in this call
+  uint64 last_block_number = 3; // Latest block synced to
 }
 
 // ── Service ─────────────────────────────────────────────────────────────

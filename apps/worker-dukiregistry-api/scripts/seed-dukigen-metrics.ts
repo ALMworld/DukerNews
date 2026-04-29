@@ -98,7 +98,7 @@ async function seed() {
     const { spawn } = await import('node:child_process')
     await new Promise<void>((resolve, reject) => {
         const child = spawn('npx', [
-            'wrangler', 'd1', 'execute', 'duker_registry',
+            'wrangler', 'd1', 'execute', 'duki_registry',
             '--local', '--file', tmpPath,
         ], { stdio: 'inherit' })
         child.on('exit', (code) => {

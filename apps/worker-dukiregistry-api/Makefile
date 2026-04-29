@@ -64,7 +64,7 @@ worker: ## Start wrangler dev server (port 8788)
 # ── Schema ───────────────────────────────────────────────
 
 schema: ## Apply D1 schema (local)
-	npx wrangler d1 execute duker_registry --local --file=./schemas/001_duker_registry.sql
+	npx wrangler d1 execute duki_registry --local --file=./schemas/001_initial.sql
 
 # ── E2E Test ─────────────────────────────────────────────
 

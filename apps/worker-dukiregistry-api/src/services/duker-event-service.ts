@@ -44,8 +44,8 @@ export async function materializeIdentity(db: D1Database, evt: DukerRegistryEven
 
             await db.prepare(`
                 INSERT OR REPLACE INTO duker_users
-                (token_id, username, chain_eid, ego, display_name, status, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, 'active', ?, ?)
+                (token_id, username, chain_eid, ego, display_name, active, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, 1, ?, ?)
             `).bind(
                 evt.tokenId.toString(),
                 evt.username,
@@ -60,7 +60,7 @@ export async function materializeIdentity(db: D1Database, evt: DukerRegistryEven
 
         case DukerEventType.IDENTITY_BURNED: {
             await db.prepare(`
-                UPDATE duker_users SET status = 'burned', updated_at = ?
+                UPDATE duker_users SET active = 0, updated_at = ?
                 WHERE token_id = ?
             `).bind(now, evt.tokenId.toString()).run()
             break

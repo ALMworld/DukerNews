@@ -14,7 +14,7 @@ import { getChainConfig, DEAL_DUKI_MINTED_ABI } from '../config'
 
 export interface PulledDealDukiMintedEvent {
     chainEid: number
-    sequence: bigint        // contract's monotonic counter (uint256)
+    evt_seq: bigint         // contract's monotonic counter (uint256)
     txHash: string
     blockNumber: bigint
     evtTime: bigint         // block timestamp (unix seconds)
@@ -117,7 +117,7 @@ function parseDealDukiMintedLog(
         const args = decoded.args as any
         return {
             chainEid,
-            sequence: args.sequence as bigint,
+            evt_seq: args.sequence as bigint,
             txHash,
             blockNumber,
             evtTime,
@@ -135,21 +135,21 @@ function parseDealDukiMintedLog(
     }
 }
 
-/** Persist a pulled event row. Idempotent on (chain_eid, sequence). */
+/** Persist a pulled event row. Idempotent on (chain_eid, evt_seq). */
 export async function persistMinterEvent(
     db: D1Database,
     evt: PulledDealDukiMintedEvent,
 ): Promise<void> {
     await db.prepare(`
         INSERT OR IGNORE INTO deal_duki_minted_events
-        (chain_eid, sequence, tx_hash, block_number, evt_time,
+        (chain_eid, evt_seq, tx_hash, block_number, evt_time,
          yang_receiver, yin_receiver, stablecoin,
          duki_amount, alm_yang_amount, alm_yin_amount,
          minter, agent_id)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
         evt.chainEid,
-        evt.sequence.toString(),
+        evt.evt_seq.toString(),
         evt.txHash,
         Number(evt.blockNumber),
         Number(evtTime(evt.evtTime)),
@@ -181,22 +181,38 @@ export async function processMinterEvents(
 
 // ── Sync state (last block per chain) ──
 
-export async function getLastBlockIndexed(db: D1Database, chainEid: number): Promise<bigint> {
-    const row = await db.prepare(
-        'SELECT last_block_indexed FROM minter_sync_state WHERE chain_eid = ?'
-    ).bind(chainEid).first<{ last_block_indexed: number }>()
-    return BigInt(row?.last_block_indexed ?? 0)
-}
-
-export async function setLastBlockIndexed(
+export async function getLastBlockNumber(
     db: D1Database,
     chainEid: number,
+    contractAddress: string
+): Promise<bigint> {
+    const row = await db.prepare(`
+        SELECT last_block_number FROM sync_state 
+        WHERE chain_eid = ? AND contract_address = ? COLLATE NOCASE
+    `).bind(chainEid, contractAddress).first<{ last_block_number: number }>()
+    return BigInt(row?.last_block_number ?? 0)
+}
+
+export async function setLastBlockNumber(
+    db: D1Database,
+    chainEid: number,
+    contractAddress: string,
     block: bigint,
+    lastEvtSeq: bigint,
 ): Promise<void> {
     const now = Math.floor(Date.now() / 1000)
     await db.prepare(`
-        INSERT INTO minter_sync_state (chain_eid, last_block_indexed, updated_at)
-        VALUES (?, ?, ?)
-        ON CONFLICT(chain_eid) DO UPDATE SET last_block_indexed = excluded.last_block_indexed, updated_at = excluded.updated_at
-    `).bind(chainEid, Number(block), now).run()
+        INSERT INTO sync_state (chain_eid, contract_address, last_block_number, last_evt_seq, updated_at)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(chain_eid, contract_address) DO UPDATE SET 
+            last_block_number = excluded.last_block_number, 
+            last_evt_seq = excluded.last_evt_seq,
+            updated_at = excluded.updated_at
+    `).bind(
+        chainEid,
+        contractAddress,
+        Number(block),
+        Number(lastEvtSeq), // It's uint64
+        now
+    ).run()
 }
