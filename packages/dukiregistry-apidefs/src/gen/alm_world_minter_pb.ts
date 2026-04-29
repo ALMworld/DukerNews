@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file alm_world_minter.proto.
  */
 export const file_alm_world_minter: GenFile = /*@__PURE__*/
-  fileDesc("ChZhbG1fd29ybGRfbWludGVyLnByb3RvEgxkdWtpcmVnaXN0cnkinAIKE0RlYWxEdWtpTWludGVkRXZlbnQSEQoJY2hhaW5fZWlkGAEgASgNEhAKCHNlcXVlbmNlGAIgASgJEg8KB3R4X2hhc2gYAyABKAkSFAoMYmxvY2tfbnVtYmVyGAQgASgEEhAKCGV2dF90aW1lGAUgASgEEhUKDXlhbmdfcmVjZWl2ZXIYBiABKAkSFAoMeWluX3JlY2VpdmVyGAcgASgJEhIKCnN0YWJsZWNvaW4YCCABKAkSEwoLZHVraV9hbW91bnQYCSABKAkSFwoPYWxtX3lhbmdfYW1vdW50GAogASgJEhYKDmFsbV95aW5fYW1vdW50GAsgASgJEg4KBm1pbnRlchgMIAEoCRIQCghhZ2VudF9pZBgNIAEoBCI3ChFOb3RpZnlNaW50ZXJUeFJlcRIPCgd0eF9oYXNoGAEgASgJEhEKCWNoYWluX2VpZBgCIAEoDSJHChJOb3RpZnlNaW50ZXJUeFJlc3ASMQoGZXZlbnRzGAEgAygLMiEuZHVraXJlZ2lzdHJ5LkRlYWxEdWtpTWludGVkRXZlbnQiZwoTU3luY01pbnRlckV2ZW50c1JlcRIRCgljaGFpbl9laWQYASABKA0SEgoKZnJvbV9ibG9jaxgCIAEoBBIQCgh0b19ibG9jaxgDIAEoBBIXCg9tYXhfYmxvY2tfcmFuZ2UYBCABKAQiSgoUU3luY01pbnRlckV2ZW50c1Jlc3ASGgoSc3luY2VkX3VwX3RvX2Jsb2NrGAEgASgEEhYKDmV2ZW50c19pbmRleGVkGAIgASgNIlYKEEdldEFnZW50RGVhbHNSZXESEAoIYWdlbnRfaWQYASABKAQSEQoJY2hhaW5fZWlkGAIgASgNEg4KBmN1cnNvchgDIAEoCRINCgVsaW1pdBgEIAEoDSJtChFHZXRBZ2VudERlYWxzUmVzcBIxCgZldmVudHMYASADKAsyIS5kdWtpcmVnaXN0cnkuRGVhbER1a2lNaW50ZWRFdmVudBITCgtuZXh0X2N1cnNvchgCIAEoCRIQCghoYXNfbW9yZRgDIAEoCCJFChFHZXRSZWNlbnREZWFsc1JlcRIRCgljaGFpbl9laWQYASABKA0SDgoGY3Vyc29yGAIgASgJEg0KBWxpbWl0GAMgASgNIm4KEkdldFJlY2VudERlYWxzUmVzcBIxCgZldmVudHMYASADKAsyIS5kdWtpcmVnaXN0cnkuRGVhbER1a2lNaW50ZWRFdmVudBITCgtuZXh0X2N1cnNvchgCIAEoCRIQCghoYXNfbW9yZRgDIAEoCDLuAgoVQWxtV29ybGRNaW50ZXJTZXJ2aWNlElMKDk5vdGlmeU1pbnRlclR4Eh8uZHVraXJlZ2lzdHJ5Lk5vdGlmeU1pbnRlclR4UmVxGiAuZHVraXJlZ2lzdHJ5Lk5vdGlmeU1pbnRlclR4UmVzcBJZChBTeW5jTWludGVyRXZlbnRzEiEuZHVraXJlZ2lzdHJ5LlN5bmNNaW50ZXJFdmVudHNSZXEaIi5kdWtpcmVnaXN0cnkuU3luY01pbnRlckV2ZW50c1Jlc3ASUAoNR2V0QWdlbnREZWFscxIeLmR1a2lyZWdpc3RyeS5HZXRBZ2VudERlYWxzUmVxGh8uZHVraXJlZ2lzdHJ5LkdldEFnZW50RGVhbHNSZXNwElMKDkdldFJlY2VudERlYWxzEh8uZHVraXJlZ2lzdHJ5LkdldFJlY2VudERlYWxzUmVxGiAuZHVraXJlZ2lzdHJ5LkdldFJlY2VudERlYWxzUmVzcGIGcHJvdG8z");
+  fileDesc("ChZhbG1fd29ybGRfbWludGVyLnByb3RvEgxkdWtpcmVnaXN0cnkinAIKE0RlYWxEdWtpTWludGVkRXZlbnQSEQoJY2hhaW5fZWlkGAEgASgNEhAKCHNlcXVlbmNlGAIgASgJEg8KB3R4X2hhc2gYAyABKAkSFAoMYmxvY2tfbnVtYmVyGAQgASgEEhAKCGV2dF90aW1lGAUgASgEEhUKDXlhbmdfcmVjZWl2ZXIYBiABKAkSFAoMeWluX3JlY2VpdmVyGAcgASgJEhIKCnN0YWJsZWNvaW4YCCABKAkSEwoLZHVraV9hbW91bnQYCSABKAkSFwoPYWxtX3lhbmdfYW1vdW50GAogASgJEhYKDmFsbV95aW5fYW1vdW50GAsgASgJEg4KBm1pbnRlchgMIAEoCRIQCghhZ2VudF9pZBgNIAEoBCI3ChFOb3RpZnlNaW50ZXJUeFJlcRIPCgd0eF9oYXNoGAEgASgJEhEKCWNoYWluX2VpZBgCIAEoDSJHChJOb3RpZnlNaW50ZXJUeFJlc3ASMQoGZXZlbnRzGAEgAygLMiEuZHVraXJlZ2lzdHJ5LkRlYWxEdWtpTWludGVkRXZlbnQiZwoTU3luY01pbnRlckV2ZW50c1JlcRIRCgljaGFpbl9laWQYASABKA0SEgoKZnJvbV9ibG9jaxgCIAEoBBIQCgh0b19ibG9jaxgDIAEoBBIXCg9tYXhfYmxvY2tfcmFuZ2UYBCABKAQiSgoUU3luY01pbnRlckV2ZW50c1Jlc3ASGgoSc3luY2VkX3VwX3RvX2Jsb2NrGAEgASgEEhYKDmV2ZW50c19pbmRleGVkGAIgASgNIlYKEEdldEFnZW50RGVhbHNSZXESEAoIYWdlbnRfaWQYASABKAQSEQoJY2hhaW5fZWlkGAIgASgNEg4KBmN1cnNvchgDIAEoCRINCgVsaW1pdBgEIAEoDSJtChFHZXRBZ2VudERlYWxzUmVzcBIxCgZldmVudHMYASADKAsyIS5kdWtpcmVnaXN0cnkuRGVhbER1a2lNaW50ZWRFdmVudBITCgtuZXh0X2N1cnNvchgCIAEoCRIQCghoYXNfbW9yZRgDIAEoCCJFChFHZXRSZWNlbnREZWFsc1JlcRIRCgljaGFpbl9laWQYASABKA0SDgoGY3Vyc29yGAIgASgJEg0KBWxpbWl0GAMgASgNIm4KEkdldFJlY2VudERlYWxzUmVzcBIxCgZldmVudHMYASADKAsyIS5kdWtpcmVnaXN0cnkuRGVhbER1a2lNaW50ZWRFdmVudBITCgtuZXh0X2N1cnNvchgCIAEoCRIQCghoYXNfbW9yZRgDIAEoCCJVChFHZXRXYWxsZXREZWFsc1JlcRIOCgZ3YWxsZXQYASABKAkSEQoJY2hhaW5fZWlkGAIgASgNEg4KBmN1cnNvchgDIAEoCRINCgVsaW1pdBgEIAEoDSJuChJHZXRXYWxsZXREZWFsc1Jlc3ASMQoGZXZlbnRzGAEgAygLMiEuZHVraXJlZ2lzdHJ5LkRlYWxEdWtpTWludGVkRXZlbnQSEwoLbmV4dF9jdXJzb3IYAiABKAkSEAoIaGFzX21vcmUYAyABKAgywwMKFUFsbVdvcmxkTWludGVyU2VydmljZRJTCg5Ob3RpZnlNaW50ZXJUeBIfLmR1a2lyZWdpc3RyeS5Ob3RpZnlNaW50ZXJUeFJlcRogLmR1a2lyZWdpc3RyeS5Ob3RpZnlNaW50ZXJUeFJlc3ASWQoQU3luY01pbnRlckV2ZW50cxIhLmR1a2lyZWdpc3RyeS5TeW5jTWludGVyRXZlbnRzUmVxGiIuZHVraXJlZ2lzdHJ5LlN5bmNNaW50ZXJFdmVudHNSZXNwElAKDUdldEFnZW50RGVhbHMSHi5kdWtpcmVnaXN0cnkuR2V0QWdlbnREZWFsc1JlcRofLmR1a2lyZWdpc3RyeS5HZXRBZ2VudERlYWxzUmVzcBJTCg5HZXRSZWNlbnREZWFscxIfLmR1a2lyZWdpc3RyeS5HZXRSZWNlbnREZWFsc1JlcRogLmR1a2lyZWdpc3RyeS5HZXRSZWNlbnREZWFsc1Jlc3ASUwoOR2V0V2FsbGV0RGVhbHMSHy5kdWtpcmVnaXN0cnkuR2V0V2FsbGV0RGVhbHNSZXEaIC5kdWtpcmVnaXN0cnkuR2V0V2FsbGV0RGVhbHNSZXNwYgZwcm90bzM");
 
 /**
  * AlmWorldDukiMinter — DealDukiMinted event indexer.
@@ -362,6 +362,71 @@ export const GetRecentDealsRespSchema: GenMessage<GetRecentDealsResp> = /*@__PUR
   messageDesc(file_alm_world_minter, 8);
 
 /**
+ * ── Query: deals involving a specific wallet (as minter or yang_receiver).
+ *
+ * @generated from message dukiregistry.GetWalletDealsReq
+ */
+export type GetWalletDealsReq = Message<"dukiregistry.GetWalletDealsReq"> & {
+  /**
+   * Wallet address (matches minter OR yang_receiver)
+   *
+   * @generated from field: string wallet = 1;
+   */
+  wallet: string;
+
+  /**
+   * 0 = all chains
+   *
+   * @generated from field: uint32 chain_eid = 2;
+   */
+  chainEid: number;
+
+  /**
+   * @generated from field: string cursor = 3;
+   */
+  cursor: string;
+
+  /**
+   * @generated from field: uint32 limit = 4;
+   */
+  limit: number;
+};
+
+/**
+ * Describes the message dukiregistry.GetWalletDealsReq.
+ * Use `create(GetWalletDealsReqSchema)` to create a new message.
+ */
+export const GetWalletDealsReqSchema: GenMessage<GetWalletDealsReq> = /*@__PURE__*/
+  messageDesc(file_alm_world_minter, 9);
+
+/**
+ * @generated from message dukiregistry.GetWalletDealsResp
+ */
+export type GetWalletDealsResp = Message<"dukiregistry.GetWalletDealsResp"> & {
+  /**
+   * @generated from field: repeated dukiregistry.DealDukiMintedEvent events = 1;
+   */
+  events: DealDukiMintedEvent[];
+
+  /**
+   * @generated from field: string next_cursor = 2;
+   */
+  nextCursor: string;
+
+  /**
+   * @generated from field: bool has_more = 3;
+   */
+  hasMore: boolean;
+};
+
+/**
+ * Describes the message dukiregistry.GetWalletDealsResp.
+ * Use `create(GetWalletDealsRespSchema)` to create a new message.
+ */
+export const GetWalletDealsRespSchema: GenMessage<GetWalletDealsResp> = /*@__PURE__*/
+  messageDesc(file_alm_world_minter, 10);
+
+/**
  * @generated from service dukiregistry.AlmWorldMinterService
  */
 export const AlmWorldMinterService: GenService<{
@@ -404,6 +469,16 @@ export const AlmWorldMinterService: GenService<{
     methodKind: "unary";
     input: typeof GetRecentDealsReqSchema;
     output: typeof GetRecentDealsRespSchema;
+  },
+  /**
+   * Deals involving a specific wallet (minter or receiver).
+   *
+   * @generated from rpc dukiregistry.AlmWorldMinterService.GetWalletDeals
+   */
+  getWalletDeals: {
+    methodKind: "unary";
+    input: typeof GetWalletDealsReqSchema;
+    output: typeof GetWalletDealsRespSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_alm_world_minter, 0);

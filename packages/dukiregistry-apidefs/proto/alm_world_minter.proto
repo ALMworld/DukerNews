@@ -90,6 +90,20 @@ message GetRecentDealsResp {
   bool   has_more    = 3;
 }
 
+// ── Query: deals involving a specific wallet (as minter or yang_receiver).
+message GetWalletDealsReq {
+  string wallet    = 1;  // Wallet address (matches minter OR yang_receiver)
+  uint32 chain_eid = 2;  // 0 = all chains
+  string cursor    = 3;
+  uint32 limit     = 4;
+}
+
+message GetWalletDealsResp {
+  repeated DealDukiMintedEvent events = 1;
+  string next_cursor = 2;
+  bool   has_more    = 3;
+}
+
 service AlmWorldMinterService {
   // Webhook — accept a tx hash, pull its receipt, index any DealDukiMinted logs.
   rpc NotifyMinterTx(NotifyMinterTxReq) returns (NotifyMinterTxResp);
@@ -102,4 +116,7 @@ service AlmWorldMinterService {
 
   // Most recent deals across all agents (market activity feed).
   rpc GetRecentDeals(GetRecentDealsReq) returns (GetRecentDealsResp);
+
+  // Deals involving a specific wallet (minter or receiver).
+  rpc GetWalletDeals(GetWalletDealsReq) returns (GetWalletDealsResp);
 }

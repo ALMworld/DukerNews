@@ -265,6 +265,28 @@ export async function getRecentDeals(
     }
 }
 
+/** Fetch deals involving a specific wallet (as minter or receiver, newest first). */
+export async function getWalletDeals(
+    wallet: string,
+    opts: { chainEid?: number; cursor?: string; limit?: number } = {},
+): Promise<DealEventsPage> {
+    try {
+        const resp = await minterClient.getWalletDeals({
+            wallet,
+            chainEid: opts.chainEid ?? 0,
+            cursor: opts.cursor ?? '',
+            limit: opts.limit ?? 20,
+        })
+        return {
+            events: resp.events ?? [],
+            nextCursor: resp.nextCursor ?? '',
+            hasMore: Boolean(resp.hasMore),
+        }
+    } catch {
+        return EMPTY_DEAL_PAGE
+    }
+}
+
 /**
  * Webhook the worker after a successful AlmWorldDukiMinter tx so it can pull
  * the receipt and index the DealDukiMinted logs. Fire-and-forget — errors are

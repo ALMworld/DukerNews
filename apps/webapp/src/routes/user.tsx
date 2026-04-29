@@ -337,6 +337,23 @@ function UserProfilePage() {
                             </td>
                         </tr>
 
+                        {/* duki activity */}
+                        {user.address && (
+                            <tr>
+                                <td style={labelStyle}></td>
+                                <td style={valueStyle}>
+                                    <Link
+                                        to="/activity/$address"
+                                        params={{ address: user.address }}
+                                        className="underline hover:opacity-80"
+                                        style={{ color: 'var(--link-color)' }}
+                                    >
+                                        duki activity
+                                    </Link>
+                                </td>
+                            </tr>
+                        )}
+
                         {/* comments */}
                         <tr>
                             <td style={labelStyle}></td>

@@ -18,7 +18,7 @@ import {
     RefreshCw,
     Rows3,
 } from 'lucide-react'
-import { getAgentDeals, getRecentDeals } from '../../client/registry-api'
+import { getAgentDeals, getRecentDeals, getWalletDeals } from '../../client/registry-api'
 import { getChainNameForEid } from '../../lib/contracts'
 import { cn } from '../../lib/utils'
 import type { DealDukiMintedEvent } from '../../client/registry-api'
@@ -26,6 +26,8 @@ import type { DealDukiMintedEvent } from '../../client/registry-api'
 interface DealDukiMintFeedProps {
     /** When set, scope to a single agent's deals; otherwise show recent across all agents. */
     agentId?: bigint | string
+    /** When set, scope to deals involving this wallet address (minter or receiver). */
+    wallet?: string
     /** When set, scope to a single chain (LayerZero EID); 0 / undefined = all chains. */
     chainEid?: number
     /** Title for the feed header. Defaults to "Agent Deal Mints" / "Market Activity". */
@@ -34,26 +36,34 @@ interface DealDukiMintFeedProps {
     limit?: number
     /** Refetch interval in ms. Pass 0 to disable polling. */
     pollMs?: number
+    /** When true, show a slim metadata-only header (row count + updated time) instead of the full title row. */
+    compact?: boolean
     className?: string
 }
 
 export function DealDukiMintFeed({
     agentId,
+    wallet,
     chainEid = 0,
     title,
     limit = 20,
     pollMs = 15_000,
+    compact,
     className,
 }: DealDukiMintFeedProps) {
     const scoped = agentId !== undefined
-    const scopeKey = scoped ? String(agentId) : 'all-agents'
-    const headerTitle = title ?? (scoped ? 'Agent Deal Mints' : 'Market Activity')
+    const walletScoped = !!wallet
+    const scopeKey = scoped ? String(agentId) : walletScoped ? wallet : 'all-agents'
+    const headerTitle = title ?? (scoped ? 'Agent Deal Mints' : walletScoped ? 'My Activity' : 'Market Activity')
 
     const { data, dataUpdatedAt, isFetching, isLoading } = useQuery({
-        queryKey: ['deal-duki-minted', scoped ? 'agent' : 'recent', scopeKey, chainEid, limit],
+        queryKey: ['deal-duki-minted', scoped ? 'agent' : walletScoped ? 'wallet' : 'recent', scopeKey, chainEid, limit],
         queryFn: () => {
             if (agentId !== undefined) {
                 return getAgentDeals(agentId, { chainEid, limit })
+            }
+            if (wallet) {
+                return getWalletDeals(wallet, { chainEid, limit })
             }
             return getRecentDeals({ chainEid, limit })
         },
@@ -72,45 +82,68 @@ export function DealDukiMintFeed({
     return (
         <section className={cn('flex min-h-[300px] flex-col overflow-hidden rounded-lg border border-border bg-card/60', className)}>
             <header className="border-b border-border bg-background/40 px-4 py-3">
-                <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                            <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-foreground text-background">
-                                <Activity size={14} />
+                {compact ? (
+                    /* ── Compact: metadata-only bar ── */
+                    <div className="flex items-center justify-between gap-3">
+                        <div className="flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground">
+                            <span className="inline-flex items-center gap-1 rounded-md bg-muted/55 px-2 py-1">
+                                <Rows3 size={11} />
+                                {events.length} row{events.length === 1 ? '' : 's'}
                             </span>
-                            <div className="min-w-0">
-                                <h3 className="m-0 truncate text-sm font-black leading-tight text-foreground">
-                                    {headerTitle}
-                                </h3>
-                                <p className="m-0 mt-0.5 truncate text-[11px] text-muted-foreground">
-                                    {scoped ? `Filtered to Agent #${scopeKey}` : 'Latest events across DukiGen'}
-                                </p>
-                            </div>
+                            <span className="inline-flex items-center gap-1 rounded-md bg-muted/55 px-2 py-1">
+                                <Radio size={11} />
+                                Updated {formatUpdatedAt(dataUpdatedAt)}
+                            </span>
                         </div>
-                    </div>
-
-                    <div className="flex shrink-0 flex-col items-end gap-1">
-                        <span className="inline-flex items-center gap-1.5 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-500">
-                            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-                            Live
-                        </span>
                         <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
                             <RefreshCw size={10} className={isFetching ? 'animate-spin' : ''} />
                             {pollMs > 0 ? `${formatPoll(pollMs)} poll` : 'manual'}
                         </span>
                     </div>
-                </div>
+                ) : (
+                    /* ── Full header ── */
+                    <>
+                        <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                    <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-foreground text-background">
+                                        <Activity size={14} />
+                                    </span>
+                                    <div className="min-w-0">
+                                        <h3 className="m-0 truncate text-sm font-black leading-tight text-foreground">
+                                            {headerTitle}
+                                        </h3>
+                                        <p className="m-0 mt-0.5 truncate text-[11px] text-muted-foreground">
+                                            {scoped ? `Filtered to Agent #${scopeKey}` : walletScoped ? `Wallet ${scopeKey.slice(0, 6)}...${scopeKey.slice(-4)}` : 'Latest events across DukiGen'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
 
-                <div className="mt-3 flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground">
-                    <span className="inline-flex items-center gap-1 rounded-md bg-muted/55 px-2 py-1">
-                        <Rows3 size={11} />
-                        {events.length} row{events.length === 1 ? '' : 's'}
-                    </span>
-                    <span className="inline-flex items-center gap-1 rounded-md bg-muted/55 px-2 py-1">
-                        <Radio size={11} />
-                        Updated {formatUpdatedAt(dataUpdatedAt)}
-                    </span>
-                </div>
+                            <div className="flex shrink-0 flex-col items-end gap-1">
+                                <span className="inline-flex items-center gap-1.5 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-500">
+                                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+                                    Live
+                                </span>
+                                <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                                    <RefreshCw size={10} className={isFetching ? 'animate-spin' : ''} />
+                                    {pollMs > 0 ? `${formatPoll(pollMs)} poll` : 'manual'}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="mt-3 flex flex-wrap items-center gap-2 text-[10px] text-muted-foreground">
+                            <span className="inline-flex items-center gap-1 rounded-md bg-muted/55 px-2 py-1">
+                                <Rows3 size={11} />
+                                {events.length} row{events.length === 1 ? '' : 's'}
+                            </span>
+                            <span className="inline-flex items-center gap-1 rounded-md bg-muted/55 px-2 py-1">
+                                <Radio size={11} />
+                                Updated {formatUpdatedAt(dataUpdatedAt)}
+                            </span>
+                        </div>
+                    </>
+                )}
             </header>
 
             <div className="min-h-0 flex-1 overflow-y-auto px-2.5 py-2.5" style={{ scrollbarWidth: 'thin' }}>

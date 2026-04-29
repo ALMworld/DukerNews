@@ -16,6 +16,7 @@ import {
     SyncMinterEventsRespSchema,
     GetAgentDealsRespSchema,
     GetRecentDealsRespSchema,
+    GetWalletDealsRespSchema,
     DealDukiMintedEventSchema,
     GetAgentsRespSchema,
     ListAgentsRankedRespSchema,
@@ -668,6 +669,17 @@ export function registerGrpcRoutes(router: ConnectRouter) {
             })
             return create(GetRecentDealsRespSchema, page)
         },
+
+        async getWalletDeals(req) {
+            const page = await queryDeals(_db, {
+                agentId: null,
+                wallet: req.wallet,
+                chainEid: req.chainEid,
+                cursor: req.cursor,
+                limit: req.limit,
+            })
+            return create(GetWalletDealsRespSchema, page)
+        },
     })
 }
 
@@ -712,6 +724,7 @@ function decodeDealCursor(raw: string | undefined | null): DealCursor | null {
 
 interface QueryDealsArgs {
     agentId: string | null   // null = all agents (recent feed)
+    wallet?: string           // filter by minter or yang_receiver
     chainEid: number          // 0 = all chains
     cursor: string
     limit: number
@@ -730,6 +743,10 @@ async function queryDeals(db: D1Database, args: QueryDealsArgs) {
     if (args.agentId !== null) {
         where.push('agent_id = ?')
         params.push(args.agentId)
+    }
+    if (args.wallet) {
+        where.push('(minter = ? COLLATE NOCASE OR yang_receiver = ? COLLATE NOCASE)')
+        params.push(args.wallet, args.wallet)
     }
     if (args.chainEid > 0) {
         where.push('chain_eid = ?')

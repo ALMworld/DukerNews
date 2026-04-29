@@ -7,6 +7,7 @@
  */
 import { Link, createFileRoute } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
+import { useAccount } from 'wagmi'
 import { ArrowRight, Loader2, Plus, Activity } from 'lucide-react'
 import { MarketStats, type MarketStatsData } from '@/components/market/MarketStats'
 import { AgentCard } from '@/components/market/AgentCard'
@@ -22,6 +23,7 @@ export const Route = createFileRoute('/market')({
 })
 
 function MarketLandingPage() {
+    const { address: walletAddr } = useAccount()
     const { data: entries = [], error, isLoading } = useQuery({
         queryKey: ['market-agents'],
         queryFn: loadMarketEntries,
@@ -68,7 +70,8 @@ function MarketLandingPage() {
                                     <Plus size={14} /> Register Agent
                                 </Link>
                                 <Link
-                                    to="/market_search"
+                                    to={walletAddr ? '/activity/$address' : '/market_search'}
+                                    params={walletAddr ? { address: walletAddr } : undefined}
                                     className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-border bg-muted/50 px-5 py-2.5 text-[13px] font-semibold text-foreground no-underline transition-colors hover:bg-muted"
                                 >
                                     <Activity size={14} /> View My Activity

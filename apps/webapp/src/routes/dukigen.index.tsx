@@ -13,7 +13,7 @@
  *
  * Calls DukigenRegistry.register() with full works metadata.
  */
-import { Link, Outlet, createFileRoute, useRouterState } from '@tanstack/react-router'
+import { Link, createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { useAccount, useChainId, usePublicClient, useSwitchChain, useWriteContract } from 'wagmi'
 import {
@@ -29,15 +29,14 @@ import { notifyDukiRegistry } from '../client/registry-api'
 import { DukiBpsSlider } from '../components/DukiBpsSlider'
 import { addBookmark } from '../lib/bookmarks'
 
-export const Route = createFileRoute('/dukigen')({
-    component: DukigenPage,
+export const Route = createFileRoute('/dukigen/')({
+    component: DukigenCreatePage,
 })
 
 // ── Design tokens ────────────────────────────────────────────────────────────
 const META = 'var(--meta-color)'
 const BDR = 'var(--border)'
 const FG = 'var(--foreground)'
-const P300 = 'var(--duki-300, #c4b5fd)'
 
 // ── Product / Duki type options ─────────────────────────────────────────────
 const PRODUCT_OPTIONS = [
@@ -63,17 +62,6 @@ const CHAIN_OPTIONS: Array<ChainOption> = SUPPORTED_CHAINS.map(c => ({
 const CUSTOM_EID_SENTINEL = '__custom__'
 
 type Step = 'idle' | 'switching' | 'executing' | 'confirming' | 'done'
-
-function DukigenPage() {
-    const pathname = useRouterState({ select: (state) => state.location.pathname })
-    const normalizedPath = pathname.replace(/\/+$/, '')
-
-    if (normalizedPath !== '/dukigen') {
-        return <Outlet />
-    }
-
-    return <DukigenCreatePage />
-}
 
 function DukigenCreatePage() {
     const { authStatus, me, setConnectModalOpen } = useAuthStore()

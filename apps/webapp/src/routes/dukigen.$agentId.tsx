@@ -5,11 +5,10 @@
  * as a registry dossier with launch actions, metadata properties, deployed
  * contracts, and a live DealDukiMintFeed scoped to this agent.
  */
-import { Link, createFileRoute } from '@tanstack/react-router'
+import { createFileRoute } from '@tanstack/react-router'
 import { useQuery } from '@tanstack/react-query'
 import {
     Activity,
-    ArrowLeft,
     BadgeCheck,
     Box,
     ExternalLink,
@@ -46,20 +45,6 @@ function AgentDetailPage() {
 
     return (
         <main className="mx-auto max-w-[1180px] px-4 pt-6 pb-14 text-foreground">
-            <div className="mb-5 flex items-center justify-between gap-3">
-                <Link
-                    to="/market"
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground no-underline transition-colors hover:text-foreground"
-                >
-                    <ArrowLeft size={13} /> Market
-                </Link>
-                <Link
-                    to="/dukigen"
-                    className="hidden items-center gap-1.5 rounded-md border border-border bg-muted/35 px-3 py-1.5 text-xs font-semibold text-foreground no-underline transition-colors hover:bg-muted sm:inline-flex"
-                >
-                    Register another
-                </Link>
-            </div>
 
             {isLoading ? (
                 <div className="grid min-h-[360px] place-items-center rounded-lg border border-border bg-card/40">

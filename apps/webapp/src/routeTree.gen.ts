@@ -24,16 +24,17 @@ import { Route as MarketRouteImport } from './routes/market'
 import { Route as JobsRouteImport } from './routes/jobs'
 import { Route as FormatdocRouteImport } from './routes/formatdoc'
 import { Route as FavoritesRouteImport } from './routes/favorites'
-import { Route as DukigenRouteImport } from './routes/dukigen'
 import { Route as DaoRouteImport } from './routes/dao'
 import { Route as CommentsRouteImport } from './routes/comments'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DukigenIndexRouteImport } from './routes/dukigen.index'
 import { Route as RpcSplatRouteImport } from './routes/rpc/$'
 import { Route as PostIdRouteImport } from './routes/post.$id'
 import { Route as DukigenAgentIdRouteImport } from './routes/dukigen.$agentId'
 import { Route as ApiSyncEventsRouteImport } from './routes/api/sync-events'
 import { Route as ApiSeedRouteImport } from './routes/api/seed'
 import { Route as ApiNotifyTxsRouteImport } from './routes/api/notify-txs'
+import { Route as ActivityAddressRouteImport } from './routes/activity.$address'
 import { Route as ApiUsersCheckNameRouteImport } from './routes/api/users/check-name'
 import { Route as ApiDebugSyncEventsRouteImport } from './routes/api/debug/sync-events'
 import { Route as ApiAuthRefreshRouteImport } from './routes/api/auth/refresh'
@@ -118,11 +119,6 @@ const FavoritesRoute = FavoritesRouteImport.update({
   path: '/favorites',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DukigenRoute = DukigenRouteImport.update({
-  id: '/dukigen',
-  path: '/dukigen',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const DaoRoute = DaoRouteImport.update({
   id: '/dao',
   path: '/dao',
@@ -138,6 +134,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DukigenIndexRoute = DukigenIndexRouteImport.update({
+  id: '/dukigen/',
+  path: '/dukigen/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RpcSplatRoute = RpcSplatRouteImport.update({
   id: '/rpc/$',
   path: '/rpc/$',
@@ -149,9 +150,9 @@ const PostIdRoute = PostIdRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const DukigenAgentIdRoute = DukigenAgentIdRouteImport.update({
-  id: '/$agentId',
-  path: '/$agentId',
-  getParentRoute: () => DukigenRoute,
+  id: '/dukigen/$agentId',
+  path: '/dukigen/$agentId',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSyncEventsRoute = ApiSyncEventsRouteImport.update({
   id: '/api/sync-events',
@@ -166,6 +167,11 @@ const ApiSeedRoute = ApiSeedRouteImport.update({
 const ApiNotifyTxsRoute = ApiNotifyTxsRouteImport.update({
   id: '/api/notify-txs',
   path: '/api/notify-txs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ActivityAddressRoute = ActivityAddressRouteImport.update({
+  id: '/activity/$address',
+  path: '/activity/$address',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiUsersCheckNameRoute = ApiUsersCheckNameRouteImport.update({
@@ -213,7 +219,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/comments': typeof CommentsRoute
   '/dao': typeof DaoRoute
-  '/dukigen': typeof DukigenRouteWithChildren
   '/favorites': typeof FavoritesRoute
   '/formatdoc': typeof FormatdocRoute
   '/jobs': typeof JobsRoute
@@ -229,12 +234,14 @@ export interface FileRoutesByFullPath {
   '/user': typeof UserRoute
   '/voice': typeof VoiceRoute
   '/welcome': typeof WelcomeRoute
+  '/activity/$address': typeof ActivityAddressRoute
   '/api/notify-txs': typeof ApiNotifyTxsRoute
   '/api/seed': typeof ApiSeedRoute
   '/api/sync-events': typeof ApiSyncEventsRoute
   '/dukigen/$agentId': typeof DukigenAgentIdRoute
   '/post/$id': typeof PostIdRoute
   '/rpc/$': typeof RpcSplatRoute
+  '/dukigen/': typeof DukigenIndexRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/auth/me': typeof ApiAuthMeRoute
@@ -248,7 +255,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/comments': typeof CommentsRoute
   '/dao': typeof DaoRoute
-  '/dukigen': typeof DukigenRouteWithChildren
   '/favorites': typeof FavoritesRoute
   '/formatdoc': typeof FormatdocRoute
   '/jobs': typeof JobsRoute
@@ -264,12 +270,14 @@ export interface FileRoutesByTo {
   '/user': typeof UserRoute
   '/voice': typeof VoiceRoute
   '/welcome': typeof WelcomeRoute
+  '/activity/$address': typeof ActivityAddressRoute
   '/api/notify-txs': typeof ApiNotifyTxsRoute
   '/api/seed': typeof ApiSeedRoute
   '/api/sync-events': typeof ApiSyncEventsRoute
   '/dukigen/$agentId': typeof DukigenAgentIdRoute
   '/post/$id': typeof PostIdRoute
   '/rpc/$': typeof RpcSplatRoute
+  '/dukigen': typeof DukigenIndexRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/auth/me': typeof ApiAuthMeRoute
@@ -284,7 +292,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/comments': typeof CommentsRoute
   '/dao': typeof DaoRoute
-  '/dukigen': typeof DukigenRouteWithChildren
   '/favorites': typeof FavoritesRoute
   '/formatdoc': typeof FormatdocRoute
   '/jobs': typeof JobsRoute
@@ -300,12 +307,14 @@ export interface FileRoutesById {
   '/user': typeof UserRoute
   '/voice': typeof VoiceRoute
   '/welcome': typeof WelcomeRoute
+  '/activity/$address': typeof ActivityAddressRoute
   '/api/notify-txs': typeof ApiNotifyTxsRoute
   '/api/seed': typeof ApiSeedRoute
   '/api/sync-events': typeof ApiSyncEventsRoute
   '/dukigen/$agentId': typeof DukigenAgentIdRoute
   '/post/$id': typeof PostIdRoute
   '/rpc/$': typeof RpcSplatRoute
+  '/dukigen/': typeof DukigenIndexRoute
   '/api/auth/login': typeof ApiAuthLoginRoute
   '/api/auth/logout': typeof ApiAuthLogoutRoute
   '/api/auth/me': typeof ApiAuthMeRoute
@@ -321,7 +330,6 @@ export interface FileRouteTypes {
     | '/'
     | '/comments'
     | '/dao'
-    | '/dukigen'
     | '/favorites'
     | '/formatdoc'
     | '/jobs'
@@ -337,12 +345,14 @@ export interface FileRouteTypes {
     | '/user'
     | '/voice'
     | '/welcome'
+    | '/activity/$address'
     | '/api/notify-txs'
     | '/api/seed'
     | '/api/sync-events'
     | '/dukigen/$agentId'
     | '/post/$id'
     | '/rpc/$'
+    | '/dukigen/'
     | '/api/auth/login'
     | '/api/auth/logout'
     | '/api/auth/me'
@@ -356,7 +366,6 @@ export interface FileRouteTypes {
     | '/'
     | '/comments'
     | '/dao'
-    | '/dukigen'
     | '/favorites'
     | '/formatdoc'
     | '/jobs'
@@ -372,12 +381,14 @@ export interface FileRouteTypes {
     | '/user'
     | '/voice'
     | '/welcome'
+    | '/activity/$address'
     | '/api/notify-txs'
     | '/api/seed'
     | '/api/sync-events'
     | '/dukigen/$agentId'
     | '/post/$id'
     | '/rpc/$'
+    | '/dukigen'
     | '/api/auth/login'
     | '/api/auth/logout'
     | '/api/auth/me'
@@ -391,7 +402,6 @@ export interface FileRouteTypes {
     | '/'
     | '/comments'
     | '/dao'
-    | '/dukigen'
     | '/favorites'
     | '/formatdoc'
     | '/jobs'
@@ -407,12 +417,14 @@ export interface FileRouteTypes {
     | '/user'
     | '/voice'
     | '/welcome'
+    | '/activity/$address'
     | '/api/notify-txs'
     | '/api/seed'
     | '/api/sync-events'
     | '/dukigen/$agentId'
     | '/post/$id'
     | '/rpc/$'
+    | '/dukigen/'
     | '/api/auth/login'
     | '/api/auth/logout'
     | '/api/auth/me'
@@ -427,7 +439,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   CommentsRoute: typeof CommentsRoute
   DaoRoute: typeof DaoRoute
-  DukigenRoute: typeof DukigenRouteWithChildren
   FavoritesRoute: typeof FavoritesRoute
   FormatdocRoute: typeof FormatdocRoute
   JobsRoute: typeof JobsRoute
@@ -443,11 +454,14 @@ export interface RootRouteChildren {
   UserRoute: typeof UserRoute
   VoiceRoute: typeof VoiceRoute
   WelcomeRoute: typeof WelcomeRoute
+  ActivityAddressRoute: typeof ActivityAddressRoute
   ApiNotifyTxsRoute: typeof ApiNotifyTxsRoute
   ApiSeedRoute: typeof ApiSeedRoute
   ApiSyncEventsRoute: typeof ApiSyncEventsRoute
+  DukigenAgentIdRoute: typeof DukigenAgentIdRoute
   PostIdRoute: typeof PostIdRoute
   RpcSplatRoute: typeof RpcSplatRoute
+  DukigenIndexRoute: typeof DukigenIndexRoute
   ApiAuthLoginRoute: typeof ApiAuthLoginRoute
   ApiAuthLogoutRoute: typeof ApiAuthLogoutRoute
   ApiAuthMeRoute: typeof ApiAuthMeRoute
@@ -565,13 +579,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FavoritesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/dukigen': {
-      id: '/dukigen'
-      path: '/dukigen'
-      fullPath: '/dukigen'
-      preLoaderRoute: typeof DukigenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/dao': {
       id: '/dao'
       path: '/dao'
@@ -593,6 +600,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dukigen/': {
+      id: '/dukigen/'
+      path: '/dukigen'
+      fullPath: '/dukigen/'
+      preLoaderRoute: typeof DukigenIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/rpc/$': {
       id: '/rpc/$'
       path: '/rpc/$'
@@ -609,10 +623,10 @@ declare module '@tanstack/react-router' {
     }
     '/dukigen/$agentId': {
       id: '/dukigen/$agentId'
-      path: '/$agentId'
+      path: '/dukigen/$agentId'
       fullPath: '/dukigen/$agentId'
       preLoaderRoute: typeof DukigenAgentIdRouteImport
-      parentRoute: typeof DukigenRoute
+      parentRoute: typeof rootRouteImport
     }
     '/api/sync-events': {
       id: '/api/sync-events'
@@ -633,6 +647,13 @@ declare module '@tanstack/react-router' {
       path: '/api/notify-txs'
       fullPath: '/api/notify-txs'
       preLoaderRoute: typeof ApiNotifyTxsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/activity/$address': {
+      id: '/activity/$address'
+      path: '/activity/$address'
+      fullPath: '/activity/$address'
+      preLoaderRoute: typeof ActivityAddressRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/users/check-name': {
@@ -694,22 +715,10 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface DukigenRouteChildren {
-  DukigenAgentIdRoute: typeof DukigenAgentIdRoute
-}
-
-const DukigenRouteChildren: DukigenRouteChildren = {
-  DukigenAgentIdRoute: DukigenAgentIdRoute,
-}
-
-const DukigenRouteWithChildren =
-  DukigenRoute._addFileChildren(DukigenRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   CommentsRoute: CommentsRoute,
   DaoRoute: DaoRoute,
-  DukigenRoute: DukigenRouteWithChildren,
   FavoritesRoute: FavoritesRoute,
   FormatdocRoute: FormatdocRoute,
   JobsRoute: JobsRoute,
@@ -725,11 +734,14 @@ const rootRouteChildren: RootRouteChildren = {
   UserRoute: UserRoute,
   VoiceRoute: VoiceRoute,
   WelcomeRoute: WelcomeRoute,
+  ActivityAddressRoute: ActivityAddressRoute,
   ApiNotifyTxsRoute: ApiNotifyTxsRoute,
   ApiSeedRoute: ApiSeedRoute,
   ApiSyncEventsRoute: ApiSyncEventsRoute,
+  DukigenAgentIdRoute: DukigenAgentIdRoute,
   PostIdRoute: PostIdRoute,
   RpcSplatRoute: RpcSplatRoute,
+  DukigenIndexRoute: DukigenIndexRoute,
   ApiAuthLoginRoute: ApiAuthLoginRoute,
   ApiAuthLogoutRoute: ApiAuthLogoutRoute,
   ApiAuthMeRoute: ApiAuthMeRoute,
