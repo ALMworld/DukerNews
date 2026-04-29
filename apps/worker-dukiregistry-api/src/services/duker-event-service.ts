@@ -2,15 +2,15 @@
  * duker-event-service.ts — Persist DukerRegistry events and materialize identities.
  */
 
-import type { PulledDukerEvent } from './chain-puller'
-import { DukerEventType } from '@repo/dukiregistry-apidefs'
-import { dukerRegistryAbi } from 'contract-duki-alm-world'
-import { decodeEventPayload } from './event-payload'
+import type { DukerRegistryEvent } from '@repo/dukiregistry-apidefs'
+import { DukerEventType, DukerEventDataSchema } from '@repo/dukiregistry-apidefs'
+import { toBinary } from '@bufbuild/protobuf'
 
 /**
  * Persist a raw DukerEvent to the duker_registry_events table.
+ * Stores the proto-serialized DukerEventData as a BLOB in event_data.
  */
-export async function persistDukerEvent(db: D1Database, evt: PulledDukerEvent): Promise<void> {
+export async function persistDukerEvent(db: D1Database, evt: DukerRegistryEvent): Promise<void> {
     await db.prepare(`
         INSERT OR IGNORE INTO duker_registry_events
         (chain_eid, evt_seq, token_id, event_type, ego, username, evt_time, tx_hash, block_number, event_data)
@@ -25,7 +25,7 @@ export async function persistDukerEvent(db: D1Database, evt: PulledDukerEvent): 
         Number(evt.evtTime),
         evt.txHash,
         Number(evt.blockNumber),
-        evt.eventData,
+        evt.eventData ? toBinary(DukerEventDataSchema, evt.eventData) : null,
     ).run()
 }
 
@@ -33,7 +33,7 @@ export async function persistDukerEvent(db: D1Database, evt: PulledDukerEvent): 
  * Materialize identity state from a DukerEvent.
  * Updates duker_users / duker_preferences based on event type.
  */
-export async function materializeIdentity(db: D1Database, evt: PulledDukerEvent): Promise<void> {
+export async function materializeIdentity(db: D1Database, evt: DukerRegistryEvent): Promise<void> {
     const now = Math.floor(Date.now() / 1000)
 
     switch (evt.eventType) {
@@ -67,11 +67,9 @@ export async function materializeIdentity(db: D1Database, evt: PulledDukerEvent)
         }
 
         case DukerEventType.PROFILE_UPDATED: {
-            const d = decodeEventPayload<{ bio: string; website: string }>(
-                dukerRegistryAbi, 'ProfileUpdatedData', evt.eventData,
-            )
-            const bio = d?.bio ?? ''
-            const website = d?.website ?? ''
+            if (evt.eventData?.payload.case !== 'profileUpdated') break
+            const bio = evt.eventData.payload.value.bio ?? ''
+            const website = evt.eventData.payload.value.website ?? ''
 
             await db.prepare(`
                 UPDATE duker_users SET bio = ?, website = ?, updated_at = ?
@@ -88,7 +86,7 @@ export async function materializeIdentity(db: D1Database, evt: PulledDukerEvent)
 /**
  * Process all DukerEvents from a tx: persist + materialize.
  */
-export async function processDukerEvents(db: D1Database, events: PulledDukerEvent[]): Promise<void> {
+export async function processDukerEvents(db: D1Database, events: DukerRegistryEvent[]): Promise<void> {
     for (const evt of events) {
         await persistDukerEvent(db, evt)
         await materializeIdentity(db, evt)

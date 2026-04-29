@@ -26,6 +26,14 @@ message ProfileUpdatedPayload {
   string website = 2;
 }
 
+// ── Event data wrapper (serializable independently) ─────────────────────
+message DukerEventData {
+  oneof payload {
+    IdentityBurnedPayload  identity_burned  = 1;
+    ProfileUpdatedPayload  profile_updated  = 2;
+  }
+}
+
 // ── Indexed DukerEvent row ──────────────────────────────────────────────
 // Primary key: (chain_eid, evt_seq) — unique per chain.
 message DukerRegistryEvent {
@@ -38,10 +46,7 @@ message DukerRegistryEvent {
   uint64          evt_time     = 7;
   string          tx_hash      = 8;
   uint64          block_number = 9;
-  oneof event_data {
-    IdentityBurnedPayload  identity_burned  = 10;
-    ProfileUpdatedPayload  profile_updated  = 11;
-  }
+  DukerEventData  event_data   = 10;
 }
 
 // ── Identity record (materialized view from events) ─────────────────────

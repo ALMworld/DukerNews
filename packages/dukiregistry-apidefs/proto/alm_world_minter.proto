@@ -33,7 +33,7 @@ message DealDukiMintedEvent {
   string duki_amount     = 9;   // DUKI minted (d18, uint256 as string)
   string alm_yang_amount = 10;  // ALM minted to yang (d18 as string)
   string alm_yin_amount  = 11;  // ALM minted to yin  (d18 as string; "0" for taiji)
-  string minter          = 12;  // tx.origin / msg.sender that paid stablecoin
+  string minter          = 12;  // msg.sender that paid stablecoin
   uint64 agent_id        = 13;  // dApp agent that originated the payment (0 = direct)
 }
 

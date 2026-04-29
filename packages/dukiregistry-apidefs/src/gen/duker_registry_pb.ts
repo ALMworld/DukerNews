@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file duker_registry.proto.
  */
 export const file_duker_registry: GenFile = /*@__PURE__*/
-  fileDesc("ChRkdWtlcl9yZWdpc3RyeS5wcm90bxIMZHVraXJlZ2lzdHJ5IioKFUlkZW50aXR5QnVybmVkUGF5bG9hZBIRCgljaGFpbl9laWQYASABKA0iNQoVUHJvZmlsZVVwZGF0ZWRQYXlsb2FkEgsKA2JpbxgBIAEoCRIPCgd3ZWJzaXRlGAIgASgJIuICChJEdWtlclJlZ2lzdHJ5RXZlbnQSEQoJY2hhaW5fZWlkGAEgASgNEg8KB2V2dF9zZXEYAiABKAQSEAoIdG9rZW5faWQYAyABKAkSMAoKZXZlbnRfdHlwZRgEIAEoDjIcLmR1a2lyZWdpc3RyeS5EdWtlckV2ZW50VHlwZRILCgNlZ28YBSABKAkSEAoIdXNlcm5hbWUYBiABKAkSEAoIZXZ0X3RpbWUYByABKAQSDwoHdHhfaGFzaBgIIAEoCRIUCgxibG9ja19udW1iZXIYCSABKAQSPgoPaWRlbnRpdHlfYnVybmVkGAogASgLMiMuZHVraXJlZ2lzdHJ5LklkZW50aXR5QnVybmVkUGF5bG9hZEgAEj4KD3Byb2ZpbGVfdXBkYXRlZBgLIAEoCzIjLmR1a2lyZWdpc3RyeS5Qcm9maWxlVXBkYXRlZFBheWxvYWRIAEIMCgpldmVudF9kYXRhInEKDUR1a2VySWRlbnRpdHkSEAoIdXNlcm5hbWUYASABKAkSEQoJY2hhaW5fZWlkGAIgASgNEhAKCHRva2VuX2lkGAMgASgJEgsKA2VnbxgEIAEoCRILCgNiaW8YBSABKAkSDwoHd2Vic2l0ZRgGIAEoCSptCg5EdWtlckV2ZW50VHlwZRIgChxEVUtFUl9FVkVOVF9UWVBFX1VOU1BFQ0lGSUVEEAASDwoLVVNFUl9NSU5URUQQARITCg9JREVOVElUWV9CVVJORUQQAhITCg9QUk9GSUxFX1VQREFURUQQA2IGcHJvdG8z");
+  fileDesc("ChRkdWtlcl9yZWdpc3RyeS5wcm90bxIMZHVraXJlZ2lzdHJ5IioKFUlkZW50aXR5QnVybmVkUGF5bG9hZBIRCgljaGFpbl9laWQYASABKA0iNQoVUHJvZmlsZVVwZGF0ZWRQYXlsb2FkEgsKA2JpbxgBIAEoCRIPCgd3ZWJzaXRlGAIgASgJIpsBCg5EdWtlckV2ZW50RGF0YRI+Cg9pZGVudGl0eV9idXJuZWQYASABKAsyIy5kdWtpcmVnaXN0cnkuSWRlbnRpdHlCdXJuZWRQYXlsb2FkSAASPgoPcHJvZmlsZV91cGRhdGVkGAIgASgLMiMuZHVraXJlZ2lzdHJ5LlByb2ZpbGVVcGRhdGVkUGF5bG9hZEgAQgkKB3BheWxvYWQihgIKEkR1a2VyUmVnaXN0cnlFdmVudBIRCgljaGFpbl9laWQYASABKA0SDwoHZXZ0X3NlcRgCIAEoBBIQCgh0b2tlbl9pZBgDIAEoCRIwCgpldmVudF90eXBlGAQgASgOMhwuZHVraXJlZ2lzdHJ5LkR1a2VyRXZlbnRUeXBlEgsKA2VnbxgFIAEoCRIQCgh1c2VybmFtZRgGIAEoCRIQCghldnRfdGltZRgHIAEoBBIPCgd0eF9oYXNoGAggASgJEhQKDGJsb2NrX251bWJlchgJIAEoBBIwCgpldmVudF9kYXRhGAogASgLMhwuZHVraXJlZ2lzdHJ5LkR1a2VyRXZlbnREYXRhInEKDUR1a2VySWRlbnRpdHkSEAoIdXNlcm5hbWUYASABKAkSEQoJY2hhaW5fZWlkGAIgASgNEhAKCHRva2VuX2lkGAMgASgJEgsKA2VnbxgEIAEoCRILCgNiaW8YBSABKAkSDwoHd2Vic2l0ZRgGIAEoCSptCg5EdWtlckV2ZW50VHlwZRIgChxEVUtFUl9FVkVOVF9UWVBFX1VOU1BFQ0lGSUVEEAASDwoLVVNFUl9NSU5URUQQARITCg9JREVOVElUWV9CVVJORUQQAhITCg9QUk9GSUxFX1VQREFURUQQA2IGcHJvdG8z");
 
 /**
  * Data for IDENTITY_BURNED (eventType=2)
@@ -54,6 +54,37 @@ export type ProfileUpdatedPayload = Message<"dukiregistry.ProfileUpdatedPayload"
  */
 export const ProfileUpdatedPayloadSchema: GenMessage<ProfileUpdatedPayload> = /*@__PURE__*/
   messageDesc(file_duker_registry, 1);
+
+/**
+ * ── Event data wrapper (serializable independently) ─────────────────────
+ *
+ * @generated from message dukiregistry.DukerEventData
+ */
+export type DukerEventData = Message<"dukiregistry.DukerEventData"> & {
+  /**
+   * @generated from oneof dukiregistry.DukerEventData.payload
+   */
+  payload: {
+    /**
+     * @generated from field: dukiregistry.IdentityBurnedPayload identity_burned = 1;
+     */
+    value: IdentityBurnedPayload;
+    case: "identityBurned";
+  } | {
+    /**
+     * @generated from field: dukiregistry.ProfileUpdatedPayload profile_updated = 2;
+     */
+    value: ProfileUpdatedPayload;
+    case: "profileUpdated";
+  } | { case: undefined; value?: undefined };
+};
+
+/**
+ * Describes the message dukiregistry.DukerEventData.
+ * Use `create(DukerEventDataSchema)` to create a new message.
+ */
+export const DukerEventDataSchema: GenMessage<DukerEventData> = /*@__PURE__*/
+  messageDesc(file_duker_registry, 2);
 
 /**
  * ── Indexed DukerEvent row ──────────────────────────────────────────────
@@ -118,21 +149,9 @@ export type DukerRegistryEvent = Message<"dukiregistry.DukerRegistryEvent"> & {
   blockNumber: bigint;
 
   /**
-   * @generated from oneof dukiregistry.DukerRegistryEvent.event_data
+   * @generated from field: dukiregistry.DukerEventData event_data = 10;
    */
-  eventData: {
-    /**
-     * @generated from field: dukiregistry.IdentityBurnedPayload identity_burned = 10;
-     */
-    value: IdentityBurnedPayload;
-    case: "identityBurned";
-  } | {
-    /**
-     * @generated from field: dukiregistry.ProfileUpdatedPayload profile_updated = 11;
-     */
-    value: ProfileUpdatedPayload;
-    case: "profileUpdated";
-  } | { case: undefined; value?: undefined };
+  eventData?: DukerEventData;
 };
 
 /**
@@ -140,7 +159,7 @@ export type DukerRegistryEvent = Message<"dukiregistry.DukerRegistryEvent"> & {
  * Use `create(DukerRegistryEventSchema)` to create a new message.
  */
 export const DukerRegistryEventSchema: GenMessage<DukerRegistryEvent> = /*@__PURE__*/
-  messageDesc(file_duker_registry, 2);
+  messageDesc(file_duker_registry, 3);
 
 /**
  * ── Identity record (materialized view from events) ─────────────────────
@@ -196,7 +215,7 @@ export type DukerIdentity = Message<"dukiregistry.DukerIdentity"> & {
  * Use `create(DukerIdentitySchema)` to create a new message.
  */
 export const DukerIdentitySchema: GenMessage<DukerIdentity> = /*@__PURE__*/
-  messageDesc(file_duker_registry, 3);
+  messageDesc(file_duker_registry, 4);
 
 /**
  * ── DukerRegistry Event Types ──────────────────────────────────────────────

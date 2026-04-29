@@ -8,13 +8,13 @@ import "dukigen_types.proto";
 // SINGLE SOURCE OF TRUTH → Solidity enum generated via `pnpm gen:sol-enums`.
 enum DukigenEventType {
   DUKIGEN_EVENT_TYPE_UNSPECIFIED = 0;
-  AGENT_REGISTERED        = 1;
+  AGENT_CREATED           = 1;
   AGENT_URI_UPDATED       = 2;
   AGENT_APPROX_BPS_SET    = 3;
   AGENT_WORKS_DATA_SET    = 4;
   AGENT_METADATA_SET      = 5;
-  AGENT_WALLET_SET        = 6;
-  AGENT_CHAIN_CONTRACT_SET = 7;
+  AGENT_CREDIBILITY_WALLET_SET = 6;
+  AGENT_OP_CONTRACT_SET    = 7;
 }
 
 // ── DukigenRegistry Event Payloads ──────────────────────────────────────
@@ -24,24 +24,24 @@ enum DukigenEventType {
 // the same shape. Used as a repeated field in agent registrations and in
 // the materialized DukigenAgent view.
 
-// Data for AGENT_REGISTERED (eventType=1)
-message AgentRegisteredPayload {
+// Data for AGENT_CREATED (eventType=1)
+message AgentCreatedPayload {
   string                      name           = 1;
   string                      agent_uri      = 2;
-  string                      website        = 3;
-  uint32                      approx_bps     = 4;
-  string                      agent_wallet   = 5;
-  ProductType                 product_type   = 6;
-  DukiType                    duki_type      = 7;
-  string                      pledge_url     = 8;
-  string                      agent_uri_hash = 10;
-  repeated ChainContractEntry chain_contracts = 11;
+  string                      agent_uri_hash = 3;
+  string                      website        = 4;
+  uint32                      approx_bps     = 5;
+  string                      credibility_wallet = 6;
+  ProductType                 product_type   = 7;
+  DukiType                    duki_type      = 8;
+  string                      pledge_url     = 9;
+  repeated ChainContractEntry op_contracts   = 10;
 }
 
 // Data for AGENT_URI_UPDATED (eventType=2)
 message AgentURIUpdatedPayload {
-  string new_uri      = 1;
-  string new_uri_hash = 2;
+  string agent_uri      = 1;
+  string agent_uri_hash = 2;
 }
 
 // Data for AGENT_APPROX_BPS_SET (eventType=3)
@@ -54,7 +54,7 @@ message AgentWorksDataSetPayload {
   ProductType     product_type = 1;
   DukiType        duki_type    = 2;
   string          pledge_url   = 3;
-  string          website      = 5;
+  string          website      = 4;
 }
 
 // Data for AGENT_METADATA_SET (eventType=5)
@@ -63,15 +63,28 @@ message AgentMetadataSetPayload {
   bytes  value = 2;
 }
 
-// Data for AGENT_WALLET_SET (eventType=6)
-message AgentWalletSetPayload {
-  string new_wallet = 1;
+// Data for AGENT_CREDIBILITY_WALLET_SET (eventType=6)
+message AgentCredibilityWalletSetPayload {
+  string credibility_wallet = 1;
 }
 
-// Data for AGENT_CHAIN_CONTRACT_SET (eventType=7)
-message AgentChainContractSetPayload {
+// Data for AGENT_OP_CONTRACT_SET (eventType=7)
+message AgentOpContractSetPayload {
   uint32 chain_eid     = 1;
   string contract_addr = 2;
+}
+
+// ── Event data wrapper (serializable independently) ─────────────────────
+message DukigenEventData {
+  oneof payload {
+    AgentCreatedPayload           agent_created          = 1;
+    AgentURIUpdatedPayload        agent_uri_updated       = 2;
+    AgentApproxBpsSetPayload      agent_approx_bps_set    = 3;
+    AgentWorksDataSetPayload      agent_works_data_set    = 4;
+    AgentMetadataSetPayload       agent_metadata_set      = 5;
+    AgentCredibilityWalletSetPayload agent_credibility_wallet_set = 6;
+    AgentOpContractSetPayload     agent_op_contract_set    = 7;
+  }
 }
 
 // ── Indexed DukigenEvent row ────────────────────────────────────────────
@@ -85,15 +98,7 @@ message DukigenRegistryEvent {
   uint64              evt_time     = 6;
   string              tx_hash      = 7;
   uint64              block_number = 8;
-  oneof event_data {
-    AgentRegisteredPayload        agent_registered       = 9;
-    AgentURIUpdatedPayload        agent_uri_updated       = 10;
-    AgentApproxBpsSetPayload      agent_approx_bps_set    = 11;
-    AgentWorksDataSetPayload      agent_works_data_set    = 12;
-    AgentMetadataSetPayload       agent_metadata_set      = 13;
-    AgentWalletSetPayload         agent_wallet_set        = 14;
-    AgentChainContractSetPayload  agent_chain_contract_set = 15;
-  }
+  DukigenEventData    event_data   = 9;
 }
 
 // ── Agent record (materialized view from events) ────────────────────────
@@ -101,14 +106,14 @@ message DukigenAgent {
   uint64                      agent_id          = 1;
   string                      name              = 2;
   string                      agent_uri         = 3;
-  string                      owner             = 4;
-  uint32                      origin_chain_eid  = 5;
-  uint32                      approx_bps        = 6;
-  ProductType                 product_type      = 7;
-  DukiType                    duki_type         = 8;
-  string                      pledge_url        = 9;
+  string                      agent_uri_hash    = 4;
+  string                      owner             = 5;
+  uint32                      origin_chain_eid  = 6;
+  uint32                      approx_bps        = 7;
+  ProductType                 product_type      = 8;
+  DukiType                    duki_type         = 9;
+  string                      pledge_url        = 10;
   string                      website           = 11;
-  string                      agent_wallet      = 12;
-  string                      agent_uri_hash    = 13;
-  repeated ChainContractEntry chain_contracts   = 14;
+  string                      credibility_wallet = 12;
+  repeated ChainContractEntry op_contracts      = 13;
 }

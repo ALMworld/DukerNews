@@ -9,9 +9,19 @@
  * hand-maintaining tuple shapes.
  */
 
-import { decodeAbiParameters, type AbiParameter } from 'viem'
+import { decodeAbiParameters, type AbiParameter, type DecodeAbiParametersReturnType } from 'viem'
 
 type AbiItem = { type: string; name?: string; inputs?: readonly AbiParameter[] }
+
+export type ExtractErrorInputs<TAbi extends readonly any[], TName extends string> = 
+    Extract<TAbi[number], { type: 'error', name: `_ABI_${TName}` }> extends { inputs: infer I extends readonly any[] }
+        ? I
+        : never;
+
+export type ExtractPayloadType<TAbi extends readonly any[], TName extends string> = 
+    ExtractErrorInputs<TAbi, TName> extends never 
+        ? unknown 
+        : DecodeAbiParametersReturnType<ExtractErrorInputs<TAbi, TName>>[0];
 
 /**
  * Look up the tuple parameter for a payload type, e.g. 'ProfileUpdatedData'.
@@ -34,16 +44,20 @@ function findPayloadAbi(
  * payload struct. Returns null when the ABI helper is missing or decoding
  * fails — callers should treat that as "skip this event type for now".
  */
-export function decodeEventPayload<T = Record<string, unknown>>(
-    abi: readonly AbiItem[],
-    payloadName: string,
+export function decodeEventPayload<
+    const TAbi extends readonly any[],
+    TName extends string,
+    TPayload = ExtractPayloadType<TAbi, TName>
+>(
+    abi: TAbi,
+    payloadName: TName,
     eventData: string,
-): T | null {
-    const params = findPayloadAbi(abi, payloadName)
+): ExtractPayloadType<TAbi, TName> | null {
+    const params = findPayloadAbi(abi as any, payloadName)
     if (!params) return null
     try {
         const decoded = decodeAbiParameters(params, eventData as `0x${string}`)
-        return decoded[0] as T
+        return decoded[0] as ExtractPayloadType<TAbi, TName>
     } catch {
         return null
     }
