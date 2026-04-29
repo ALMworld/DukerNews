@@ -105,24 +105,26 @@ async function main() {
 
     // ── 4. Notify worker about the mint tx (DukerRegistry) ───
     console.log('\n[4/7] Notifying worker about mint tx (DukerRegistry)...')
-    const notifyResp = await workerPost('/dukiregistry.DukerRegistryService/NotifyDukerTx', {
+    const notifyResp = await workerPost('/dukiregistry.BlockchainSyncService/NotifyTx', {
+        contract: 'DUKER_REGISTRY',
         txHash: mintTx,
         chainEid: CHAIN_EID,
     })
     console.log(`  📦 Worker response:`, JSON.stringify(notifyResp, null, 2))
     assert(
-        notifyResp.events && notifyResp.events.length > 0,
-        `Worker parsed ${notifyResp.events?.length ?? 0} DukerRegistry events from tx`
+        notifyResp.dukerEvents && notifyResp.dukerEvents.length > 0,
+        `Worker parsed ${notifyResp.dukerEvents?.length ?? 0} DukerRegistry events from tx`
     )
 
     // ── 5. Notify worker about the same tx (DukigenRegistry) ─
     console.log('\n[5/7] Notifying worker about mint tx (DukigenRegistry)...')
-    const notifyDukigenResp = await workerPost('/dukiregistry.DukigenRegistryService/NotifyDukigenTx', {
+    const notifyDukigenResp = await workerPost('/dukiregistry.BlockchainSyncService/NotifyTx', {
+        contract: 'DUKIGEN_REGISTRY',
         txHash: mintTx,
         chainEid: CHAIN_EID,
     })
     console.log(`  📦 Worker response:`, JSON.stringify(notifyDukigenResp, null, 2))
-    console.log(`  ✅ DukigenRegistry notify succeeded (${notifyDukigenResp.events?.length ?? 0} events)`)
+    console.log(`  ✅ DukigenRegistry notify succeeded (${notifyDukigenResp.dukigenEvents?.length ?? 0} events)`)
 
     // ── 6. Query GetUsername ──────────────────────────────────
     console.log('\n[6/7] Querying GetUsername...')

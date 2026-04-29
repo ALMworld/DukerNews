@@ -71,7 +71,7 @@ schema: ## Apply D1 schema (local)
 e2e: ## Run E2E integration test (assumes anvil + worker running)
 	npx tsx scripts/test-e2e.ts
 
-e2e-sync: ## Run SyncDukerEvents E2E test (assumes anvil + worker running)
+e2e-sync: ## Run BlockchainSyncService SyncEvents E2E test (assumes anvil + worker running)
 	npx tsx scripts/test-sync-e2e.ts
 
 # ── Full Test ────────────────────────────────────────────

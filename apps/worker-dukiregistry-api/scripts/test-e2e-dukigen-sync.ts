@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 /**
- * test-e2e-dukigen-sync.ts — End-to-end test of SyncDukigenEvents.
+ * test-e2e-dukigen-sync.ts — End-to-end test of BlockchainSyncService SyncEvents.
  *
  * Prereqs:
  *   - anvil running, ALM stack deployed, worker running, D1 schema applied
@@ -85,7 +85,7 @@ const website = `https://dukigen-sync.example/${suffix}`
 const pledgeUrl = `https://dukigen-sync.example/${suffix}/pledge`
 
 async function main() {
-    console.log('SyncDukigenEvents E2E test\n')
+    console.log('BlockchainSyncService SyncEvents(DUKIGEN_REGISTRY) E2E test\n')
     console.log(`  chainEid:          ${CHAIN_EID}`)
     console.log(`  dukigenRegistry:   ${deploy.dukigenRegistry}`)
     console.log(`  worker:            ${WORKER_URL}`)
@@ -126,17 +126,15 @@ async function main() {
     console.log(`  post-register chainEvtSeq = ${postSeq}`)
     assert(postSeq > preSeq, `chainEvtSeq advanced (${preSeq} -> ${postSeq})`)
 
-    console.log('\n[4/5] Call SyncDukigenEvents (max_block_range=50)')
-    const syncResp = await workerPost('/dukiregistry.DukigenRegistryService/SyncDukigenEvents', {
+    console.log('\n[4/5] Call SyncEvents(DUKIGEN_REGISTRY)')
+    const syncResp = await workerPost('/dukiregistry.BlockchainSyncService/SyncEvents', {
+        contract: 'DUKIGEN_REGISTRY',
         chainEid: CHAIN_EID,
-        lastEvtSeq: '0',
-        maxBlockRange: '50',
+        contractHead: postSeq.toString(),
     })
     console.log('  ', JSON.stringify(syncResp))
-    assert(BigInt(syncResp.chainEvtSeq ?? '0') === postSeq,
-        `worker reports chainEvtSeq=${syncResp.chainEvtSeq} (matches contract)`)
-    assert(BigInt(syncResp.syncedUpTo ?? '0') >= postSeq,
-        `syncedUpTo=${syncResp.syncedUpTo} reached chainEvtSeq=${postSeq}`)
+    assert(BigInt(syncResp.lastEvtSeq ?? '0') >= postSeq,
+        `lastEvtSeq=${syncResp.lastEvtSeq} reached contract evtSeq=${postSeq}`)
     assert((syncResp.eventsIndexed ?? 0) >= 1, `eventsIndexed=${syncResp.eventsIndexed}`)
 
     console.log('\n[5/5] Query GetAgent')

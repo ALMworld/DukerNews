@@ -2,8 +2,8 @@
  * minter-event-service.ts — Index AlmWorldDukiMinter `DealDukiMinted` events.
  *
  * Two ingest paths share the same INSERT (idempotent on `(chain_eid, sequence)`):
- *   1. NotifyMinterTx — webhook from the dApp after a successful mint tx.
- *   2. SyncMinterEvents — eth_getLogs over a block range for backfill / catch-up.
+ *   1. BlockchainSyncService.NotifyTx — webhook after a successful mint tx.
+ *   2. BlockchainSyncService.SyncEvents — eth_getLogs over a block range.
  *
  * Both paths produce `PulledDealDukiMintedEvent`s, which are the worker-internal
  * shape (bigint amounts) before being written to D1 as text.

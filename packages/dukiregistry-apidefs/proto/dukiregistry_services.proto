@@ -6,7 +6,7 @@ import "duker_registry.proto";
 import "dukigen_registry.proto";
 
 // ══════════════════════════════════════════════════════════════════════════
-//  DukerRegistry Query + Notify RPCs
+//  DukerRegistry Query RPCs
 // ══════════════════════════════════════════════════════════════════════════
 
 message GetUsernameReq {
@@ -22,33 +22,17 @@ message GetIdentitiesByTokenReq {
   string token_id = 1;  // uint256 as string
 }
 
-// ── Webhook / Notify ──
-
-message NotifyDukerTxReq {
-  string tx_hash   = 1;
-  uint32 chain_eid = 2;  // Which chain the tx is on
+message CheckUsernameReq {
+  string username = 1;  // Username to check availability — globally unique (encodes origin chain suffix)
 }
 
-message NotifyDukerTxResp {
-  repeated DukerRegistryEvent events = 1;
-}
-
-// ── Sync Events (catch-up from on-chain checkpoints) ──
-
-message SyncEventsReq {
-  uint32 chain_eid       = 1;  // Which chain to sync
-  uint64 last_evt_seq    = 2;  // Worker's last indexed evtSeq (0 = full sync)
-  uint64 max_block_range = 3;  // Max blocks per eth_getLogs call (0 = use server default)
-}
-
-message SyncEventsResp {
-  uint64 synced_up_to    = 1;  // Highest evtSeq after sync
-  uint32 events_indexed  = 2;  // Number of new events indexed
-  uint64 chain_evt_seq   = 3;  // Contract's current worldEvtSeq
+message CheckUsernameResp {
+  bool available       = 1;  // true if the username is not taken
+  DukerIdentity owner  = 2;  // set if the username is taken (who owns it)
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-//  DukigenRegistry Query + Notify RPCs
+//  DukigenRegistry Query RPCs
 // ══════════════════════════════════════════════════════════════════════════
 
 message GetAgentReq {
@@ -88,26 +72,8 @@ message ListAgentsRankedResp {
   bool                 has_more    = 3;
 }
 
-message NotifyDukigenTxReq {
-  string tx_hash   = 1;
-  uint32 chain_eid = 2;
-}
-
-message NotifyDukigenTxResp {
-  repeated DukigenRegistryEvent events = 1;
-}
-
-message CheckUsernameReq {
-  string username = 1;  // Username to check availability — globally unique (encodes origin chain suffix)
-}
-
-message CheckUsernameResp {
-  bool available       = 1;  // true if the username is not taken
-  DukerIdentity owner  = 2;  // set if the username is taken (who owns it)
-}
-
 // ══════════════════════════════════════════════════════════════════════════
-//  Services
+//  Services (query-only — Notify/Sync moved to BlockchainSyncService)
 // ══════════════════════════════════════════════════════════════════════════
 
 service DukerRegistryService {
@@ -119,12 +85,6 @@ service DukerRegistryService {
 
   // Query all chain presences for a given token ID
   rpc GetIdentitiesByToken(GetIdentitiesByTokenReq) returns (GetUsernameResp);
-
-  // Notify worker about a new DukerRegistry tx (pull + index)
-  rpc NotifyDukerTx(NotifyDukerTxReq) returns (NotifyDukerTxResp);
-
-  // Catch up on missed events using on-chain block checkpoints
-  rpc SyncDukerEvents(SyncEventsReq) returns (SyncEventsResp);
 }
 
 service DukigenRegistryService {
@@ -136,10 +96,4 @@ service DukigenRegistryService {
 
   // List agents ranked by credibility for a given timescale (default /market view).
   rpc ListAgentsRanked(ListAgentsRankedReq) returns (ListAgentsRankedResp);
-
-  // Notify worker about a new DukigenRegistry tx (pull + index)
-  rpc NotifyDukigenTx(NotifyDukigenTxReq) returns (NotifyDukigenTxResp);
-
-  // Catch up on missed events using on-chain block checkpoints
-  rpc SyncDukigenEvents(SyncEventsReq) returns (SyncEventsResp);
 }

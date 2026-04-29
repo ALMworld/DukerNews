@@ -5,34 +5,43 @@
  * the identity to the worker-dukiregistry-api (indexes events + materializes user).
  */
 
+import { createClient } from '@connectrpc/connect'
+import { createConnectTransport } from '@connectrpc/connect-web'
+import {
+    AlmWorldMinterService,
+    BlockchainSyncService as BlockchainSyncServiceDef,
+    ContractType,
+    DukigenRegistryService,
+} from '@repo/dukiregistry-apidefs'
+import type { DealDukiMintedEvent, DukigenAgent } from '@repo/dukiregistry-apidefs'
+
 const REGISTRY_WORKER_URL = (import.meta as any).env?.VITE_REGISTRY_WORKER_URL ?? 'http://localhost:8788'
 
 /**
- * Notify the DukerRegistry worker about a tx that contains registry events.
+ * Notify the BlockchainSyncService about a DukerRegistry tx.
  * Fire-and-forget — errors are logged but don't block the UI.
  */
 export async function notifyRegistryWorker(txHash: string, chainEid: number): Promise<{ latestEvtSeq?: number }> {
     try {
-        const resp = await fetch(`${REGISTRY_WORKER_URL}/dukiregistry.DukerRegistryService/NotifyDukerTx`, {
+        const resp = await fetch(`${REGISTRY_WORKER_URL}/dukiregistry.BlockchainSyncService/NotifyTx`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Connect-Protocol-Version': '1',
             },
-            body: JSON.stringify({ txHash, chainEid }),
+            body: JSON.stringify({ contract: 'DUKER_REGISTRY', txHash, chainEid }),
         })
         if (!resp.ok) {
-            console.warn('[registry-api] NotifyDukerTx failed:', resp.status, await resp.text())
+            console.warn('[registry-api] NotifyTx(DUKER) failed:', resp.status, await resp.text())
             return {}
         }
         const data = await resp.json() as any
-        const events = data.events ?? []
-        console.log('[registry-api] Synced', events.length, 'events to registry worker')
-        // Return the latest evtSeq from synced events
+        const events = data.dukerEvents ?? []
+        console.log('[registry-api] Synced', events.length, 'duker events to registry worker')
         const latestEvtSeq = events.reduce((max: number, e: any) => Math.max(max, Number(e.evtSeq ?? 0)), 0)
         return { latestEvtSeq: latestEvtSeq || undefined }
     } catch (err) {
-        console.warn('[registry-api] NotifyDukerTx error (non-blocking):', err)
+        console.warn('[registry-api] NotifyTx(DUKER) error (non-blocking):', err)
         return {}
     }
 }
@@ -78,7 +87,7 @@ export async function checkUsernameAvailability(username: string): Promise<{ ava
             body: JSON.stringify({ username }),
         })
         if (!resp.ok) return { available: true } // assume available if worker is down
-        return await resp.json() as { available: boolean; owner?: any }
+        return await resp.json()
     } catch {
         return { available: true } // assume available if worker is unreachable
     }
@@ -88,32 +97,27 @@ export async function checkUsernameAvailability(username: string): Promise<{ ava
  * Trigger a full sync of DukerRegistry events for a chain.
  * Used for AlreadyHasIdentity recovery — ensures the worker D1 is up-to-date.
  */
-export async function syncDukerEvents(chainEid: number, lastEvtSeq: number = 0): Promise<{ syncedUpTo?: number; eventsIndexed?: number }> {
+export async function syncDukerEvents(chainEid: number): Promise<{ lastEvtSeq?: number; eventsIndexed?: number }> {
     try {
-        const resp = await fetch(`${REGISTRY_WORKER_URL}/dukiregistry.DukerRegistryService/SyncDukerEvents`, {
+        const resp = await fetch(`${REGISTRY_WORKER_URL}/dukiregistry.BlockchainSyncService/SyncEvents`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Connect-Protocol-Version': '1',
             },
-            body: JSON.stringify({ chainEid, lastEvtSeq: String(lastEvtSeq) }),
+            body: JSON.stringify({ contract: 'DUKER_REGISTRY', chainEid }),
         })
         if (!resp.ok) return {}
-        return await resp.json() as { syncedUpTo?: number; eventsIndexed?: number }
+        const data = await resp.json() as any
+        return {
+            lastEvtSeq: data.lastEvtSeq != null ? Number(data.lastEvtSeq) : undefined,
+            eventsIndexed: data.eventsIndexed != null ? Number(data.eventsIndexed) : undefined,
+        }
     } catch {
         return {}
     }
 }
 // ── DukigenRegistryService (ConnectRPC binary client) ─────────────────────
-
-import { createClient } from '@connectrpc/connect'
-import { createConnectTransport } from '@connectrpc/connect-web'
-import {
-    DukigenRegistryService,
-    AlmWorldMinterService,
-    type DukigenAgent,
-    type DealDukiMintedEvent,
-} from '@repo/dukiregistry-apidefs'
 
 const dukigenTransport = createConnectTransport({
     baseUrl: REGISTRY_WORKER_URL,
@@ -121,6 +125,7 @@ const dukigenTransport = createConnectTransport({
 
 export const dukigenClient = createClient(DukigenRegistryService, dukigenTransport)
 export const minterClient = createClient(AlmWorldMinterService, dukigenTransport)
+export const syncClient = createClient(BlockchainSyncServiceDef, dukigenTransport)
 
 export type { DukigenAgent, DealDukiMintedEvent }
 
@@ -145,7 +150,7 @@ export async function getDukigenAgent(agentId: string): Promise<DukigenAgent | n
  */
 export async function notifyDukiRegistry(txHash: string, chainEid: number): Promise<void> {
     try {
-        await dukigenClient.notifyDukigenTx({ txHash, chainEid })
+        await syncClient.notifyTx({ contract: ContractType.DUKIGEN_REGISTRY, txHash, chainEid })
     } catch {
         // Best-effort; don't block the UI
     }
@@ -159,7 +164,7 @@ export const notifyDukigenTx = notifyDukiRegistry
  * ranked endpoint below.
  */
 export async function getDukigenAgents(opts: { page?: number; perPage?: number } = {}): Promise<{
-    agents: DukigenAgent[]
+    agents: Array<DukigenAgent>
     total: number
 }> {
     try {
@@ -167,7 +172,7 @@ export async function getDukigenAgents(opts: { page?: number; perPage?: number }
             page: opts.page ?? 1,
             perPage: opts.perPage ?? 100,
         })
-        return { agents: resp.agents ?? [], total: Number(resp.total ?? 0) }
+        return { agents: resp.agents, total: Number(resp.total) }
     } catch {
         return { agents: [], total: 0 }
     }
@@ -183,7 +188,7 @@ export type RankedAgentEntry = {
 }
 
 export type RankedAgentsPage = {
-    items: RankedAgentEntry[]
+    items: Array<RankedAgentEntry>
     nextCursor: string
     hasMore: boolean
 }
@@ -201,11 +206,11 @@ export async function listAgentsRanked(
     try {
         const resp = await dukigenClient.listAgentsRanked({ timescale, cursor, limit })
         return {
-            items: (resp.items ?? []).map((it) => ({
+            items: resp.items.map((it) => ({
                 agent: it.agent!,
-                credibility: Number(it.credibility ?? 0n),
+                credibility: Number(it.credibility),
             })),
-            nextCursor: resp.nextCursor ?? '',
+            nextCursor: resp.nextCursor,
             hasMore: Boolean(resp.hasMore),
         }
     } catch {
@@ -216,7 +221,7 @@ export async function listAgentsRanked(
 // ── AlmWorldMinterService (DealDukiMinted feed) ─────────────────────────
 
 export type DealEventsPage = {
-    events: DealDukiMintedEvent[]
+    events: Array<DealDukiMintedEvent>
     nextCursor: string
     hasMore: boolean
 }
@@ -236,8 +241,8 @@ export async function getAgentDeals(
             limit: opts.limit ?? 20,
         })
         return {
-            events: resp.events ?? [],
-            nextCursor: resp.nextCursor ?? '',
+            events: resp.events,
+            nextCursor: resp.nextCursor,
             hasMore: Boolean(resp.hasMore),
         }
     } catch {
@@ -256,8 +261,8 @@ export async function getRecentDeals(
             limit: opts.limit ?? 20,
         })
         return {
-            events: resp.events ?? [],
-            nextCursor: resp.nextCursor ?? '',
+            events: resp.events,
+            nextCursor: resp.nextCursor,
             hasMore: Boolean(resp.hasMore),
         }
     } catch {
@@ -278,8 +283,8 @@ export async function getWalletDeals(
             limit: opts.limit ?? 20,
         })
         return {
-            events: resp.events ?? [],
-            nextCursor: resp.nextCursor ?? '',
+            events: resp.events,
+            nextCursor: resp.nextCursor,
             hasMore: Boolean(resp.hasMore),
         }
     } catch {
@@ -294,8 +299,8 @@ export async function getWalletDeals(
  */
 export async function notifyMinterTx(txHash: string, chainEid: number): Promise<void> {
     try {
-        await minterClient.notifyMinterTx({ txHash, chainEid })
+        await syncClient.notifyTx({ contract: ContractType.ALM_WORLD_MINTER, txHash, chainEid })
     } catch (err) {
-        console.warn('[registry-api] NotifyMinterTx error (non-blocking):', err)
+        console.warn('[registry-api] NotifyTx(MINTER) error (non-blocking):', err)
     }
 }

@@ -46,11 +46,11 @@ UCH -> Chain: waitForTransactionReceipt(txHash)
 Chain --> UCH: receipt.status = "success"
 
 UCH -> RegAPI: notifyRegistryWorker(txHash, chainId)
-RegAPI -> Worker: POST /NotifyDukerTx
+RegAPI -> Worker: POST /BlockchainSyncService/NotifyTx\ncontract=DUKER_REGISTRY
 Worker -> Chain: getTransactionReceipt
 Chain --> Worker: receipt + logs
 Worker -> Worker: INSERT duker_users
-Worker --> RegAPI: {events, latestEvtSeq}
+Worker --> RegAPI: {dukerEvents, latestEvtSeq}
 
 UCH -> Auth: POST /api/auth/refresh
 Auth -> Worker: getRegistryIdentity(addr, eid)\n(via vite proxy /worker-api)
@@ -84,10 +84,10 @@ UCH -> UCH: throw "AlreadyHasIdentity"
 
 UCH -> UCH: catch: detect AlreadyHasIdentity
 UCH -> RegAPI: syncDukerEvents(chainId)
-RegAPI -> Worker: POST /SyncDukerEvents
+RegAPI -> Worker: POST /BlockchainSyncService/SyncEvents\ncontract=DUKER_REGISTRY
 Worker -> Chain: eth_getLogs(DukerEvent)
 Worker -> Worker: upsert duker_users
-Worker --> RegAPI: {syncedUpTo}
+Worker --> RegAPI: {lastEvtSeq}
 
 UCH -> Auth: POST /api/auth/refresh
 Auth -> Worker: getRegistryIdentity(addr, eid)\n(via vite proxy /worker-api)

@@ -39,29 +39,8 @@ message DealDukiMintedEvent {
 
 // ── Webhook: external service tells the worker about a tx that contains
 // DealDukiMinted events. The worker pulls the receipt and indexes them.
-message NotifyMinterTxReq {
-  string tx_hash   = 1;
-  uint32 chain_eid = 2;
-}
-
-message NotifyMinterTxResp {
-  repeated DealDukiMintedEvent events = 1;
-}
-
-// ── Catch-up sync via eth_getLogs over a block range.
-//   from_block = 0 → resume from the worker's last indexed block.
-//   to_block   = 0 → up to head.
-message SyncMinterEventsReq {
-  uint32 chain_eid       = 1;
-  uint64 from_block      = 2;
-  uint64 to_block        = 3;
-  uint64 max_block_range = 4;  // 0 = use server default
-}
-
-message SyncMinterEventsResp {
-  uint64 synced_up_to_block = 1;  // Highest block processed
-  uint32 events_indexed     = 2;  // New rows inserted (existing rows ignored)
-}
+//   → MOVED to BlockchainSyncService.NotifyTx (ContractType = ALM_WORLD_MINTER)
+//   → MOVED to BlockchainSyncService.SyncEvents (ContractType = ALM_WORLD_MINTER)
 
 // ── Query: deals that paid this agent.
 message GetAgentDealsReq {
@@ -105,12 +84,6 @@ message GetWalletDealsResp {
 }
 
 service AlmWorldMinterService {
-  // Webhook — accept a tx hash, pull its receipt, index any DealDukiMinted logs.
-  rpc NotifyMinterTx(NotifyMinterTxReq) returns (NotifyMinterTxResp);
-
-  // Backfill / catch-up via eth_getLogs over a block range.
-  rpc SyncMinterEvents(SyncMinterEventsReq) returns (SyncMinterEventsResp);
-
   // Deals paid to a specific agent (newest first).
   rpc GetAgentDeals(GetAgentDealsReq) returns (GetAgentDealsResp);
 

@@ -4,9 +4,9 @@
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { DukerIdentity, DukerRegistryEvent } from "./duker_registry_pb";
+import type { DukerIdentity } from "./duker_registry_pb";
 import { file_duker_registry } from "./duker_registry_pb";
-import type { DukigenAgent, DukigenAgentSchema, DukigenRegistryEvent } from "./dukigen_registry_pb";
+import type { DukigenAgent, DukigenAgentSchema } from "./dukigen_registry_pb";
 import { file_dukigen_registry } from "./dukigen_registry_pb";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -14,7 +14,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file dukiregistry_services.proto.
  */
 export const file_dukiregistry_services: GenFile = /*@__PURE__*/
-  fileDesc("ChtkdWtpcmVnaXN0cnlfc2VydmljZXMucHJvdG8SDGR1a2lyZWdpc3RyeSI0Cg5HZXRVc2VybmFtZVJlcRIPCgdhZGRyZXNzGAEgASgJEhEKCWNoYWluX2VpZBgCIAEoDSJCCg9HZXRVc2VybmFtZVJlc3ASLwoKaWRlbnRpdGllcxgBIAMoCzIbLmR1a2lyZWdpc3RyeS5EdWtlcklkZW50aXR5IisKF0dldElkZW50aXRpZXNCeVRva2VuUmVxEhAKCHRva2VuX2lkGAEgASgJIjYKEE5vdGlmeUR1a2VyVHhSZXESDwoHdHhfaGFzaBgBIAEoCRIRCgljaGFpbl9laWQYAiABKA0iRQoRTm90aWZ5RHVrZXJUeFJlc3ASMAoGZXZlbnRzGAEgAygLMiAuZHVraXJlZ2lzdHJ5LkR1a2VyUmVnaXN0cnlFdmVudCJRCg1TeW5jRXZlbnRzUmVxEhEKCWNoYWluX2VpZBgBIAEoDRIUCgxsYXN0X2V2dF9zZXEYAiABKAQSFwoPbWF4X2Jsb2NrX3JhbmdlGAMgASgEIlUKDlN5bmNFdmVudHNSZXNwEhQKDHN5bmNlZF91cF90bxgBIAEoBBIWCg5ldmVudHNfaW5kZXhlZBgCIAEoDRIVCg1jaGFpbl9ldnRfc2VxGAMgASgEIh8KC0dldEFnZW50UmVxEhAKCGFnZW50X2lkGAEgASgEIi4KDEdldEFnZW50c1JlcRIMCgRwYWdlGAEgASgNEhAKCHBlcl9wYWdlGAIgASgNIkoKDUdldEFnZW50c1Jlc3ASKgoGYWdlbnRzGAEgAygLMhouZHVraXJlZ2lzdHJ5LkR1a2lnZW5BZ2VudBINCgV0b3RhbBgCIAEoDSJHChNMaXN0QWdlbnRzUmFua2VkUmVxEhEKCXRpbWVzY2FsZRgBIAEoCRIOCgZjdXJzb3IYAiABKAkSDQoFbGltaXQYAyABKA0iTQoLUmFua2VkQWdlbnQSKQoFYWdlbnQYASABKAsyGi5kdWtpcmVnaXN0cnkuRHVraWdlbkFnZW50EhMKC2NyZWRpYmlsaXR5GAIgASgEImcKFExpc3RBZ2VudHNSYW5rZWRSZXNwEigKBWl0ZW1zGAEgAygLMhkuZHVraXJlZ2lzdHJ5LlJhbmtlZEFnZW50EhMKC25leHRfY3Vyc29yGAIgASgJEhAKCGhhc19tb3JlGAMgASgIIjgKEk5vdGlmeUR1a2lnZW5UeFJlcRIPCgd0eF9oYXNoGAEgASgJEhEKCWNoYWluX2VpZBgCIAEoDSJJChNOb3RpZnlEdWtpZ2VuVHhSZXNwEjIKBmV2ZW50cxgBIAMoCzIiLmR1a2lyZWdpc3RyeS5EdWtpZ2VuUmVnaXN0cnlFdmVudCIkChBDaGVja1VzZXJuYW1lUmVxEhAKCHVzZXJuYW1lGAEgASgJIlIKEUNoZWNrVXNlcm5hbWVSZXNwEhEKCWF2YWlsYWJsZRgBIAEoCBIqCgVvd25lchgCIAEoCzIbLmR1a2lyZWdpc3RyeS5EdWtlcklkZW50aXR5MrIDChREdWtlclJlZ2lzdHJ5U2VydmljZRJKCgtHZXRVc2VybmFtZRIcLmR1a2lyZWdpc3RyeS5HZXRVc2VybmFtZVJlcRodLmR1a2lyZWdpc3RyeS5HZXRVc2VybmFtZVJlc3ASUAoNQ2hlY2tVc2VybmFtZRIeLmR1a2lyZWdpc3RyeS5DaGVja1VzZXJuYW1lUmVxGh8uZHVraXJlZ2lzdHJ5LkNoZWNrVXNlcm5hbWVSZXNwElwKFEdldElkZW50aXRpZXNCeVRva2VuEiUuZHVraXJlZ2lzdHJ5LkdldElkZW50aXRpZXNCeVRva2VuUmVxGh0uZHVraXJlZ2lzdHJ5LkdldFVzZXJuYW1lUmVzcBJQCg1Ob3RpZnlEdWtlclR4Eh4uZHVraXJlZ2lzdHJ5Lk5vdGlmeUR1a2VyVHhSZXEaHy5kdWtpcmVnaXN0cnkuTm90aWZ5RHVrZXJUeFJlc3ASTAoPU3luY0R1a2VyRXZlbnRzEhsuZHVraXJlZ2lzdHJ5LlN5bmNFdmVudHNSZXEaHC5kdWtpcmVnaXN0cnkuU3luY0V2ZW50c1Jlc3AypAMKFkR1a2lnZW5SZWdpc3RyeVNlcnZpY2USQQoIR2V0QWdlbnQSGS5kdWtpcmVnaXN0cnkuR2V0QWdlbnRSZXEaGi5kdWtpcmVnaXN0cnkuRHVraWdlbkFnZW50EkQKCUdldEFnZW50cxIaLmR1a2lyZWdpc3RyeS5HZXRBZ2VudHNSZXEaGy5kdWtpcmVnaXN0cnkuR2V0QWdlbnRzUmVzcBJZChBMaXN0QWdlbnRzUmFua2VkEiEuZHVraXJlZ2lzdHJ5Lkxpc3RBZ2VudHNSYW5rZWRSZXEaIi5kdWtpcmVnaXN0cnkuTGlzdEFnZW50c1JhbmtlZFJlc3ASVgoPTm90aWZ5RHVraWdlblR4EiAuZHVraXJlZ2lzdHJ5Lk5vdGlmeUR1a2lnZW5UeFJlcRohLmR1a2lyZWdpc3RyeS5Ob3RpZnlEdWtpZ2VuVHhSZXNwEk4KEVN5bmNEdWtpZ2VuRXZlbnRzEhsuZHVraXJlZ2lzdHJ5LlN5bmNFdmVudHNSZXEaHC5kdWtpcmVnaXN0cnkuU3luY0V2ZW50c1Jlc3BiBnByb3RvMw", [file_duker_registry, file_dukigen_registry]);
+  fileDesc("ChtkdWtpcmVnaXN0cnlfc2VydmljZXMucHJvdG8SDGR1a2lyZWdpc3RyeSI0Cg5HZXRVc2VybmFtZVJlcRIPCgdhZGRyZXNzGAEgASgJEhEKCWNoYWluX2VpZBgCIAEoDSJCCg9HZXRVc2VybmFtZVJlc3ASLwoKaWRlbnRpdGllcxgBIAMoCzIbLmR1a2lyZWdpc3RyeS5EdWtlcklkZW50aXR5IisKF0dldElkZW50aXRpZXNCeVRva2VuUmVxEhAKCHRva2VuX2lkGAEgASgJIiQKEENoZWNrVXNlcm5hbWVSZXESEAoIdXNlcm5hbWUYASABKAkiUgoRQ2hlY2tVc2VybmFtZVJlc3ASEQoJYXZhaWxhYmxlGAEgASgIEioKBW93bmVyGAIgASgLMhsuZHVraXJlZ2lzdHJ5LkR1a2VySWRlbnRpdHkiHwoLR2V0QWdlbnRSZXESEAoIYWdlbnRfaWQYASABKAQiLgoMR2V0QWdlbnRzUmVxEgwKBHBhZ2UYASABKA0SEAoIcGVyX3BhZ2UYAiABKA0iSgoNR2V0QWdlbnRzUmVzcBIqCgZhZ2VudHMYASADKAsyGi5kdWtpcmVnaXN0cnkuRHVraWdlbkFnZW50Eg0KBXRvdGFsGAIgASgNIkcKE0xpc3RBZ2VudHNSYW5rZWRSZXESEQoJdGltZXNjYWxlGAEgASgJEg4KBmN1cnNvchgCIAEoCRINCgVsaW1pdBgDIAEoDSJNCgtSYW5rZWRBZ2VudBIpCgVhZ2VudBgBIAEoCzIaLmR1a2lyZWdpc3RyeS5EdWtpZ2VuQWdlbnQSEwoLY3JlZGliaWxpdHkYAiABKAQiZwoUTGlzdEFnZW50c1JhbmtlZFJlc3ASKAoFaXRlbXMYASADKAsyGS5kdWtpcmVnaXN0cnkuUmFua2VkQWdlbnQSEwoLbmV4dF9jdXJzb3IYAiABKAkSEAoIaGFzX21vcmUYAyABKAgykgIKFER1a2VyUmVnaXN0cnlTZXJ2aWNlEkoKC0dldFVzZXJuYW1lEhwuZHVraXJlZ2lzdHJ5LkdldFVzZXJuYW1lUmVxGh0uZHVraXJlZ2lzdHJ5LkdldFVzZXJuYW1lUmVzcBJQCg1DaGVja1VzZXJuYW1lEh4uZHVraXJlZ2lzdHJ5LkNoZWNrVXNlcm5hbWVSZXEaHy5kdWtpcmVnaXN0cnkuQ2hlY2tVc2VybmFtZVJlc3ASXAoUR2V0SWRlbnRpdGllc0J5VG9rZW4SJS5kdWtpcmVnaXN0cnkuR2V0SWRlbnRpdGllc0J5VG9rZW5SZXEaHS5kdWtpcmVnaXN0cnkuR2V0VXNlcm5hbWVSZXNwMvwBChZEdWtpZ2VuUmVnaXN0cnlTZXJ2aWNlEkEKCEdldEFnZW50EhkuZHVraXJlZ2lzdHJ5LkdldEFnZW50UmVxGhouZHVraXJlZ2lzdHJ5LkR1a2lnZW5BZ2VudBJECglHZXRBZ2VudHMSGi5kdWtpcmVnaXN0cnkuR2V0QWdlbnRzUmVxGhsuZHVraXJlZ2lzdHJ5LkdldEFnZW50c1Jlc3ASWQoQTGlzdEFnZW50c1JhbmtlZBIhLmR1a2lyZWdpc3RyeS5MaXN0QWdlbnRzUmFua2VkUmVxGiIuZHVraXJlZ2lzdHJ5Lkxpc3RBZ2VudHNSYW5rZWRSZXNwYgZwcm90bzM", [file_duker_registry, file_dukigen_registry]);
 
 /**
  * @generated from message dukiregistry.GetUsernameReq
@@ -81,111 +81,49 @@ export const GetIdentitiesByTokenReqSchema: GenMessage<GetIdentitiesByTokenReq> 
   messageDesc(file_dukiregistry_services, 2);
 
 /**
- * @generated from message dukiregistry.NotifyDukerTxReq
+ * @generated from message dukiregistry.CheckUsernameReq
  */
-export type NotifyDukerTxReq = Message<"dukiregistry.NotifyDukerTxReq"> & {
+export type CheckUsernameReq = Message<"dukiregistry.CheckUsernameReq"> & {
   /**
-   * @generated from field: string tx_hash = 1;
-   */
-  txHash: string;
-
-  /**
-   * Which chain the tx is on
+   * Username to check availability — globally unique (encodes origin chain suffix)
    *
-   * @generated from field: uint32 chain_eid = 2;
+   * @generated from field: string username = 1;
    */
-  chainEid: number;
+  username: string;
 };
 
 /**
- * Describes the message dukiregistry.NotifyDukerTxReq.
- * Use `create(NotifyDukerTxReqSchema)` to create a new message.
+ * Describes the message dukiregistry.CheckUsernameReq.
+ * Use `create(CheckUsernameReqSchema)` to create a new message.
  */
-export const NotifyDukerTxReqSchema: GenMessage<NotifyDukerTxReq> = /*@__PURE__*/
+export const CheckUsernameReqSchema: GenMessage<CheckUsernameReq> = /*@__PURE__*/
   messageDesc(file_dukiregistry_services, 3);
 
 /**
- * @generated from message dukiregistry.NotifyDukerTxResp
+ * @generated from message dukiregistry.CheckUsernameResp
  */
-export type NotifyDukerTxResp = Message<"dukiregistry.NotifyDukerTxResp"> & {
+export type CheckUsernameResp = Message<"dukiregistry.CheckUsernameResp"> & {
   /**
-   * @generated from field: repeated dukiregistry.DukerRegistryEvent events = 1;
+   * true if the username is not taken
+   *
+   * @generated from field: bool available = 1;
    */
-  events: DukerRegistryEvent[];
+  available: boolean;
+
+  /**
+   * set if the username is taken (who owns it)
+   *
+   * @generated from field: dukiregistry.DukerIdentity owner = 2;
+   */
+  owner?: DukerIdentity;
 };
 
 /**
- * Describes the message dukiregistry.NotifyDukerTxResp.
- * Use `create(NotifyDukerTxRespSchema)` to create a new message.
+ * Describes the message dukiregistry.CheckUsernameResp.
+ * Use `create(CheckUsernameRespSchema)` to create a new message.
  */
-export const NotifyDukerTxRespSchema: GenMessage<NotifyDukerTxResp> = /*@__PURE__*/
+export const CheckUsernameRespSchema: GenMessage<CheckUsernameResp> = /*@__PURE__*/
   messageDesc(file_dukiregistry_services, 4);
-
-/**
- * @generated from message dukiregistry.SyncEventsReq
- */
-export type SyncEventsReq = Message<"dukiregistry.SyncEventsReq"> & {
-  /**
-   * Which chain to sync
-   *
-   * @generated from field: uint32 chain_eid = 1;
-   */
-  chainEid: number;
-
-  /**
-   * Worker's last indexed evtSeq (0 = full sync)
-   *
-   * @generated from field: uint64 last_evt_seq = 2;
-   */
-  lastEvtSeq: bigint;
-
-  /**
-   * Max blocks per eth_getLogs call (0 = use server default)
-   *
-   * @generated from field: uint64 max_block_range = 3;
-   */
-  maxBlockRange: bigint;
-};
-
-/**
- * Describes the message dukiregistry.SyncEventsReq.
- * Use `create(SyncEventsReqSchema)` to create a new message.
- */
-export const SyncEventsReqSchema: GenMessage<SyncEventsReq> = /*@__PURE__*/
-  messageDesc(file_dukiregistry_services, 5);
-
-/**
- * @generated from message dukiregistry.SyncEventsResp
- */
-export type SyncEventsResp = Message<"dukiregistry.SyncEventsResp"> & {
-  /**
-   * Highest evtSeq after sync
-   *
-   * @generated from field: uint64 synced_up_to = 1;
-   */
-  syncedUpTo: bigint;
-
-  /**
-   * Number of new events indexed
-   *
-   * @generated from field: uint32 events_indexed = 2;
-   */
-  eventsIndexed: number;
-
-  /**
-   * Contract's current worldEvtSeq
-   *
-   * @generated from field: uint64 chain_evt_seq = 3;
-   */
-  chainEvtSeq: bigint;
-};
-
-/**
- * Describes the message dukiregistry.SyncEventsResp.
- * Use `create(SyncEventsRespSchema)` to create a new message.
- */
-export const SyncEventsRespSchema: GenMessage<SyncEventsResp> = /*@__PURE__*/
-  messageDesc(file_dukiregistry_services, 6);
 
 /**
  * @generated from message dukiregistry.GetAgentReq
@@ -202,7 +140,7 @@ export type GetAgentReq = Message<"dukiregistry.GetAgentReq"> & {
  * Use `create(GetAgentReqSchema)` to create a new message.
  */
 export const GetAgentReqSchema: GenMessage<GetAgentReq> = /*@__PURE__*/
-  messageDesc(file_dukiregistry_services, 7);
+  messageDesc(file_dukiregistry_services, 5);
 
 /**
  * @generated from message dukiregistry.GetAgentsReq
@@ -224,7 +162,7 @@ export type GetAgentsReq = Message<"dukiregistry.GetAgentsReq"> & {
  * Use `create(GetAgentsReqSchema)` to create a new message.
  */
 export const GetAgentsReqSchema: GenMessage<GetAgentsReq> = /*@__PURE__*/
-  messageDesc(file_dukiregistry_services, 8);
+  messageDesc(file_dukiregistry_services, 6);
 
 /**
  * @generated from message dukiregistry.GetAgentsResp
@@ -246,7 +184,7 @@ export type GetAgentsResp = Message<"dukiregistry.GetAgentsResp"> & {
  * Use `create(GetAgentsRespSchema)` to create a new message.
  */
 export const GetAgentsRespSchema: GenMessage<GetAgentsResp> = /*@__PURE__*/
-  messageDesc(file_dukiregistry_services, 9);
+  messageDesc(file_dukiregistry_services, 7);
 
 /**
  * ── Ranked listing (default /market view) ──
@@ -286,7 +224,7 @@ export type ListAgentsRankedReq = Message<"dukiregistry.ListAgentsRankedReq"> & 
  * Use `create(ListAgentsRankedReqSchema)` to create a new message.
  */
 export const ListAgentsRankedReqSchema: GenMessage<ListAgentsRankedReq> = /*@__PURE__*/
-  messageDesc(file_dukiregistry_services, 10);
+  messageDesc(file_dukiregistry_services, 8);
 
 /**
  * @generated from message dukiregistry.RankedAgent
@@ -308,7 +246,7 @@ export type RankedAgent = Message<"dukiregistry.RankedAgent"> & {
  * Use `create(RankedAgentSchema)` to create a new message.
  */
 export const RankedAgentSchema: GenMessage<RankedAgent> = /*@__PURE__*/
-  messageDesc(file_dukiregistry_services, 11);
+  messageDesc(file_dukiregistry_services, 9);
 
 /**
  * @generated from message dukiregistry.ListAgentsRankedResp
@@ -337,91 +275,7 @@ export type ListAgentsRankedResp = Message<"dukiregistry.ListAgentsRankedResp"> 
  * Use `create(ListAgentsRankedRespSchema)` to create a new message.
  */
 export const ListAgentsRankedRespSchema: GenMessage<ListAgentsRankedResp> = /*@__PURE__*/
-  messageDesc(file_dukiregistry_services, 12);
-
-/**
- * @generated from message dukiregistry.NotifyDukigenTxReq
- */
-export type NotifyDukigenTxReq = Message<"dukiregistry.NotifyDukigenTxReq"> & {
-  /**
-   * @generated from field: string tx_hash = 1;
-   */
-  txHash: string;
-
-  /**
-   * @generated from field: uint32 chain_eid = 2;
-   */
-  chainEid: number;
-};
-
-/**
- * Describes the message dukiregistry.NotifyDukigenTxReq.
- * Use `create(NotifyDukigenTxReqSchema)` to create a new message.
- */
-export const NotifyDukigenTxReqSchema: GenMessage<NotifyDukigenTxReq> = /*@__PURE__*/
-  messageDesc(file_dukiregistry_services, 13);
-
-/**
- * @generated from message dukiregistry.NotifyDukigenTxResp
- */
-export type NotifyDukigenTxResp = Message<"dukiregistry.NotifyDukigenTxResp"> & {
-  /**
-   * @generated from field: repeated dukiregistry.DukigenRegistryEvent events = 1;
-   */
-  events: DukigenRegistryEvent[];
-};
-
-/**
- * Describes the message dukiregistry.NotifyDukigenTxResp.
- * Use `create(NotifyDukigenTxRespSchema)` to create a new message.
- */
-export const NotifyDukigenTxRespSchema: GenMessage<NotifyDukigenTxResp> = /*@__PURE__*/
-  messageDesc(file_dukiregistry_services, 14);
-
-/**
- * @generated from message dukiregistry.CheckUsernameReq
- */
-export type CheckUsernameReq = Message<"dukiregistry.CheckUsernameReq"> & {
-  /**
-   * Username to check availability — globally unique (encodes origin chain suffix)
-   *
-   * @generated from field: string username = 1;
-   */
-  username: string;
-};
-
-/**
- * Describes the message dukiregistry.CheckUsernameReq.
- * Use `create(CheckUsernameReqSchema)` to create a new message.
- */
-export const CheckUsernameReqSchema: GenMessage<CheckUsernameReq> = /*@__PURE__*/
-  messageDesc(file_dukiregistry_services, 15);
-
-/**
- * @generated from message dukiregistry.CheckUsernameResp
- */
-export type CheckUsernameResp = Message<"dukiregistry.CheckUsernameResp"> & {
-  /**
-   * true if the username is not taken
-   *
-   * @generated from field: bool available = 1;
-   */
-  available: boolean;
-
-  /**
-   * set if the username is taken (who owns it)
-   *
-   * @generated from field: dukiregistry.DukerIdentity owner = 2;
-   */
-  owner?: DukerIdentity;
-};
-
-/**
- * Describes the message dukiregistry.CheckUsernameResp.
- * Use `create(CheckUsernameRespSchema)` to create a new message.
- */
-export const CheckUsernameRespSchema: GenMessage<CheckUsernameResp> = /*@__PURE__*/
-  messageDesc(file_dukiregistry_services, 16);
+  messageDesc(file_dukiregistry_services, 10);
 
 /**
  * @generated from service dukiregistry.DukerRegistryService
@@ -456,26 +310,6 @@ export const DukerRegistryService: GenService<{
     methodKind: "unary";
     input: typeof GetIdentitiesByTokenReqSchema;
     output: typeof GetUsernameRespSchema;
-  },
-  /**
-   * Notify worker about a new DukerRegistry tx (pull + index)
-   *
-   * @generated from rpc dukiregistry.DukerRegistryService.NotifyDukerTx
-   */
-  notifyDukerTx: {
-    methodKind: "unary";
-    input: typeof NotifyDukerTxReqSchema;
-    output: typeof NotifyDukerTxRespSchema;
-  },
-  /**
-   * Catch up on missed events using on-chain block checkpoints
-   *
-   * @generated from rpc dukiregistry.DukerRegistryService.SyncDukerEvents
-   */
-  syncDukerEvents: {
-    methodKind: "unary";
-    input: typeof SyncEventsReqSchema;
-    output: typeof SyncEventsRespSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_dukiregistry_services, 0);
@@ -513,26 +347,6 @@ export const DukigenRegistryService: GenService<{
     methodKind: "unary";
     input: typeof ListAgentsRankedReqSchema;
     output: typeof ListAgentsRankedRespSchema;
-  },
-  /**
-   * Notify worker about a new DukigenRegistry tx (pull + index)
-   *
-   * @generated from rpc dukiregistry.DukigenRegistryService.NotifyDukigenTx
-   */
-  notifyDukigenTx: {
-    methodKind: "unary";
-    input: typeof NotifyDukigenTxReqSchema;
-    output: typeof NotifyDukigenTxRespSchema;
-  },
-  /**
-   * Catch up on missed events using on-chain block checkpoints
-   *
-   * @generated from rpc dukiregistry.DukigenRegistryService.SyncDukigenEvents
-   */
-  syncDukigenEvents: {
-    methodKind: "unary";
-    input: typeof SyncEventsReqSchema;
-    output: typeof SyncEventsRespSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_dukiregistry_services, 1);

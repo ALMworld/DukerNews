@@ -1,5 +1,9 @@
 /**
- * grpc.ts — ConnectRPC handlers for DukerRegistryService + DukigenRegistryService.
+ * grpc.ts — ConnectRPC handlers for DukerRegistryService, DukigenRegistryService,
+ * AlmWorldMinterService, and BlockchainSyncService.
+ *
+ * All notify/sync (chain-ingest) logic is consolidated in BlockchainSyncService.
+ * The per-contract services expose query-only RPCs.
  */
 
 import type { ConnectRouter } from '@connectrpc/connect'
@@ -8,12 +12,12 @@ import {
     DukerRegistryService,
     DukigenRegistryService,
     AlmWorldMinterService,
+    BlockchainSyncService,
+    ContractType,
     GetUsernameRespSchema,
     CheckUsernameRespSchema,
-    NotifyDukerTxRespSchema,
-    NotifyDukigenTxRespSchema,
-    NotifyMinterTxRespSchema,
-    SyncMinterEventsRespSchema,
+    NotifyTxRespSchema,
+    BlockchainSyncRespSchema,
     GetAgentDealsRespSchema,
     GetRecentDealsRespSchema,
     GetWalletDealsRespSchema,
@@ -21,7 +25,6 @@ import {
     GetAgentsRespSchema,
     ListAgentsRankedRespSchema,
     RankedAgentSchema,
-    SyncEventsRespSchema,
     ChainContractEntrySchema,
 } from '@repo/dukiregistry-apidefs'
 import {
@@ -154,58 +157,6 @@ export function registerGrpcRoutes(router: ConnectRouter) {
             })
         },
 
-        async notifyDukerTx(req) {
-            const resp = create(NotifyDukerTxRespSchema, {})
-
-            const pulled = await pullTxReceipt(req.chainEid, req.txHash)
-            await processDukerEvents(_db, pulled.dukerEvents)
-
-            // Events from chain-puller are already fully-typed proto messages
-            resp.events = pulled.dukerEvents
-            return resp
-        },
-
-        async syncDukerEvents(req) {
-            const lastEvtSeq = req.lastEvtSeq > 0n
-                ? req.lastEvtSeq
-                : await getContinuousDukerEvtSeq(req.chainEid)
-            const cfg = getChainConfig(req.chainEid)
-            const client = createPublicClient({ transport: http(cfg.rpcUrl) })
-
-            const [chainEvtSeq, checkpoints] = await client.readContract({
-                address: cfg.dukerRegistryAddress,
-                abi: dukerRegistryAbi,
-                functionName: 'eventState',
-            })
-
-            if (Number(chainEvtSeq) === 0 || Number(chainEvtSeq) <= Number(lastEvtSeq)) {
-                return create(SyncEventsRespSchema, {
-                    syncedUpTo: lastEvtSeq,
-                    eventsIndexed: 0,
-                    chainEvtSeq: chainEvtSeq as bigint,
-                })
-            }
-
-            const fromBlockStart = findBestCheckpoint(checkpoints, Number(lastEvtSeq))
-            const latestBlock = await client.getBlockNumber()
-
-            const result = await chunkedSync({
-                fromBlock: fromBlockStart,
-                latestBlock,
-                lastEvtSeq,
-                chainEvtSeq: chainEvtSeq as bigint,
-                maxBlockRange: req.maxBlockRange,
-                pull: (from, to) => pullDukerEventsByBlockRange(req.chainEid, from, to),
-                process: (evts) => processDukerEvents(_db, evts),
-                getEvtSeq: (e) => e.evtSeq,
-            })
-
-            return create(SyncEventsRespSchema, {
-                syncedUpTo: result.syncedUpTo,
-                eventsIndexed: result.eventsIndexed,
-                chainEvtSeq: chainEvtSeq as bigint,
-            })
-        },
     })
 
     // ── DukigenRegistryService ───────────────────────────────
@@ -345,124 +296,11 @@ export function registerGrpcRoutes(router: ConnectRouter) {
             })
         },
 
-        async notifyDukigenTx(req) {
-            const resp = create(NotifyDukigenTxRespSchema, {})
-
-            const pulled = await pullTxReceipt(req.chainEid, req.txHash)
-            await processDukigenEvents(_db, pulled.dukigenEvents)
-
-            // Events from chain-puller are already fully-typed proto messages
-            resp.events = pulled.dukigenEvents
-            return resp
-        },
-
-        async syncDukigenEvents(req) {
-            const lastEvtSeq = req.lastEvtSeq > 0n
-                ? req.lastEvtSeq
-                : await getContinuousDukigenEvtSeq(req.chainEid)
-            const cfg = getChainConfig(req.chainEid)
-            const client = createPublicClient({ transport: http(cfg.rpcUrl) })
-
-            const [chainEvtSeq, checkpoints] = await client.readContract({
-                address: cfg.dukigenRegistryAddress,
-                abi: dukigenRegistryAbi,
-                functionName: 'eventState',
-            })
-
-            if (Number(chainEvtSeq) === 0 || Number(chainEvtSeq) <= Number(lastEvtSeq)) {
-                return create(SyncEventsRespSchema, {
-                    syncedUpTo: lastEvtSeq,
-                    eventsIndexed: 0,
-                    chainEvtSeq: chainEvtSeq as bigint,
-                })
-            }
-
-            const fromBlockStart = findBestCheckpoint(checkpoints, Number(lastEvtSeq))
-            const latestBlock = await client.getBlockNumber()
-
-            const result = await chunkedSync({
-                fromBlock: fromBlockStart,
-                latestBlock,
-                lastEvtSeq,
-                chainEvtSeq: chainEvtSeq as bigint,
-                maxBlockRange: req.maxBlockRange,
-                pull: (from, to) => pullDukigenEventsByBlockRange(req.chainEid, from, to),
-                process: (evts) => processDukigenEvents(_db, evts),
-                getEvtSeq: (e) => e.evtSeq,
-            })
-
-            return create(SyncEventsRespSchema, {
-                syncedUpTo: result.syncedUpTo,
-                eventsIndexed: result.eventsIndexed,
-                chainEvtSeq: chainEvtSeq as bigint,
-            })
-        },
     })
 
-    // ── AlmWorldMinterService ────────────────────────────────
-    //
-    // Indexes DealDukiMinted events from AlmWorldDukiMinter contracts. Two
-    // ingest paths share the same persistence layer:
-    //   • notifyMinterTx — the dApp's webhook hits this with a tx hash right
-    //     after a successful mint. Cheap, single receipt fetch.
-    //   • syncMinterEvents — eth_getLogs over a block range, used for backfill
-    //     and as a safety net if a webhook is missed. Resumes from
-    //     minter_sync_state.last_block_indexed when from_block is 0.
+    // ── AlmWorldMinterService (query-only) ────────────────────
 
     router.service(AlmWorldMinterService, {
-        async notifyMinterTx(req) {
-            const events = await pullMinterEventsFromTx(req.chainEid, req.txHash)
-            await processMinterEvents(_db, events)
-            return create(NotifyMinterTxRespSchema, {
-                events: events.map(toDealDukiMintedProto),
-            })
-        },
-
-        async syncMinterEvents(req) {
-            const cfg = getChainConfig(req.chainEid)
-            const client = createPublicClient({ transport: http(cfg.rpcUrl) })
-
-            const headBlock = req.toBlock > 0n ? req.toBlock : await client.getBlockNumber()
-
-            // Resume from D1's last-indexed cursor if the caller didn't pin a
-            // start block. +1 so we don't re-pull the previous tail block.
-            const cursor = req.fromBlock > 0n
-                ? req.fromBlock
-                : (await getLastBlockIndexed(_db, req.chainEid)) + 1n
-            let fromBlock = cursor < 1n ? 1n : cursor
-
-            if (fromBlock > headBlock) {
-                return create(SyncMinterEventsRespSchema, {
-                    syncedUpToBlock: headBlock,
-                    eventsIndexed: 0,
-                })
-            }
-
-            const maxRange = req.maxBlockRange > 0n ? req.maxBlockRange : DEFAULT_MAX_BLOCK_RANGE
-            let totalIndexed = 0
-            let lastProcessedBlock = fromBlock - 1n
-
-            for (let i = 0; i < MAX_CHUNKS_PER_REQUEST; i++) {
-                if (fromBlock > headBlock) break
-                const tentativeTo = fromBlock + maxRange - 1n
-                const toBlock = tentativeTo < headBlock ? tentativeTo : headBlock
-
-                const events = await pullDealDukiMintedByBlockRange(req.chainEid, fromBlock, toBlock)
-                if (events.length > 0) {
-                    await processMinterEvents(_db, events)
-                    totalIndexed += events.length
-                }
-                lastProcessedBlock = toBlock
-                fromBlock = toBlock + 1n
-            }
-
-            await setLastBlockIndexed(_db, req.chainEid, lastProcessedBlock)
-            return create(SyncMinterEventsRespSchema, {
-                syncedUpToBlock: lastProcessedBlock,
-                eventsIndexed: totalIndexed,
-            })
-        },
-
         async getAgentDeals(req) {
             const page = await queryDeals(_db, {
                 agentId: req.agentId.toString(),
@@ -493,6 +331,177 @@ export function registerGrpcRoutes(router: ConnectRouter) {
             })
             return create(GetWalletDealsRespSchema, page)
         },
+    })
+
+    // ── BlockchainSyncService (unified ingest) ──────────────────
+    //
+    // Consolidates all notify/sync RPCs for DukerRegistry, DukigenRegistry,
+    // and AlmWorldMinter into a single service with a ContractType switch.
+
+    router.service(BlockchainSyncService, {
+        async notifyTx(req) {
+            const resp = create(NotifyTxRespSchema, {})
+
+            switch (req.contract) {
+                case ContractType.DUKER_REGISTRY: {
+                    const pulled = await pullTxReceipt(req.chainEid, req.txHash)
+                    await processDukerEvents(_db, pulled.dukerEvents)
+                    resp.dukerEvents = pulled.dukerEvents
+                    break
+                }
+                case ContractType.DUKIGEN_REGISTRY: {
+                    const pulled = await pullTxReceipt(req.chainEid, req.txHash)
+                    await processDukigenEvents(_db, pulled.dukigenEvents)
+                    resp.dukigenEvents = pulled.dukigenEvents
+                    break
+                }
+                case ContractType.ALM_WORLD_MINTER: {
+                    const events = await pullMinterEventsFromTx(req.chainEid, req.txHash)
+                    await processMinterEvents(_db, events)
+                    resp.minterEvents = events.map(toDealDukiMintedProto)
+                    break
+                }
+                default:
+                    throw new Error(`Unknown contract type: ${req.contract}`)
+            }
+
+            return resp
+        },
+
+        async syncEvents(req) {
+            switch (req.contract) {
+                case ContractType.DUKER_REGISTRY:
+                    return await syncDukerContract(req.chainEid)
+
+                case ContractType.DUKIGEN_REGISTRY:
+                    return await syncDukigenContract(req.chainEid)
+
+                case ContractType.ALM_WORLD_MINTER:
+                    return await syncMinterContract(req.chainEid)
+
+                default:
+                    throw new Error(`Unknown contract type: ${req.contract}`)
+            }
+        },
+    })
+}
+
+// ── Sync implementations (one per contract) ─────────────────────────────
+
+async function syncDukerContract(chainEid: number) {
+    const lastEvtSeq = await getContinuousDukerEvtSeq(chainEid)
+    const cfg = getChainConfig(chainEid)
+    const client = createPublicClient({ transport: http(cfg.rpcUrl) })
+
+    const [chainEvtSeq, checkpoints] = await client.readContract({
+        address: cfg.dukerRegistryAddress,
+        abi: dukerRegistryAbi,
+        functionName: 'eventState',
+    })
+
+    if (Number(chainEvtSeq) === 0 || Number(chainEvtSeq) <= Number(lastEvtSeq)) {
+        return create(BlockchainSyncRespSchema, {
+            lastEvtSeq,
+            eventsIndexed: 0,
+        })
+    }
+
+    const fromBlockStart = findBestCheckpoint(checkpoints, Number(lastEvtSeq))
+    const latestBlock = await client.getBlockNumber()
+
+    const result = await chunkedSync({
+        fromBlock: fromBlockStart,
+        latestBlock,
+        lastEvtSeq,
+        chainEvtSeq: chainEvtSeq as bigint,
+        maxBlockRange: 0n,
+        pull: (from, to) => pullDukerEventsByBlockRange(chainEid, from, to),
+        process: (evts) => processDukerEvents(_db, evts),
+        getEvtSeq: (e) => e.evtSeq,
+    })
+
+    return create(BlockchainSyncRespSchema, {
+        lastEvtSeq: result.syncedUpTo,
+        eventsIndexed: result.eventsIndexed,
+    })
+}
+
+async function syncDukigenContract(chainEid: number) {
+    const lastEvtSeq = await getContinuousDukigenEvtSeq(chainEid)
+    const cfg = getChainConfig(chainEid)
+    const client = createPublicClient({ transport: http(cfg.rpcUrl) })
+
+    const [chainEvtSeq, checkpoints] = await client.readContract({
+        address: cfg.dukigenRegistryAddress,
+        abi: dukigenRegistryAbi,
+        functionName: 'eventState',
+    })
+
+    if (Number(chainEvtSeq) === 0 || Number(chainEvtSeq) <= Number(lastEvtSeq)) {
+        return create(BlockchainSyncRespSchema, {
+            lastEvtSeq,
+            eventsIndexed: 0,
+        })
+    }
+
+    const fromBlockStart = findBestCheckpoint(checkpoints, Number(lastEvtSeq))
+    const latestBlock = await client.getBlockNumber()
+
+    const result = await chunkedSync({
+        fromBlock: fromBlockStart,
+        latestBlock,
+        lastEvtSeq,
+        chainEvtSeq: chainEvtSeq as bigint,
+        maxBlockRange: 0n,
+        pull: (from, to) => pullDukigenEventsByBlockRange(chainEid, from, to),
+        process: (evts) => processDukigenEvents(_db, evts),
+        getEvtSeq: (e) => e.evtSeq,
+    })
+
+    return create(BlockchainSyncRespSchema, {
+        lastEvtSeq: result.syncedUpTo,
+        eventsIndexed: result.eventsIndexed,
+    })
+}
+
+async function syncMinterContract(chainEid: number) {
+    const cfg = getChainConfig(chainEid)
+    const client = createPublicClient({ transport: http(cfg.rpcUrl) })
+
+    const headBlock = await client.getBlockNumber()
+
+    // Resume from D1's last-indexed cursor +1 so we don't re-pull the tail block.
+    const cursor = (await getLastBlockIndexed(_db, chainEid)) + 1n
+    let fromBlock = cursor < 1n ? 1n : cursor
+
+    if (fromBlock > headBlock) {
+        return create(BlockchainSyncRespSchema, {
+            lastEvtSeq: headBlock,
+            eventsIndexed: 0,
+        })
+    }
+
+    let totalIndexed = 0
+    let lastProcessedBlock = fromBlock - 1n
+
+    for (let i = 0; i < MAX_CHUNKS_PER_REQUEST; i++) {
+        if (fromBlock > headBlock) break
+        const tentativeTo = fromBlock + DEFAULT_MAX_BLOCK_RANGE - 1n
+        const toBlock = tentativeTo < headBlock ? tentativeTo : headBlock
+
+        const events = await pullDealDukiMintedByBlockRange(chainEid, fromBlock, toBlock)
+        if (events.length > 0) {
+            await processMinterEvents(_db, events)
+            totalIndexed += events.length
+        }
+        lastProcessedBlock = toBlock
+        fromBlock = toBlock + 1n
+    }
+
+    await setLastBlockIndexed(_db, chainEid, lastProcessedBlock)
+    return create(BlockchainSyncRespSchema, {
+        lastEvtSeq: lastProcessedBlock,
+        eventsIndexed: totalIndexed,
     })
 }
 

@@ -9,24 +9,41 @@
  * to the deployed worker URL.
  */
 
-import { createClient, type Client } from '@connectrpc/connect'
+import { createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
-import { DukerRegistryService, type DukerIdentity } from '@repo/dukiregistry-apidefs'
+import {
+    BlockchainSyncService,
+    ContractType,
+    DukerRegistryService,
+} from '@repo/dukiregistry-apidefs'
+import type { Client } from '@connectrpc/connect'
+import type { DukerIdentity } from '@repo/dukiregistry-apidefs'
 
 const REGISTRY_WORKER_URL = process.env.REGISTRY_WORKER_URL ?? 'http://localhost:3000/worker-api'
 
 let _client: Client<typeof DukerRegistryService> | null = null
+let _syncClient: Client<typeof BlockchainSyncService> | null = null
 
 function getClient(): Client<typeof DukerRegistryService> {
     if (!_client) {
-        const transport = createConnectTransport({
-            baseUrl: REGISTRY_WORKER_URL,
-            // workerd's edge fetch rejects redirect:"error" (the default for fetch).
-            fetch: (input, init) => fetch(input, { ...init, redirect: 'manual' }),
-        })
-        _client = createClient(DukerRegistryService, transport)
+        _client = createClient(DukerRegistryService, createRegistryTransport())
     }
     return _client
+}
+
+function getSyncClient(): Client<typeof BlockchainSyncService> {
+    if (!_syncClient) {
+        _syncClient = createClient(BlockchainSyncService, createRegistryTransport())
+    }
+    return _syncClient
+}
+
+function createRegistryTransport() {
+    return createConnectTransport({
+        baseUrl: REGISTRY_WORKER_URL,
+        // workerd's edge fetch rejects redirect:"error" (the default for fetch).
+        fetch: (input, init) => fetch(input, { ...init, redirect: 'manual' }),
+    })
 }
 
 /** A serializable copy of DukerIdentity — bigints become strings, status drops. */
@@ -57,7 +74,7 @@ function toPlain(i: DukerIdentity): RegistryIdentity {
 export async function getRegistryIdentities(
     address: string,
     chainEid: number = 0,
-): Promise<RegistryIdentity[]> {
+): Promise<Array<RegistryIdentity>> {
     try {
         const resp = await getClient().getUsername({ address: address.toLowerCase(), chainEid })
         return resp.identities.map(toPlain)
@@ -74,7 +91,7 @@ export async function getRegistryIdentities(
  *      `(seq << 24) | chainEid`, so the largest tokenId is the latest mint.
  */
 export function pickPrimaryIdentity(
-    identities: RegistryIdentity[],
+    identities: Array<RegistryIdentity>,
     chainEid: number,
 ): RegistryIdentity | null {
     if (identities.length === 0) return null
@@ -105,21 +122,24 @@ export async function getRegistryIdentity(
 
 /**
  * Ask the registry worker to catch up DukerRegistry logs for a chain.
- * lastEvtSeq=0 lets the worker derive its own indexed cursor from D1.
+ * contractHead=0 lets the worker derive its own indexed cursor from D1.
  */
 export async function syncRegistryIdentities(
     chainEid: number,
-    lastEvtSeq: bigint = 0n,
-): Promise<{ syncedUpTo: bigint; eventsIndexed: number; chainEvtSeq: bigint } | null> {
+    contractHead: bigint = 0n,
+): Promise<{ lastEvtSeq: bigint; eventsIndexed: number } | null> {
     try {
-        const resp = await getClient().syncDukerEvents({ chainEid, lastEvtSeq })
+        const resp = await getSyncClient().syncEvents({
+            contract: ContractType.DUKER_REGISTRY,
+            chainEid,
+            contractHead,
+        })
         return {
-            syncedUpTo: resp.syncedUpTo,
+            lastEvtSeq: resp.lastEvtSeq,
             eventsIndexed: resp.eventsIndexed,
-            chainEvtSeq: resp.chainEvtSeq,
         }
     } catch (err) {
-        console.warn('[registry-worker-client] syncDukerEvents failed:', err)
+        console.warn('[registry-worker-client] BlockchainSyncService.syncEvents failed:', err)
         return null
     }
 }

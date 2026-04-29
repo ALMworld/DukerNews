@@ -70,13 +70,14 @@ Connect-Protocol-Version: 1
 
 ###
 
-### NotifyDukerTx — index a DukerRegistry transaction
+### NotifyTx — index a DukerRegistry transaction
 # Replace tx_hash with actual tx hash from anvil
-POST {{host}}/dukiregistry.DukerRegistryService/NotifyDukerTx
+POST {{host}}/dukiregistry.BlockchainSyncService/NotifyTx
 Content-Type: application/json
 Connect-Protocol-Version: 1
 
 {
+    "contract": "DUKER_REGISTRY",
     "txHash": "0xREPLACE_WITH_ACTUAL_TX_HASH",
     "chainEid": 31337
 }
@@ -110,13 +111,26 @@ Connect-Protocol-Version: 1
 
 ###
 
-### NotifyDukigenTx — index a DukigenRegistry transaction
-POST {{host}}/dukiregistry.DukigenRegistryService/NotifyDukigenTx
+### NotifyTx — index a DukigenRegistry transaction
+POST {{host}}/dukiregistry.BlockchainSyncService/NotifyTx
 Content-Type: application/json
 Connect-Protocol-Version: 1
 
 {
+    "contract": "DUKIGEN_REGISTRY",
     "txHash": "0xREPLACE_WITH_ACTUAL_TX_HASH",
+    "chainEid": 31337
+}
+
+###
+
+### SyncEvents — catch up DukerRegistry
+POST {{host}}/dukiregistry.BlockchainSyncService/SyncEvents
+Content-Type: application/json
+Connect-Protocol-Version: 1
+
+{
+    "contract": "DUKER_REGISTRY",
     "chainEid": 31337
 }
 

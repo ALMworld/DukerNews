@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file alm_world_minter.proto.
  */
 export const file_alm_world_minter: GenFile = /*@__PURE__*/
-  fileDesc("ChZhbG1fd29ybGRfbWludGVyLnByb3RvEgxkdWtpcmVnaXN0cnkinAIKE0RlYWxEdWtpTWludGVkRXZlbnQSEQoJY2hhaW5fZWlkGAEgASgNEhAKCHNlcXVlbmNlGAIgASgJEg8KB3R4X2hhc2gYAyABKAkSFAoMYmxvY2tfbnVtYmVyGAQgASgEEhAKCGV2dF90aW1lGAUgASgEEhUKDXlhbmdfcmVjZWl2ZXIYBiABKAkSFAoMeWluX3JlY2VpdmVyGAcgASgJEhIKCnN0YWJsZWNvaW4YCCABKAkSEwoLZHVraV9hbW91bnQYCSABKAkSFwoPYWxtX3lhbmdfYW1vdW50GAogASgJEhYKDmFsbV95aW5fYW1vdW50GAsgASgJEg4KBm1pbnRlchgMIAEoCRIQCghhZ2VudF9pZBgNIAEoBCI3ChFOb3RpZnlNaW50ZXJUeFJlcRIPCgd0eF9oYXNoGAEgASgJEhEKCWNoYWluX2VpZBgCIAEoDSJHChJOb3RpZnlNaW50ZXJUeFJlc3ASMQoGZXZlbnRzGAEgAygLMiEuZHVraXJlZ2lzdHJ5LkRlYWxEdWtpTWludGVkRXZlbnQiZwoTU3luY01pbnRlckV2ZW50c1JlcRIRCgljaGFpbl9laWQYASABKA0SEgoKZnJvbV9ibG9jaxgCIAEoBBIQCgh0b19ibG9jaxgDIAEoBBIXCg9tYXhfYmxvY2tfcmFuZ2UYBCABKAQiSgoUU3luY01pbnRlckV2ZW50c1Jlc3ASGgoSc3luY2VkX3VwX3RvX2Jsb2NrGAEgASgEEhYKDmV2ZW50c19pbmRleGVkGAIgASgNIlYKEEdldEFnZW50RGVhbHNSZXESEAoIYWdlbnRfaWQYASABKAQSEQoJY2hhaW5fZWlkGAIgASgNEg4KBmN1cnNvchgDIAEoCRINCgVsaW1pdBgEIAEoDSJtChFHZXRBZ2VudERlYWxzUmVzcBIxCgZldmVudHMYASADKAsyIS5kdWtpcmVnaXN0cnkuRGVhbER1a2lNaW50ZWRFdmVudBITCgtuZXh0X2N1cnNvchgCIAEoCRIQCghoYXNfbW9yZRgDIAEoCCJFChFHZXRSZWNlbnREZWFsc1JlcRIRCgljaGFpbl9laWQYASABKA0SDgoGY3Vyc29yGAIgASgJEg0KBWxpbWl0GAMgASgNIm4KEkdldFJlY2VudERlYWxzUmVzcBIxCgZldmVudHMYASADKAsyIS5kdWtpcmVnaXN0cnkuRGVhbER1a2lNaW50ZWRFdmVudBITCgtuZXh0X2N1cnNvchgCIAEoCRIQCghoYXNfbW9yZRgDIAEoCCJVChFHZXRXYWxsZXREZWFsc1JlcRIOCgZ3YWxsZXQYASABKAkSEQoJY2hhaW5fZWlkGAIgASgNEg4KBmN1cnNvchgDIAEoCRINCgVsaW1pdBgEIAEoDSJuChJHZXRXYWxsZXREZWFsc1Jlc3ASMQoGZXZlbnRzGAEgAygLMiEuZHVraXJlZ2lzdHJ5LkRlYWxEdWtpTWludGVkRXZlbnQSEwoLbmV4dF9jdXJzb3IYAiABKAkSEAoIaGFzX21vcmUYAyABKAgywwMKFUFsbVdvcmxkTWludGVyU2VydmljZRJTCg5Ob3RpZnlNaW50ZXJUeBIfLmR1a2lyZWdpc3RyeS5Ob3RpZnlNaW50ZXJUeFJlcRogLmR1a2lyZWdpc3RyeS5Ob3RpZnlNaW50ZXJUeFJlc3ASWQoQU3luY01pbnRlckV2ZW50cxIhLmR1a2lyZWdpc3RyeS5TeW5jTWludGVyRXZlbnRzUmVxGiIuZHVraXJlZ2lzdHJ5LlN5bmNNaW50ZXJFdmVudHNSZXNwElAKDUdldEFnZW50RGVhbHMSHi5kdWtpcmVnaXN0cnkuR2V0QWdlbnREZWFsc1JlcRofLmR1a2lyZWdpc3RyeS5HZXRBZ2VudERlYWxzUmVzcBJTCg5HZXRSZWNlbnREZWFscxIfLmR1a2lyZWdpc3RyeS5HZXRSZWNlbnREZWFsc1JlcRogLmR1a2lyZWdpc3RyeS5HZXRSZWNlbnREZWFsc1Jlc3ASUwoOR2V0V2FsbGV0RGVhbHMSHy5kdWtpcmVnaXN0cnkuR2V0V2FsbGV0RGVhbHNSZXEaIC5kdWtpcmVnaXN0cnkuR2V0V2FsbGV0RGVhbHNSZXNwYgZwcm90bzM");
+  fileDesc("ChZhbG1fd29ybGRfbWludGVyLnByb3RvEgxkdWtpcmVnaXN0cnkinAIKE0RlYWxEdWtpTWludGVkRXZlbnQSEQoJY2hhaW5fZWlkGAEgASgNEhAKCHNlcXVlbmNlGAIgASgJEg8KB3R4X2hhc2gYAyABKAkSFAoMYmxvY2tfbnVtYmVyGAQgASgEEhAKCGV2dF90aW1lGAUgASgEEhUKDXlhbmdfcmVjZWl2ZXIYBiABKAkSFAoMeWluX3JlY2VpdmVyGAcgASgJEhIKCnN0YWJsZWNvaW4YCCABKAkSEwoLZHVraV9hbW91bnQYCSABKAkSFwoPYWxtX3lhbmdfYW1vdW50GAogASgJEhYKDmFsbV95aW5fYW1vdW50GAsgASgJEg4KBm1pbnRlchgMIAEoCRIQCghhZ2VudF9pZBgNIAEoBCJWChBHZXRBZ2VudERlYWxzUmVxEhAKCGFnZW50X2lkGAEgASgEEhEKCWNoYWluX2VpZBgCIAEoDRIOCgZjdXJzb3IYAyABKAkSDQoFbGltaXQYBCABKA0ibQoRR2V0QWdlbnREZWFsc1Jlc3ASMQoGZXZlbnRzGAEgAygLMiEuZHVraXJlZ2lzdHJ5LkRlYWxEdWtpTWludGVkRXZlbnQSEwoLbmV4dF9jdXJzb3IYAiABKAkSEAoIaGFzX21vcmUYAyABKAgiRQoRR2V0UmVjZW50RGVhbHNSZXESEQoJY2hhaW5fZWlkGAEgASgNEg4KBmN1cnNvchgCIAEoCRINCgVsaW1pdBgDIAEoDSJuChJHZXRSZWNlbnREZWFsc1Jlc3ASMQoGZXZlbnRzGAEgAygLMiEuZHVraXJlZ2lzdHJ5LkRlYWxEdWtpTWludGVkRXZlbnQSEwoLbmV4dF9jdXJzb3IYAiABKAkSEAoIaGFzX21vcmUYAyABKAgiVQoRR2V0V2FsbGV0RGVhbHNSZXESDgoGd2FsbGV0GAEgASgJEhEKCWNoYWluX2VpZBgCIAEoDRIOCgZjdXJzb3IYAyABKAkSDQoFbGltaXQYBCABKA0ibgoSR2V0V2FsbGV0RGVhbHNSZXNwEjEKBmV2ZW50cxgBIAMoCzIhLmR1a2lyZWdpc3RyeS5EZWFsRHVraU1pbnRlZEV2ZW50EhMKC25leHRfY3Vyc29yGAIgASgJEhAKCGhhc19tb3JlGAMgASgIMpMCChVBbG1Xb3JsZE1pbnRlclNlcnZpY2USUAoNR2V0QWdlbnREZWFscxIeLmR1a2lyZWdpc3RyeS5HZXRBZ2VudERlYWxzUmVxGh8uZHVraXJlZ2lzdHJ5LkdldEFnZW50RGVhbHNSZXNwElMKDkdldFJlY2VudERlYWxzEh8uZHVraXJlZ2lzdHJ5LkdldFJlY2VudERlYWxzUmVxGiAuZHVraXJlZ2lzdHJ5LkdldFJlY2VudERlYWxzUmVzcBJTCg5HZXRXYWxsZXREZWFscxIfLmR1a2lyZWdpc3RyeS5HZXRXYWxsZXREZWFsc1JlcRogLmR1a2lyZWdpc3RyeS5HZXRXYWxsZXREZWFsc1Jlc3BiBnByb3RvMw");
 
 /**
  * AlmWorldDukiMinter — DealDukiMinted event indexer.
@@ -109,7 +109,7 @@ export type DealDukiMintedEvent = Message<"dukiregistry.DealDukiMintedEvent"> & 
   almYinAmount: string;
 
   /**
-   * tx.origin / msg.sender that paid stablecoin
+   * msg.sender that paid stablecoin
    *
    * @generated from field: string minter = 12;
    */
@@ -129,112 +129,6 @@ export type DealDukiMintedEvent = Message<"dukiregistry.DealDukiMintedEvent"> & 
  */
 export const DealDukiMintedEventSchema: GenMessage<DealDukiMintedEvent> = /*@__PURE__*/
   messageDesc(file_alm_world_minter, 0);
-
-/**
- * ── Webhook: external service tells the worker about a tx that contains
- * DealDukiMinted events. The worker pulls the receipt and indexes them.
- *
- * @generated from message dukiregistry.NotifyMinterTxReq
- */
-export type NotifyMinterTxReq = Message<"dukiregistry.NotifyMinterTxReq"> & {
-  /**
-   * @generated from field: string tx_hash = 1;
-   */
-  txHash: string;
-
-  /**
-   * @generated from field: uint32 chain_eid = 2;
-   */
-  chainEid: number;
-};
-
-/**
- * Describes the message dukiregistry.NotifyMinterTxReq.
- * Use `create(NotifyMinterTxReqSchema)` to create a new message.
- */
-export const NotifyMinterTxReqSchema: GenMessage<NotifyMinterTxReq> = /*@__PURE__*/
-  messageDesc(file_alm_world_minter, 1);
-
-/**
- * @generated from message dukiregistry.NotifyMinterTxResp
- */
-export type NotifyMinterTxResp = Message<"dukiregistry.NotifyMinterTxResp"> & {
-  /**
-   * @generated from field: repeated dukiregistry.DealDukiMintedEvent events = 1;
-   */
-  events: DealDukiMintedEvent[];
-};
-
-/**
- * Describes the message dukiregistry.NotifyMinterTxResp.
- * Use `create(NotifyMinterTxRespSchema)` to create a new message.
- */
-export const NotifyMinterTxRespSchema: GenMessage<NotifyMinterTxResp> = /*@__PURE__*/
-  messageDesc(file_alm_world_minter, 2);
-
-/**
- * ── Catch-up sync via eth_getLogs over a block range.
- *   from_block = 0 → resume from the worker's last indexed block.
- *   to_block   = 0 → up to head.
- *
- * @generated from message dukiregistry.SyncMinterEventsReq
- */
-export type SyncMinterEventsReq = Message<"dukiregistry.SyncMinterEventsReq"> & {
-  /**
-   * @generated from field: uint32 chain_eid = 1;
-   */
-  chainEid: number;
-
-  /**
-   * @generated from field: uint64 from_block = 2;
-   */
-  fromBlock: bigint;
-
-  /**
-   * @generated from field: uint64 to_block = 3;
-   */
-  toBlock: bigint;
-
-  /**
-   * 0 = use server default
-   *
-   * @generated from field: uint64 max_block_range = 4;
-   */
-  maxBlockRange: bigint;
-};
-
-/**
- * Describes the message dukiregistry.SyncMinterEventsReq.
- * Use `create(SyncMinterEventsReqSchema)` to create a new message.
- */
-export const SyncMinterEventsReqSchema: GenMessage<SyncMinterEventsReq> = /*@__PURE__*/
-  messageDesc(file_alm_world_minter, 3);
-
-/**
- * @generated from message dukiregistry.SyncMinterEventsResp
- */
-export type SyncMinterEventsResp = Message<"dukiregistry.SyncMinterEventsResp"> & {
-  /**
-   * Highest block processed
-   *
-   * @generated from field: uint64 synced_up_to_block = 1;
-   */
-  syncedUpToBlock: bigint;
-
-  /**
-   * New rows inserted (existing rows ignored)
-   *
-   * @generated from field: uint32 events_indexed = 2;
-   */
-  eventsIndexed: number;
-};
-
-/**
- * Describes the message dukiregistry.SyncMinterEventsResp.
- * Use `create(SyncMinterEventsRespSchema)` to create a new message.
- */
-export const SyncMinterEventsRespSchema: GenMessage<SyncMinterEventsResp> = /*@__PURE__*/
-  messageDesc(file_alm_world_minter, 4);
 
 /**
  * ── Query: deals that paid this agent.
@@ -274,7 +168,7 @@ export type GetAgentDealsReq = Message<"dukiregistry.GetAgentDealsReq"> & {
  * Use `create(GetAgentDealsReqSchema)` to create a new message.
  */
 export const GetAgentDealsReqSchema: GenMessage<GetAgentDealsReq> = /*@__PURE__*/
-  messageDesc(file_alm_world_minter, 5);
+  messageDesc(file_alm_world_minter, 1);
 
 /**
  * @generated from message dukiregistry.GetAgentDealsResp
@@ -301,7 +195,7 @@ export type GetAgentDealsResp = Message<"dukiregistry.GetAgentDealsResp"> & {
  * Use `create(GetAgentDealsRespSchema)` to create a new message.
  */
 export const GetAgentDealsRespSchema: GenMessage<GetAgentDealsResp> = /*@__PURE__*/
-  messageDesc(file_alm_world_minter, 6);
+  messageDesc(file_alm_world_minter, 2);
 
 /**
  * ── Query: most recent deals across all agents (market activity feed).
@@ -332,7 +226,7 @@ export type GetRecentDealsReq = Message<"dukiregistry.GetRecentDealsReq"> & {
  * Use `create(GetRecentDealsReqSchema)` to create a new message.
  */
 export const GetRecentDealsReqSchema: GenMessage<GetRecentDealsReq> = /*@__PURE__*/
-  messageDesc(file_alm_world_minter, 7);
+  messageDesc(file_alm_world_minter, 3);
 
 /**
  * @generated from message dukiregistry.GetRecentDealsResp
@@ -359,7 +253,7 @@ export type GetRecentDealsResp = Message<"dukiregistry.GetRecentDealsResp"> & {
  * Use `create(GetRecentDealsRespSchema)` to create a new message.
  */
 export const GetRecentDealsRespSchema: GenMessage<GetRecentDealsResp> = /*@__PURE__*/
-  messageDesc(file_alm_world_minter, 8);
+  messageDesc(file_alm_world_minter, 4);
 
 /**
  * ── Query: deals involving a specific wallet (as minter or yang_receiver).
@@ -397,7 +291,7 @@ export type GetWalletDealsReq = Message<"dukiregistry.GetWalletDealsReq"> & {
  * Use `create(GetWalletDealsReqSchema)` to create a new message.
  */
 export const GetWalletDealsReqSchema: GenMessage<GetWalletDealsReq> = /*@__PURE__*/
-  messageDesc(file_alm_world_minter, 9);
+  messageDesc(file_alm_world_minter, 5);
 
 /**
  * @generated from message dukiregistry.GetWalletDealsResp
@@ -424,32 +318,12 @@ export type GetWalletDealsResp = Message<"dukiregistry.GetWalletDealsResp"> & {
  * Use `create(GetWalletDealsRespSchema)` to create a new message.
  */
 export const GetWalletDealsRespSchema: GenMessage<GetWalletDealsResp> = /*@__PURE__*/
-  messageDesc(file_alm_world_minter, 10);
+  messageDesc(file_alm_world_minter, 6);
 
 /**
  * @generated from service dukiregistry.AlmWorldMinterService
  */
 export const AlmWorldMinterService: GenService<{
-  /**
-   * Webhook — accept a tx hash, pull its receipt, index any DealDukiMinted logs.
-   *
-   * @generated from rpc dukiregistry.AlmWorldMinterService.NotifyMinterTx
-   */
-  notifyMinterTx: {
-    methodKind: "unary";
-    input: typeof NotifyMinterTxReqSchema;
-    output: typeof NotifyMinterTxRespSchema;
-  },
-  /**
-   * Backfill / catch-up via eth_getLogs over a block range.
-   *
-   * @generated from rpc dukiregistry.AlmWorldMinterService.SyncMinterEvents
-   */
-  syncMinterEvents: {
-    methodKind: "unary";
-    input: typeof SyncMinterEventsReqSchema;
-    output: typeof SyncMinterEventsRespSchema;
-  },
   /**
    * Deals paid to a specific agent (newest first).
    *

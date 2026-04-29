@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+package dukiregistry;
+
+import "duker_registry.proto";
+import "dukigen_registry.proto";
+import "alm_world_minter.proto";
+
+// ══════════════════════════════════════════════════════════════════════════
+//  BlockchainSyncService — unified ingest for all on-chain contracts.
+//
+//  Replaces the per-service Notify*Tx / Sync*Events RPCs that were
+//  previously duplicated across DukerRegistryService, DukigenRegistryService
+//  and AlmWorldMinterService.
+// ══════════════════════════════════════════════════════════════════════════
+
+// Which on-chain contract to target.
+enum ContractType {
+  CONTRACT_TYPE_UNSPECIFIED = 0;
+  DUKER_REGISTRY            = 1;  // DukerRegistry — soulbound identity
+  DUKIGEN_REGISTRY          = 2;  // DukigenRegistry — agent / dApp registry
+  ALM_WORLD_MINTER          = 3;  // AlmWorldDukiMinter — deal minting
+}
+
+// ── Notify: index events from a specific transaction ────────────────────
+
+message NotifyTxReq {
+  ContractType contract  = 1;
+  string       tx_hash   = 2;
+  uint32       chain_eid = 3;
+}
+
+message NotifyTxResp {
+  // Exactly one of these will be populated based on ContractType.
+  repeated DukerRegistryEvent    duker_events   = 1;
+  repeated DukigenRegistryEvent  dukigen_events = 2;
+  repeated DealDukiMintedEvent   minter_events  = 3;
+}
+
+// ── Sync: catch-up via eth_getLogs / eventState checkpoints ─────────────
+//
+// The server tracks its own last-indexed cursor internally (per chain,
+// per contract). `contract_head` is an optional hint from the caller:
+// "I know the contract is at this evt_seq / block" — lets the server
+// short-circuit if it's already caught up. 0 = "I don't know".
+
+message BlockchainSyncReq {
+  ContractType contract      = 1;
+  uint32       chain_eid     = 2;
+  uint64       contract_head = 3;  // Caller's hint of the contract's current position; 0 = unknown
+}
+
+message BlockchainSyncResp {
+  uint64 last_evt_seq    = 1;  // Latest evt_seq (or block) synced to
+  uint32 events_indexed  = 2;  // Number of new events indexed in this call
+}
+
+// ── Service ─────────────────────────────────────────────────────────────
+
+service BlockchainSyncService {
+  // Webhook — accept a tx hash, pull its receipt, index events for the
+  // specified contract.
+  rpc NotifyTx(NotifyTxReq) returns (NotifyTxResp);
+
+  // Backfill / catch-up — walk the chain from the server's last-indexed
+  // cursor to head using eth_getLogs and on-chain checkpoints.
+  rpc SyncEvents(BlockchainSyncReq) returns (BlockchainSyncResp);
+}

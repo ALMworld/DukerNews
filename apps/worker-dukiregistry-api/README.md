@@ -75,10 +75,13 @@ pnpm --filter @repo/dukiregistry-apidefs build
 |---------|--------|-------------|
 | `DukerRegistryService` | `GetUsername` | Lookup identity by wallet address |
 | `DukerRegistryService` | `GetIdentitiesByToken` | Get all chain presences for a token ID |
-| `DukerRegistryService` | `NotifyDukerTx` | Pull + index a DukerRegistry tx |
 | `DukigenRegistryService` | `GetAgent` | Query agent by ID |
 | `DukigenRegistryService` | `GetAgents` | List agents (paginated) |
-| `DukigenRegistryService` | `NotifyDukigenTx` | Pull + index a DukigenRegistry tx |
+| `AlmWorldMinterService` | `GetAgentDeals` | List deals for an agent |
+| `AlmWorldMinterService` | `GetRecentDeals` | List recent deal mint events |
+| `AlmWorldMinterService` | `GetWalletDeals` | List deals involving a wallet |
+| `BlockchainSyncService` | `NotifyTx` | Pull + index one tx for a `ContractType` |
+| `BlockchainSyncService` | `SyncEvents` | Catch up one contract using on-chain checkpoints |
 
 ## Dev-Only Endpoints
 

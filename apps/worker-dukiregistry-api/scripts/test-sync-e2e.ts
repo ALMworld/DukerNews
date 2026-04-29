@@ -1,12 +1,12 @@
 #!/usr/bin/env tsx
 /**
- * test-sync-e2e.ts — End-to-end test of the SyncDukerEvents pull path.
+ * test-sync-e2e.ts — End-to-end test of the BlockchainSyncService pull path.
  *
- * Unlike test-e2e.ts (which uses NotifyDukerTx — push by tx hash), this drives
- * the worker through the catch-up path:
+ * Unlike test-e2e.ts (which uses NotifyTx by tx hash), this drives the worker
+ * through the catch-up path:
  *
  *   1. Mint a username on anvil  → contract emits DukerEvent(evtSeq=N)
- *   2. Call SyncDukerEvents      → worker calls eventState(), getLogs, indexes
+ *   2. Call SyncEvents           → worker calls eventState(), getLogs, indexes
  *   3. Call GetUsername          → confirms duker_users row was materialized
  *
  * Prereqs (same as test-e2e.ts):
@@ -77,7 +77,7 @@ function assert(cond: boolean, msg: string) {
 const handle = `alice${Math.floor(Date.now() / 1000) % 100000}`
 
 async function main() {
-    console.log('SyncDukerEvents E2E test\n')
+    console.log('BlockchainSyncService SyncEvents(DUKER_REGISTRY) E2E test\n')
     console.log(`  chainEid:       ${CHAIN_EID}`)
     console.log(`  dukerRegistry:  ${deploy.dukerRegistry}`)
     console.log(`  worker:         ${WORKER_URL}`)
@@ -128,18 +128,15 @@ async function main() {
     assert(postSeq > preSeq, `chainEvtSeq advanced (${preSeq} -> ${postSeq})`)
 
     // 4. Drive the SYNC path — no tx hash given to the worker.
-    //    Use a small max_block_range to exercise the chunked loop.
-    console.log('\n[4/5] Call SyncDukerEvents (max_block_range=50)')
-    const syncResp = await workerPost('/dukiregistry.DukerRegistryService/SyncDukerEvents', {
+    console.log('\n[4/5] Call SyncEvents(DUKER_REGISTRY)')
+    const syncResp = await workerPost('/dukiregistry.BlockchainSyncService/SyncEvents', {
+        contract: 'DUKER_REGISTRY',
         chainEid: CHAIN_EID,
-        lastEvtSeq: '0',
-        maxBlockRange: '50',
+        contractHead: postSeq.toString(),
     })
     console.log('  ', JSON.stringify(syncResp))
-    assert(BigInt(syncResp.chainEvtSeq ?? '0') === postSeq,
-        `worker reports chainEvtSeq=${syncResp.chainEvtSeq} (matches contract)`)
-    assert(BigInt(syncResp.syncedUpTo ?? '0') >= postSeq,
-        `syncedUpTo=${syncResp.syncedUpTo} reached chainEvtSeq=${postSeq}`)
+    assert(BigInt(syncResp.lastEvtSeq ?? '0') >= postSeq,
+        `lastEvtSeq=${syncResp.lastEvtSeq} reached contract evtSeq=${postSeq}`)
     assert((syncResp.eventsIndexed ?? 0) >= 1, `eventsIndexed=${syncResp.eventsIndexed}`)
 
     // 5. Verify users table got the row via the sync path
