@@ -143,7 +143,7 @@ function AgentDossier({ agent }: { agent: DukigenAgent }) {
                     <HeroStat icon={ProductIcon ? <ProductIcon size={15} /> : <Box size={15} />} label="Product" value={productLabel} />
                     <HeroStat icon={DukiIcon ? <DukiIcon size={15} /> : <HeartHandshake size={15} />} label="Duki policy" value={`${dukiTypeLabel} share`} />
                     <HeroStat icon={<HeartPulse size={15} />} label="Approx rate" value={`${formatBps(agent.approxBps)}%`} />
-                    <HeroStat icon={<Activity size={15} />} label="Deployments" value={`${agent.chainContracts.length || 0} chain${agent.chainContracts.length === 1 ? '' : 's'}`} />
+                    <HeroStat icon={<Activity size={15} />} label="Deployments" value={`${agent.opContracts?.length || 0} chain${agent.opContracts?.length === 1 ? '' : 's'}`} />
                 </div>
             </section>
 
@@ -204,7 +204,7 @@ function MetadataProperties({
                     action={pledgeHref ? <InlineOpenLink href={pledgeHref}>Open pledge</InlineOpenLink> : null}
                 />
                 <PropertyRow icon={<WalletCards size={15} />} label="Owner wallet" value={agent.owner || 'Not provided'} mono />
-                <PropertyRow icon={<WalletCards size={15} />} label="Agent wallet" value={agent.agentWallet || 'Not provided'} mono />
+                <PropertyRow icon={<WalletCards size={15} />} label="Credibility wallet" value={agent.credibilityWallet || 'Not provided'} mono />
                 <PropertyRow
                     icon={<FileText size={15} />}
                     label="Agent URI"
@@ -227,17 +227,17 @@ function DeployedContracts({ agent }: { agent: DukigenAgent }) {
                     <h2 className="m-0 mt-1 text-xl font-black leading-tight text-foreground">Deployed Contracts</h2>
                 </div>
                 <span className="rounded-md bg-muted px-2 py-1 text-xs font-bold text-muted-foreground">
-                    {agent.chainContracts.length}
+                    {agent.opContracts?.length || 0}
                 </span>
             </div>
 
-            {agent.chainContracts.length === 0 ? (
+            {(!agent.opContracts || agent.opContracts.length === 0) ? (
                 <div className="px-5 py-8 text-sm text-muted-foreground">
                     No deployed contract addresses are registered for this agent yet.
                 </div>
             ) : (
                 <div className="divide-y divide-border">
-                    {agent.chainContracts.map((contract, index) => (
+                    {(agent.opContracts || []).map((contract, index) => (
                         <div key={`${contract.chainEid}-${contract.contractAddr}-${index}`} className="grid gap-2 px-5 py-4 md:grid-cols-[160px_1fr] md:items-center">
                             <div>
                                 <div className="text-sm font-bold text-foreground">

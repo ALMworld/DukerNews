@@ -121,11 +121,11 @@ export function AgentRow({ agent, credibility, rank }: AgentRowProps) {
                     <Pill icon={ProductIcon ? <ProductIcon size={9} /> : null} label={productLabel} />
                     <Pill icon={DukiIcon ? <DukiIcon size={9} /> : <HeartHandshake size={9} />} label={`${dukiTypeLabel} share`} />
                     <Pill icon={<HeartPulse size={9} />} label={`${(agent.approxBps / 100).toFixed(1)}%`} title="Avg DUKI rate" />
-                    {agent.chainContracts && agent.chainContracts.length > 0 && (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                            <Network size={10} />
-                            {agent.chainContracts.length} chain{agent.chainContracts.length === 1 ? '' : 's'}
-                        </span>
+                    {agent.opContracts && agent.opContracts.length > 0 && (
+                        <div className="flex items-center gap-1">
+                            <Network size={11} />
+                            {agent.opContracts.length} chain{agent.opContracts.length === 1 ? '' : 's'}
+                        </div>
                     )}
                     {agent.agentUri && (
                         <span style={{

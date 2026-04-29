@@ -36,7 +36,7 @@ function MarketLandingPage() {
         volume24h: entries.length > 0
             ? `${(entries.reduce((s, e) => s + e.credibility, 0) / 100).toFixed(1)}M`
             : '0',
-        activeChains: new Set(entries.flatMap(e => e.agent.chainContracts.map(c => c.chainEid))).size || 1,
+        activeChains: new Set(entries.flatMap(e => e.agent.opContracts?.map(c => c.chainEid) || [])).size || 1,
         transactionCount: entries.length > 0
             ? `${(entries.length * 3.7).toFixed(1)}K`
             : '0',

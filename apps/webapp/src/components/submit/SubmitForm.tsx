@@ -153,7 +153,7 @@ export default function SubmitForm() {
                             dukiType: Number(agentInfo.dukiType) as DukiType,
                             approxBps: agentInfo.approxBps,
                             pledgeUrl: agentInfo.pledgeUrl,
-                            chainContracts: agentInfo.chainContracts.map(c => create(ChainContractEntrySchema, {
+                            chainContracts: (agentInfo.opContracts || []).map(c => create(ChainContractEntrySchema, {
                                 chainEid: c.chainEid,
                                 contractAddr: c.contractAddr,
                             })),
@@ -661,12 +661,12 @@ function AgentPreviewCard({ agent, children }: { agent: DukigenAgent; children?:
             )}
 
             {/* ── Deployed contracts — chip list ── */}
-            {agent.chainContracts && agent.chainContracts.length > 0 && (
+            {agent.opContracts && agent.opContracts.length > 0 && (
                 <Row>
                     <div className="flex items-start gap-1.5">
                         <Network size={11} className="mt-1 flex-shrink-0" />
                         <div className="flex flex-wrap gap-1 min-w-0">
-                            {agent.chainContracts.map((c, i) => (
+                            {agent.opContracts.map((c, i) => (
                                 <span
                                     key={i}
                                     className="rounded-md border px-1.5 py-0.5 inline-flex items-center gap-1.5 font-mono"
