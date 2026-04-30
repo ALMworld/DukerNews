@@ -13,6 +13,7 @@ import {
     DukigenRegistryService,
     AlmWorldMinterService,
     BlockchainSyncService,
+    DukiAggService,
     ContractType,
     GetUsernameRespSchema,
     CheckUsernameRespSchema,
@@ -25,6 +26,9 @@ import {
     GetAgentsRespSchema,
     ListAgentsRankedRespSchema,
     RankedAgentSchema,
+    PbQuickOverviewRespSchema,
+    AlmWorldDukiMinterOverviewSchema,
+    DukigenAgentAggSchema,
     ChainContractEntrySchema,
 } from '@repo/dukiregistry-apidefs'
 import {
@@ -43,7 +47,7 @@ import {
     type PulledDealDukiMintedEvent,
 } from '../services/minter-event-service'
 import { createPublicClient, http } from 'viem'
-import { getChainConfig } from '../config'
+import { getChainConfig, getSupportedChainEids } from '../config'
 import { dukerRegistryAbi, dukigenRegistryAbi } from 'contract-duki-alm-world'
 
 // Store reference for context access — set from index.ts
@@ -112,8 +116,150 @@ function decodeRankCursor(raw: string | undefined | null): RankCursor | null {
     }
 }
 
+async function queryRankedAgentRows(db: D1Database, timescale: string, limit: number) {
+    const rows = (await db.prepare(
+        `SELECT a.*,
+                COALESCE(m.credibility, 0) AS metric_credibility,
+                COALESCE(m.updated_at, 0) AS metric_updated_at,
+                COALESCE(dm.mint_credibility_d6, 0) AS mint_credibility_d6
+         FROM   dukigen_agents a
+         LEFT JOIN dukigen_agent_metrics m
+                ON m.agent_id = a.agent_id AND m.timescale = ?
+         LEFT JOIN (
+             SELECT agent_id,
+                    COALESCE(SUM(CAST(duki_amount AS REAL)), 0) / 1000000000000.0 AS mint_credibility_d6
+             FROM deal_duki_minted_events
+             GROUP BY agent_id
+         ) dm ON dm.agent_id = a.agent_id
+         ORDER BY COALESCE(m.credibility, 0) DESC, a.agent_id DESC
+         LIMIT ?`
+    ).bind(timescale, limit).all<any>()).results ?? []
+
+    return rows
+}
+
+async function queryMarketQuickTotals(db: D1Database) {
+    const [totalAgentsRow, totals, activeChainsRow] = await Promise.all([
+        db.prepare('SELECT COUNT(*) AS total_agents FROM dukigen_agents').first<{ total_agents?: number }>(),
+        db.prepare(
+        `SELECT COUNT(*) AS transaction_count,
+                COALESCE(SUM(CAST(duki_amount AS REAL)), 0) / 1000000000000.0 AS total_d6_amount
+         FROM deal_duki_minted_events`
+        ).first<{ transaction_count?: number; total_d6_amount?: number }>(),
+        db.prepare(
+        `SELECT COUNT(*) AS active_chains
+         FROM (
+           SELECT DISTINCT chain_eid FROM dukigen_agents
+           UNION
+           SELECT DISTINCT chain_eid FROM deal_duki_minted_events
+         )`
+        ).first<{ active_chains?: number }>(),
+    ])
+
+    return {
+        totalAgents: Number(totalAgentsRow?.total_agents ?? 0),
+        totalD6Amount: BigInt(Math.floor(Number(totals?.total_d6_amount ?? 0))),
+        activeChainCount: Number(activeChainsRow?.active_chains ?? 0),
+        transactionsCount: BigInt(Number(totals?.transaction_count ?? 0)),
+    }
+}
+
+async function queryChainMinterOverviews(db: D1Database) {
+    const rows = (await db.prepare(
+        `SELECT chain_eid,
+                COALESCE(MAX(CAST(evt_seq AS INTEGER)), 0) AS evt_seq,
+                COALESCE(SUM(CAST(duki_amount AS REAL)), 0) / 1000000000000.0 AS total_d6_amount
+         FROM deal_duki_minted_events
+         GROUP BY chain_eid`
+    ).all<any>()).results ?? []
+
+    const byChain = new Map(rows.map((row: any) => [Number(row.chain_eid), row]))
+    const zeroAddress = '0x0000000000000000000000000000000000000000'
+
+    return getSupportedChainEids()
+        .map((chainEid) => {
+            const cfg = getChainConfig(chainEid)
+            if (!cfg.almWorldDukiMinterAddress || cfg.almWorldDukiMinterAddress === zeroAddress) return null
+            const row = byChain.get(chainEid)
+            return create(AlmWorldDukiMinterOverviewSchema, {
+                chainEid,
+                contractAddr: cfg.almWorldDukiMinterAddress,
+                evtSeq: BigInt(Number(row?.evt_seq ?? 0)),
+                totalD6Amount: BigInt(Math.floor(Number(row?.total_d6_amount ?? 0))),
+            })
+        })
+        .filter((item): item is NonNullable<typeof item> => item != null)
+}
+
+function rowToAgent(row: any) {
+    return create(DukigenAgentSchema, {
+        agentId: BigInt(row.agent_id),
+        name: row.name,
+        agentUri: row.agent_uri,
+        agentUriHash: row.agent_uri_hash ?? '',
+        owner: row.owner,
+        originChainEid: row.chain_eid,
+        approxBps: row.approx_bps ?? 0,
+        productType: row.product_type,
+        dukiType: row.duki_type,
+        opContracts: parseOpContractsRow(row.op_contracts),
+        pledgeUrl: row.pledge_url,
+        website: row.website ?? '',
+        credibilityWallet: row.credibility_wallet ?? '',
+    })
+}
+
+function rowToRankedAgent(row: any) {
+    return create(RankedAgentSchema, {
+        agent: rowToAgent(row),
+        credibility: BigInt(row.metric_credibility ?? 0),
+    })
+}
+
+function rowToAgentAgg(row: any) {
+    const now = BigInt(Math.floor(Date.now() / 1000))
+    return create(DukigenAgentAggSchema, {
+        agent: rowToAgent(row),
+        credibility: BigInt(row.metric_credibility ?? 0),
+        credibilitySnapshotTime: BigInt(row.metric_updated_at ?? 0) || now,
+        mintCredibility: BigInt(Math.floor(Number(row.mint_credibility_d6 ?? 0))),
+        mintCredibilitySnapshotTime: now,
+    })
+}
+
 
 export function registerGrpcRoutes(router: ConnectRouter) {
+    // ── DukiAggService ───────────────────────────────────────
+
+    router.service(DukiAggService, {
+        async getQuickOverview() {
+            const featuredLimit = 3
+            const trendingLimit = 5
+            const activityLimit = 20
+
+            const rankedRows = await queryRankedAgentRows(_db, 'all', Math.max(featuredLimit, trendingLimit))
+            const activity = await queryDeals(_db, {
+                agentId: null,
+                chainEid: 0,
+                cursor: '',
+                limit: activityLimit,
+            })
+            const totals = await queryMarketQuickTotals(_db)
+            const minterOverview = await queryChainMinterOverviews(_db)
+
+            return create(PbQuickOverviewRespSchema, {
+                totalAgents: totals.totalAgents,
+                totalD6Amount: totals.totalD6Amount,
+                activeChainCount: totals.activeChainCount,
+                transactionsCount: totals.transactionsCount,
+                minterOverview,
+                featuredAgents: rankedRows.slice(0, featuredLimit).map(rowToAgentAgg),
+                trendingAgents: rankedRows.slice(0, trendingLimit).map(rowToAgentAgg),
+                recentDukiEvents: activity.events,
+            })
+        },
+    })
+
     // ── DukerRegistryService ────────────────────────────────
 
     router.service(DukerRegistryService, {
@@ -260,26 +406,7 @@ export function registerGrpcRoutes(router: ConnectRouter) {
             const hasMore = rows.length > limit
             const pageRows = hasMore ? rows.slice(0, limit) : rows
 
-            const items = pageRows.map((row: any) =>
-                create(RankedAgentSchema, {
-                    agent: create(DukigenAgentSchema, {
-                        agentId: BigInt(row.agent_id),
-                        name: row.name,
-                        agentUri: row.agent_uri,
-                        agentUriHash: row.agent_uri_hash ?? '',
-                        owner: row.owner,
-                        originChainEid: row.chain_eid,
-                        approxBps: row.approx_bps ?? 0,
-                        productType: row.product_type,
-                        dukiType: row.duki_type,
-                        opContracts: parseOpContractsRow(row.op_contracts),
-                        pledgeUrl: row.pledge_url,
-                        website: row.website ?? '',
-                        credibilityWallet: row.credibility_wallet ?? '',
-                    }),
-                    credibility: BigInt(row.metric_credibility ?? 0),
-                })
-            )
+            const items = pageRows.map(rowToRankedAgent)
 
             const last = pageRows[pageRows.length - 1]
             const nextCursor = hasMore && last

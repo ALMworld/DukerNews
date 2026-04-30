@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package dukiregistry;
+
+import "duker_registry.proto";
+import "dukigen_registry.proto";
+import "dukiregistry_services.proto";
+import "alm_world_minter.proto";
+
+message GetQuickOverviewReq {
+}
+
+message AlmWorldDukiMinterOverview {
+  uint32 chain_eid = 1;
+  string contract_addr = 2;
+  uint64 evt_seq = 3;
+  uint64 total_d6_amount = 4;
+}
+
+message DukigenAgentAgg {
+    DukigenAgent agent = 1;
+    uint64    credibility = 2; // the amount of ALM token amount in the credibility wallet, on chain
+    uint64    credibility_snapshot_time = 3;
+    uint64    mint_credibility = 4; // a sum of dukis token amount summed in the DukiMinting, off chain 
+    uint64    mint_credibility_snapshot_time = 5;
+}
+
+message PbQuickOverviewResp {
+  uint32 total_agents = 1;
+  uint64 total_d6_amount = 2; // total duki token amount , we use d6 decimal
+  uint32 active_chain_count = 3;
+  uint64 transactions_count = 4;
+  repeated AlmWorldDukiMinterOverview  minter_overview = 5;
+  repeated DukigenAgentAgg featured_agents = 6;
+  repeated DukigenAgentAgg trending_agents = 7;
+  repeated DealDukiMintedEvent recent_duki_events = 8;
+}
+
+
+service DukiAggService {
+  // List agents ranked by credibility for a given timescale (default /market view).
+  rpc GetQuickOverview(GetQuickOverviewReq) returns (PbQuickOverviewResp);
+}

@@ -38,6 +38,8 @@ interface DealDukiMintFeedProps {
     pollMs?: number
     /** When true, show a slim metadata-only header (row count + updated time) instead of the full title row. */
     compact?: boolean
+    /** Preloaded events from an aggregate loader. When provided, the feed skips its own query. */
+    initialEvents?: Array<DealDukiMintedEvent>
     className?: string
 }
 
@@ -49,6 +51,7 @@ export function DealDukiMintFeed({
     limit = 20,
     pollMs = 15_000,
     compact,
+    initialEvents,
     className,
 }: DealDukiMintFeedProps) {
     const scoped = agentId !== undefined
@@ -74,9 +77,10 @@ export function DealDukiMintFeed({
         refetchOnWindowFocus: true,
         staleTime: 0,
         placeholderData: (previous) => previous,
+        enabled: initialEvents === undefined,
     })
 
-    const events = sortDealsNewestFirst(data?.events ?? [])
+    const events = sortDealsNewestFirst(data?.events ?? initialEvents ?? [])
     const [animationParent] = useAutoAnimate()
 
     return (

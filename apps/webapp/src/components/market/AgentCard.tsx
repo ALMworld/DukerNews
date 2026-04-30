@@ -4,8 +4,11 @@
  * Layout:  Square image → Title → Tag pills → Price-style metric → Seller row
  */
 import { Link } from '@tanstack/react-router'
+import { Copy } from 'lucide-react'
 import { PRODUCT_LABELS } from '../../lib/constants'
+import { getChainNameForEid } from '../../lib/contracts'
 import type { RankedAgentEntry } from '../../client/registry-api'
+import type { MouseEvent } from 'react'
 
 interface AgentCardProps {
     entry: RankedAgentEntry
@@ -14,21 +17,12 @@ interface AgentCardProps {
     onFavorite: () => void
 }
 
-const STATUS_STYLES: Record<string, { label: string; bg: string; text: string }> = {
-    online: { label: 'ONLINE', bg: 'bg-emerald-500/15', text: 'text-emerald-400' },
-    busy: { label: 'BUSY', bg: 'bg-amber-500/15', text: 'text-amber-400' },
-}
-
-function getStatus(agentId: bigint) {
-    return Number(agentId) % 5 === 0 ? 'busy' : 'online'
-}
-
 export function AgentCard({ entry }: AgentCardProps) {
     const { agent, credibility } = entry
-    const productLabel = PRODUCT_LABELS[agent.productType as keyof typeof PRODUCT_LABELS] ?? 'Agent'
+    const productLabel = PRODUCT_LABELS[agent.productType] ?? 'Agent'
     const snId = `SN-${String(agent.agentId).padStart(5, '0')}`
-    const status = getStatus(agent.agentId)
-    const statusStyle = STATUS_STYLES[status]
+    const chainName = getChainNameForEid(agent.originChainEid)
+    const keyword = productLabel.replace(/\s+Product$/i, '')
 
     // Price-style metric: credibility score
     const score = credibility > 0
@@ -36,8 +30,15 @@ export function AgentCard({ entry }: AgentCardProps) {
         : (Number(agent.agentId) % 500 / 10).toFixed(2)
     const bps = agent.approxBps
 
-    // Wants count (derived)
-    const wants = (Number(agent.agentId) * 3 + credibility) % 12 + 1
+    const copyAgentId = async (event: MouseEvent<HTMLButtonElement>) => {
+        event.preventDefault()
+        event.stopPropagation()
+        try {
+            await navigator.clipboard.writeText(String(agent.agentId))
+        } catch {
+            // The ID remains visible if clipboard access is unavailable.
+        }
+    }
 
     return (
         <Link
@@ -57,12 +58,9 @@ export function AgentCard({ entry }: AgentCardProps) {
                 <span className="absolute bottom-1.5 left-1.5 rounded bg-black/55 px-1.5 py-0.5 font-mono text-[9px] font-semibold text-white/75 backdrop-blur-sm">
                     {snId}
                 </span>
-                {/* Status badge — top-right */}
-                {statusStyle && (
-                    <span className={`absolute top-1.5 right-1.5 rounded-full px-1.5 py-px text-[8px] font-bold uppercase tracking-wide ${statusStyle.bg} ${statusStyle.text}`}>
-                        {statusStyle.label}
-                    </span>
-                )}
+                <span className="absolute top-1.5 right-1.5 rounded bg-black/55 px-1.5 py-0.5 text-[9px] font-bold text-white/80 backdrop-blur-sm">
+                    {chainName}
+                </span>
             </div>
 
             {/* ── Content body ── */}
@@ -72,9 +70,23 @@ export function AgentCard({ entry }: AgentCardProps) {
                     {agent.name || `Agent #${agent.agentId}`}
                 </h3>
 
+                <div className="mt-1 flex min-w-0 items-center gap-1 rounded-md bg-muted/45 px-1.5 py-1">
+                    <span className="min-w-0 flex-1 truncate font-mono text-[10px] text-muted-foreground">
+                        ID {String(agent.agentId)}
+                    </span>
+                    <button
+                        type="button"
+                        onClick={copyAgentId}
+                        className="inline-flex h-5 w-5 flex-shrink-0 items-center justify-center rounded border border-border bg-background/60 text-muted-foreground transition-colors hover:text-foreground"
+                        aria-label="Copy agent ID"
+                    >
+                        <Copy size={10} />
+                    </button>
+                </div>
+
                 {/* Tag pills row */}
                 <div className="mt-1.5 flex items-center gap-1 text-[11px] text-muted-foreground leading-none">
-                    <span>{productLabel}</span>
+                    <span className="truncate">#{keyword}</span>
                     <span className="inline-block w-px h-2.5 bg-border mx-0.5" />
                     <span>{bps.toLocaleString()} bps</span>
                 </div>
@@ -84,7 +96,6 @@ export function AgentCard({ entry }: AgentCardProps) {
                     <span className="text-[11px] font-bold text-primary leading-none">◆</span>
                     <span className="text-lg font-extrabold tabular-nums text-primary leading-none">{score}</span>
                     <span className="text-[10px] font-medium text-muted-foreground ml-1">DUKI</span>
-                    <span className="ml-auto text-[11px] text-muted-foreground">{wants}人想要</span>
                 </div>
 
                 {/* Seller row */}

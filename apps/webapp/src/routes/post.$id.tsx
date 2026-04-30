@@ -2,7 +2,7 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState } from 'react'
 import { create } from '@bufbuild/protobuf'
 import { postAggQueryOptions } from '../lib/query-options'
-import { getComments as fetchComments } from '../server/comments'
+import { getComments } from '../server/comments'
 import { useLocale, type SupportedLocale } from '../lib/locale-context'
 import type { PbPost, PbComment } from '@repo/dukernews-apidefs'
 import { applyCommentEvents } from '../lib/apply-events'
@@ -72,7 +72,7 @@ function PostDetailPage() {
 
     const loadMore = async () => {
         setLoadingMore(true)
-        const result = await fetchComments({
+        const result = await getComments({
             data: { postId: Number(id), offset: comments.length },
         })
         setComments(prev => [...prev, ...result.comments])

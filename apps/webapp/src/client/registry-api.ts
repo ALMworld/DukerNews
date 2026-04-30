@@ -11,9 +11,10 @@ import {
     AlmWorldMinterService,
     BlockchainSyncService as BlockchainSyncServiceDef,
     ContractType,
+    DukiAggService,
     DukigenRegistryService,
 } from '@repo/dukiregistry-apidefs'
-import type { DealDukiMintedEvent, DukigenAgent } from '@repo/dukiregistry-apidefs'
+import type { AlmWorldDukiMinterOverview, DealDukiMintedEvent, DukigenAgent } from '@repo/dukiregistry-apidefs'
 
 const REGISTRY_WORKER_URL = (import.meta as any).env?.VITE_REGISTRY_WORKER_URL ?? 'http://localhost:8788'
 
@@ -126,8 +127,9 @@ const dukigenTransport = createConnectTransport({
 export const dukigenClient = createClient(DukigenRegistryService, dukigenTransport)
 export const minterClient = createClient(AlmWorldMinterService, dukigenTransport)
 export const syncClient = createClient(BlockchainSyncServiceDef, dukigenTransport)
+export const dukiAggClient = createClient(DukiAggService, dukigenTransport)
 
-export type { DukigenAgent, DealDukiMintedEvent }
+export type { DukigenAgent, DealDukiMintedEvent, AlmWorldDukiMinterOverview }
 
 /**
  * Fetch a DukiGen agent by token ID using the generated ConnectRPC client.
@@ -187,6 +189,19 @@ export type RankedAgentEntry = {
     credibility: number
 }
 
+export type MarketOverview = {
+    featuredAgents: Array<RankedAgentEntry>
+    trendingAgents: Array<RankedAgentEntry>
+    marketActivity: Array<DealDukiMintedEvent>
+    summary: {
+        totalAgents: number
+        totalVolume: string
+        activeChains: number
+        transactionCount: number
+        chains: Array<AlmWorldDukiMinterOverview>
+    }
+}
+
 export type RankedAgentsPage = {
     items: Array<RankedAgentEntry>
     nextCursor: string
@@ -216,6 +231,99 @@ export async function listAgentsRanked(
     } catch {
         return { items: [], nextCursor: '', hasMore: false }
     }
+}
+
+export async function getQuickOverview(opts: {
+    featuredLimit?: number
+    trendingLimit?: number
+    activityLimit?: number
+} = {}): Promise<MarketOverview> {
+    try {
+        const resp = await dukiAggClient.getQuickOverview({})
+        const featuredLimit = opts.featuredLimit ?? resp.featuredAgents.length
+        const trendingLimit = opts.trendingLimit ?? resp.trendingAgents.length
+        return {
+            featuredAgents: resp.featuredAgents
+                .slice(0, featuredLimit)
+                .filter((it) => it.agent)
+                .map((it) => ({ agent: it.agent!, credibility: Number(it.credibility) })),
+            trendingAgents: resp.trendingAgents
+                .slice(0, trendingLimit)
+                .filter((it) => it.agent)
+                .map((it) => ({ agent: it.agent!, credibility: Number(it.credibility) })),
+            marketActivity: resp.recentDukiEvents.slice(0, opts.activityLimit ?? resp.recentDukiEvents.length),
+            summary: {
+                totalAgents: resp.totalAgents,
+                totalVolume: formatD6Amount(resp.totalD6Amount),
+                activeChains: resp.activeChainCount,
+                transactionCount: Number(resp.transactionsCount),
+                chains: resp.minterOverview,
+            },
+        }
+    } catch {
+        const entries = await loadMarketEntriesFallback()
+        return {
+            featuredAgents: entries.slice(0, opts.featuredLimit ?? 3),
+            trendingAgents: entries.slice(0, opts.trendingLimit ?? 5),
+            marketActivity: [],
+            summary: {
+                totalAgents: entries.length,
+                totalVolume: '0',
+                activeChains: new Set(entries.flatMap(e => e.agent.opContracts.map(c => c.chainEid))).size,
+                transactionCount: 0,
+                chains: [],
+            },
+        }
+    }
+}
+
+export function formatD6Amount(amount: bigint | number): string {
+    const value = typeof amount === 'bigint' ? Number(amount) / 1_000_000 : amount / 1_000_000
+    if (!Number.isFinite(value) || value <= 0) return '0'
+    if (value >= 1_000_000_000) return `${trimFixed(value / 1_000_000_000, 2)}B`
+    if (value >= 1_000_000) return `${trimFixed(value / 1_000_000, 2)}M`
+    if (value >= 1_000) return `${trimFixed(value / 1_000, 2)}K`
+    return trimFixed(value, value >= 10 ? 2 : 4)
+}
+
+function trimFixed(value: number, digits: number): string {
+    return value.toFixed(digits).replace(/\.?0+$/, '')
+}
+
+async function loadMarketEntriesFallback(): Promise<Array<RankedAgentEntry>> {
+    const agents: Array<DukigenAgent> = []
+    let total = Number.POSITIVE_INFINITY
+    let page = 1
+    const pageSize = 100
+    const maxItems = 500
+
+    while (agents.length < Math.min(total, maxItems)) {
+        const resp = await getDukigenAgents({ page, perPage: pageSize })
+        total = resp.total
+        agents.push(...resp.agents)
+        if (resp.agents.length === 0 || agents.length >= total) break
+        page += 1
+    }
+
+    const credibility = new Map<string, number>()
+    let cursor = ''
+    let rankedLoaded = 0
+    do {
+        const resp = await listAgentsRanked('all', cursor, pageSize)
+        for (const item of resp.items) {
+            credibility.set(String(item.agent.agentId), item.credibility)
+        }
+        rankedLoaded += resp.items.length
+        cursor = resp.hasMore ? resp.nextCursor : ''
+    } while (cursor && rankedLoaded < maxItems)
+
+    return agents
+        .slice(0, maxItems)
+        .map((agent) => ({
+            agent,
+            credibility: credibility.get(String(agent.agentId)) ?? 0,
+        }))
+        .sort((a, b) => (b.credibility - a.credibility) || (Number(b.agent.agentId) - Number(a.agent.agentId)))
 }
 
 // ── AlmWorldMinterService (DealDukiMinted feed) ─────────────────────────

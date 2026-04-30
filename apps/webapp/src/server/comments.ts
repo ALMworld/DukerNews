@@ -22,7 +22,7 @@ export const getComments = createServerFn({ method: 'GET' })
         //     const client = createClient(QueryService, getGoApiTransport())
         //     return client.getComments({ postId: data.postId })
         // }
-        return CommentService.getComments(data.postId, {
+        return CommentService.getComments(BigInt(data.postId), {
             limit: data.limit ?? (data.isBot ? LIMIT_BOT : LIMIT_NORMAL),
             offset: data.offset,
         })
@@ -43,7 +43,7 @@ export const getUserThreads = createServerFn({ method: 'GET' })
     .inputValidator((input: { identifier: string; limit?: number; next?: number }) => input)
     .handler(async ({ data }) => CommentService.getUserThreads(data.identifier, {
         limit: data.limit,
-        next: data.next,
+        next: data.next !== undefined ? BigInt(data.next) : undefined,
     }))
 
 // export const addComment = createServerFn({ method: 'POST' })

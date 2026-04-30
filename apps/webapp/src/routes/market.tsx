@@ -6,46 +6,39 @@
  * /market_search.
  */
 import { Link, createFileRoute } from '@tanstack/react-router'
-import { useQuery } from '@tanstack/react-query'
+import { queryOptions, useQuery } from '@tanstack/react-query'
 import { useAccount } from 'wagmi'
-import { ArrowRight, Loader2, Plus, Activity } from 'lucide-react'
-import { MarketStats, type MarketStatsData } from '@/components/market/MarketStats'
+import { Activity, ArrowRight, Loader2, Plus } from 'lucide-react'
+import { getQuickOverview } from '../client/registry-api'
+import type { MarketStatsData } from '@/components/market/MarketStats'
+import { MarketStats } from '@/components/market/MarketStats'
 import { AgentCard } from '@/components/market/AgentCard'
 import { DealDukiMintFeed } from '@/components/market/DealDukiMintFeed'
 import { TrendingAgents } from '@/components/market/TrendingAgents'
 import { EmptyState } from '@/components/market/EmptyState'
-import { FETCH_PAGE_SIZE, MAX_MARKET_ITEMS } from '@/components/market/constants'
-import type { DukigenAgent, RankedAgentEntry } from '../client/registry-api'
-import { getDukigenAgents, listAgentsRanked } from '../client/registry-api'
 
 export const Route = createFileRoute('/market')({
+    loader: async ({ context: { queryClient } }) => {
+        return queryClient.ensureQueryData(marketOverviewQueryOptions())
+    },
+    staleTime: 2 * 60 * 1000, // 2 minutes router cache
     component: MarketLandingPage,
 })
 
 function MarketLandingPage() {
     const { address: walletAddr } = useAccount()
-    const { data: entries = [], error, isLoading } = useQuery({
-        queryKey: ['market-agents'],
-        queryFn: loadMarketEntries,
-        staleTime: 30_000,
-    })
+    const { data: overview, error, isLoading } = useQuery(marketOverviewQueryOptions())
 
-    // Derive stats from real data
+    const featured = overview?.featuredAgents ?? []
+    const trending = overview?.trendingAgents ?? []
+    const activity = overview?.marketActivity ?? []
     const stats: MarketStatsData = {
-        totalAgents: entries.length,
-        volume24h: entries.length > 0
-            ? `${(entries.reduce((s, e) => s + e.credibility, 0) / 100).toFixed(1)}M`
-            : '0',
-        activeChains: new Set(entries.flatMap(e => e.agent.opContracts?.map(c => c.chainEid) || [])).size || 1,
-        transactionCount: entries.length > 0
-            ? `${(entries.length * 3.7).toFixed(1)}K`
-            : '0',
+        totalAgents: overview?.summary.totalAgents ?? 0,
+        totalVolume: overview?.summary.totalVolume ?? '0',
+        activeChains: overview?.summary.activeChains ?? 0,
+        transactionCount: overview?.summary.transactionCount ?? 0,
+        chains: overview?.summary.chains ?? [],
     }
-
-    const featured = entries
-        .slice()
-        .sort((a, b) => (b.credibility - a.credibility) || (Number(b.agent.agentId) - Number(a.agent.agentId)))
-        .slice(0, 3)
 
     return (
         <div className="mx-auto max-w-[1240px] px-4 pt-8 pb-12 text-foreground">
@@ -86,7 +79,7 @@ function MarketLandingPage() {
                 </div>
 
                 <div className="w-full lg:w-[320px] xl:w-[340px] flex-shrink-0 flex">
-                    <DealDukiMintFeed />
+                    <DealDukiMintFeed initialEvents={activity} pollMs={0} />
                 </div>
             </div>
 
@@ -140,7 +133,7 @@ function MarketLandingPage() {
                     {/* Spacer to align Trending Agents card top with Featured Agents card top 
                         (Header height is ~28px + mb-4 is 16px = 44px) */}
                     <div className="hidden lg:block h-[44px]"></div>
-                    <TrendingAgents entries={entries} />
+                    <TrendingAgents entries={trending} />
                 </div>
             </div>
 
@@ -215,37 +208,14 @@ function CtaIllustration() {
 
 // ── Data loading ──────────────────────────────────────────────────────────────
 
-async function loadMarketEntries(): Promise<Array<RankedAgentEntry>> {
-    const agents: Array<DukigenAgent> = []
-    let total = Number.POSITIVE_INFINITY
-    let page = 1
-
-    while (agents.length < Math.min(total, MAX_MARKET_ITEMS)) {
-        const resp = await getDukigenAgents({ page, perPage: FETCH_PAGE_SIZE })
-        total = resp.total
-        agents.push(...resp.agents)
-        if (resp.agents.length === 0 || agents.length >= total) break
-        page += 1
-    }
-
-    const credibility = new Map<string, number>()
-    try {
-        let cursor = ''
-        let rankedLoaded = 0
-        do {
-            const resp = await listAgentsRanked('all', cursor, FETCH_PAGE_SIZE)
-            for (const item of resp.items) {
-                credibility.set(String(item.agent.agentId), item.credibility)
-            }
-            rankedLoaded += resp.items.length
-            cursor = resp.hasMore ? resp.nextCursor : ''
-        } while (cursor && rankedLoaded < MAX_MARKET_ITEMS)
-    } catch {
-        // ListAgentsRanked may 500 — degrade gracefully with zero credibility
-    }
-
-    return agents.slice(0, MAX_MARKET_ITEMS).map((agent) => ({
-        agent,
-        credibility: credibility.get(String(agent.agentId)) ?? 0,
-    }))
+function marketOverviewQueryOptions() {
+    return queryOptions({
+        queryKey: ['market-quick-overview'],
+        queryFn: () => getQuickOverview({
+            featuredLimit: 3,
+            trendingLimit: 5,
+            activityLimit: 20,
+        }),
+        staleTime: 8 * 60 * 1000, // 2 minutes query cache
+    })
 }
