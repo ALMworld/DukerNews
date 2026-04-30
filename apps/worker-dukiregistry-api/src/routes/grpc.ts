@@ -7,7 +7,7 @@
  */
 
 import type { ConnectRouter } from '@connectrpc/connect'
-import { create } from '@bufbuild/protobuf'
+import { create, fromBinary } from '@bufbuild/protobuf'
 import {
     DukerRegistryService,
     DukigenRegistryService,
@@ -28,12 +28,12 @@ import {
     RankedAgentSchema,
     PbQuickOverviewRespSchema,
     AlmWorldDukiMinterOverviewSchema,
-    DukigenAgentAggSchema,
     ChainContractEntrySchema,
 } from '@repo/dukiregistry-apidefs'
 import {
     DukerIdentitySchema,
     DukigenAgentSchema,
+    SnapshotValueSchema,
 } from '@repo/dukiregistry-apidefs'
 import { pullTxReceipt, pullDukerEventsByBlockRange, pullDukigenEventsByBlockRange } from '../services/chain-puller'
 import { processDukerEvents } from '../services/duker-event-service'
@@ -64,10 +64,15 @@ export function setDb(db: D1Database) {
 
 
 
-/**
- * Parse the op_contracts JSON column into proto ChainContractEntry[].
- * Tolerates missing/null/malformed JSON — never throws.
- */
+function parseSnapshotBlob(raw: ArrayBuffer | null | undefined) {
+    if (!raw) return undefined
+    try {
+        return fromBinary(SnapshotValueSchema, new Uint8Array(raw))
+    } catch {
+        return undefined
+    }
+}
+
 function parseOpContractsRow(raw: string | null | undefined) {
     if (!raw) return []
     try {
@@ -206,6 +211,10 @@ function rowToAgent(row: any) {
         pledgeUrl: row.pledge_url,
         website: row.website ?? '',
         credibilityWallet: row.credibility_wallet ?? '',
+        credibilityD6: BigInt(row.credibility_d6 ?? 0),
+        credibilitySnapshot: parseSnapshotBlob(row.credibility_snapshot),
+        mintCredibilityD6: BigInt(row.mint_credibility_d6 ?? 0),
+        mintCredibilitySnapshot: parseSnapshotBlob(row.mint_credibility_snapshot),
     })
 }
 
@@ -215,18 +224,6 @@ function rowToRankedAgent(row: any) {
         credibility: BigInt(row.metric_credibility ?? 0),
     })
 }
-
-function rowToAgentAgg(row: any) {
-    const now = BigInt(Math.floor(Date.now() / 1000))
-    return create(DukigenAgentAggSchema, {
-        agent: rowToAgent(row),
-        credibility: BigInt(row.metric_credibility ?? 0),
-        credibilitySnapshotTime: BigInt(row.metric_updated_at ?? 0) || now,
-        mintCredibility: BigInt(Math.floor(Number(row.mint_credibility_d6 ?? 0))),
-        mintCredibilitySnapshotTime: now,
-    })
-}
-
 
 export function registerGrpcRoutes(router: ConnectRouter) {
     // ── DukiAggService ───────────────────────────────────────
@@ -253,8 +250,8 @@ export function registerGrpcRoutes(router: ConnectRouter) {
                 activeChainCount: totals.activeChainCount,
                 transactionsCount: totals.transactionsCount,
                 minterOverview,
-                featuredAgents: rankedRows.slice(0, featuredLimit).map(rowToAgentAgg),
-                trendingAgents: rankedRows.slice(0, trendingLimit).map(rowToAgentAgg),
+                featuredAgents: rankedRows.slice(0, featuredLimit).map(rowToAgent),
+                trendingAgents: rankedRows.slice(0, trendingLimit).map(rowToAgent),
                 recentDukiEvents: activity.events,
             })
         },

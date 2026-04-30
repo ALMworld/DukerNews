@@ -245,12 +245,10 @@ export async function getQuickOverview(opts: {
         return {
             featuredAgents: resp.featuredAgents
                 .slice(0, featuredLimit)
-                .filter((it) => it.agent)
-                .map((it) => ({ agent: it.agent!, credibility: Number(it.credibility) })),
+                .map((it) => ({ agent: it, credibility: Number(it.credibilityD6) })),
             trendingAgents: resp.trendingAgents
                 .slice(0, trendingLimit)
-                .filter((it) => it.agent)
-                .map((it) => ({ agent: it.agent!, credibility: Number(it.credibility) })),
+                .map((it) => ({ agent: it, credibility: Number(it.credibilityD6) })),
             marketActivity: resp.recentDukiEvents.slice(0, opts.activityLimit ?? resp.recentDukiEvents.length),
             summary: {
                 totalAgents: resp.totalAgents,

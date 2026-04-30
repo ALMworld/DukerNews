@@ -68,6 +68,10 @@ CREATE TABLE IF NOT EXISTS dukigen_agents (
     website TEXT NOT NULL DEFAULT '',
     credibility_wallet TEXT NOT NULL DEFAULT '',
     op_contracts TEXT NOT NULL DEFAULT '[]', -- JSON array of {chainEid, contractAddr}
+    credibility_d6 INTEGER NOT NULL DEFAULT 0,
+    credibility_snapshot BLOB,
+    mint_credibility_d6 INTEGER NOT NULL DEFAULT 0,
+    mint_credibility_snapshot BLOB,
     created_at INTEGER NOT NULL,
     updated_at INTEGER NOT NULL
 );
@@ -124,6 +128,9 @@ CREATE TABLE IF NOT EXISTS deal_duki_minted_events (
     duki_amount     TEXT    NOT NULL,   -- d18, uint256 as text
     alm_yang_amount TEXT    NOT NULL,
     alm_yin_amount  TEXT    NOT NULL,
+    duki_d6_amount      INTEGER NOT NULL,
+    alm_yang_d6_amount  INTEGER NOT NULL,
+    alm_yin_d6_amount   INTEGER NOT NULL,
     minter          TEXT    NOT NULL COLLATE NOCASE,
     agent_id        TEXT    NOT NULL,   -- 0 for direct (non-agent) mints
     PRIMARY KEY (chain_eid, evt_seq)

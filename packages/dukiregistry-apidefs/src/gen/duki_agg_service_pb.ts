@@ -16,7 +16,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file duki_agg_service.proto.
  */
 export const file_duki_agg_service: GenFile = /*@__PURE__*/
-  fileDesc("ChZkdWtpX2FnZ19zZXJ2aWNlLnByb3RvEgxkdWtpcmVnaXN0cnkiFQoTR2V0UXVpY2tPdmVydmlld1JlcSJwChpBbG1Xb3JsZER1a2lNaW50ZXJPdmVydmlldxIRCgljaGFpbl9laWQYASABKA0SFQoNY29udHJhY3RfYWRkchgCIAEoCRIPCgdldnRfc2VxGAMgASgEEhcKD3RvdGFsX2Q2X2Ftb3VudBgEIAEoBCK2AQoPRHVraWdlbkFnZW50QWdnEikKBWFnZW50GAEgASgLMhouZHVraXJlZ2lzdHJ5LkR1a2lnZW5BZ2VudBITCgtjcmVkaWJpbGl0eRgCIAEoBBIhChljcmVkaWJpbGl0eV9zbmFwc2hvdF90aW1lGAMgASgEEhgKEG1pbnRfY3JlZGliaWxpdHkYBCABKAQSJgoebWludF9jcmVkaWJpbGl0eV9zbmFwc2hvdF90aW1lGAUgASgEIu4CChNQYlF1aWNrT3ZlcnZpZXdSZXNwEhQKDHRvdGFsX2FnZW50cxgBIAEoDRIXCg90b3RhbF9kNl9hbW91bnQYAiABKAQSGgoSYWN0aXZlX2NoYWluX2NvdW50GAMgASgNEhoKEnRyYW5zYWN0aW9uc19jb3VudBgEIAEoBBJBCg9taW50ZXJfb3ZlcnZpZXcYBSADKAsyKC5kdWtpcmVnaXN0cnkuQWxtV29ybGREdWtpTWludGVyT3ZlcnZpZXcSNgoPZmVhdHVyZWRfYWdlbnRzGAYgAygLMh0uZHVraXJlZ2lzdHJ5LkR1a2lnZW5BZ2VudEFnZxI2Cg90cmVuZGluZ19hZ2VudHMYByADKAsyHS5kdWtpcmVnaXN0cnkuRHVraWdlbkFnZW50QWdnEj0KEnJlY2VudF9kdWtpX2V2ZW50cxgIIAMoCzIhLmR1a2lyZWdpc3RyeS5EZWFsRHVraU1pbnRlZEV2ZW50MmoKDkR1a2lBZ2dTZXJ2aWNlElgKEEdldFF1aWNrT3ZlcnZpZXcSIS5kdWtpcmVnaXN0cnkuR2V0UXVpY2tPdmVydmlld1JlcRohLmR1a2lyZWdpc3RyeS5QYlF1aWNrT3ZlcnZpZXdSZXNwYgZwcm90bzM", [file_duker_registry, file_dukigen_registry, file_dukiregistry_services, file_alm_world_minter]);
+  fileDesc("ChZkdWtpX2FnZ19zZXJ2aWNlLnByb3RvEgxkdWtpcmVnaXN0cnkiFQoTR2V0UXVpY2tPdmVydmlld1JlcSJwChpBbG1Xb3JsZER1a2lNaW50ZXJPdmVydmlldxIRCgljaGFpbl9laWQYASABKA0SFQoNY29udHJhY3RfYWRkchgCIAEoCRIPCgdldnRfc2VxGAMgASgEEhcKD3RvdGFsX2Q2X2Ftb3VudBgEIAEoBCLoAgoTUGJRdWlja092ZXJ2aWV3UmVzcBIUCgx0b3RhbF9hZ2VudHMYASABKA0SFwoPdG90YWxfZDZfYW1vdW50GAIgASgEEhoKEmFjdGl2ZV9jaGFpbl9jb3VudBgDIAEoDRIaChJ0cmFuc2FjdGlvbnNfY291bnQYBCABKAQSQQoPbWludGVyX292ZXJ2aWV3GAUgAygLMiguZHVraXJlZ2lzdHJ5LkFsbVdvcmxkRHVraU1pbnRlck92ZXJ2aWV3EjMKD2ZlYXR1cmVkX2FnZW50cxgGIAMoCzIaLmR1a2lyZWdpc3RyeS5EdWtpZ2VuQWdlbnQSMwoPdHJlbmRpbmdfYWdlbnRzGAcgAygLMhouZHVraXJlZ2lzdHJ5LkR1a2lnZW5BZ2VudBI9ChJyZWNlbnRfZHVraV9ldmVudHMYCCADKAsyIS5kdWtpcmVnaXN0cnkuRGVhbER1a2lNaW50ZWRFdmVudDJqCg5EdWtpQWdnU2VydmljZRJYChBHZXRRdWlja092ZXJ2aWV3EiEuZHVraXJlZ2lzdHJ5LkdldFF1aWNrT3ZlcnZpZXdSZXEaIS5kdWtpcmVnaXN0cnkuUGJRdWlja092ZXJ2aWV3UmVzcGIGcHJvdG8z", [file_duker_registry, file_dukigen_registry, file_dukiregistry_services, file_alm_world_minter]);
 
 /**
  * @generated from message dukiregistry.GetQuickOverviewReq
@@ -64,47 +64,6 @@ export const AlmWorldDukiMinterOverviewSchema: GenMessage<AlmWorldDukiMinterOver
   messageDesc(file_duki_agg_service, 1);
 
 /**
- * @generated from message dukiregistry.DukigenAgentAgg
- */
-export type DukigenAgentAgg = Message<"dukiregistry.DukigenAgentAgg"> & {
-  /**
-   * @generated from field: dukiregistry.DukigenAgent agent = 1;
-   */
-  agent?: DukigenAgent;
-
-  /**
-   * the amount of ALM token amount in the credibility wallet, on chain
-   *
-   * @generated from field: uint64 credibility = 2;
-   */
-  credibility: bigint;
-
-  /**
-   * @generated from field: uint64 credibility_snapshot_time = 3;
-   */
-  credibilitySnapshotTime: bigint;
-
-  /**
-   * a sum of dukis token amount summed in the DukiMinting, off chain 
-   *
-   * @generated from field: uint64 mint_credibility = 4;
-   */
-  mintCredibility: bigint;
-
-  /**
-   * @generated from field: uint64 mint_credibility_snapshot_time = 5;
-   */
-  mintCredibilitySnapshotTime: bigint;
-};
-
-/**
- * Describes the message dukiregistry.DukigenAgentAgg.
- * Use `create(DukigenAgentAggSchema)` to create a new message.
- */
-export const DukigenAgentAggSchema: GenMessage<DukigenAgentAgg> = /*@__PURE__*/
-  messageDesc(file_duki_agg_service, 2);
-
-/**
  * @generated from message dukiregistry.PbQuickOverviewResp
  */
 export type PbQuickOverviewResp = Message<"dukiregistry.PbQuickOverviewResp"> & {
@@ -136,14 +95,14 @@ export type PbQuickOverviewResp = Message<"dukiregistry.PbQuickOverviewResp"> & 
   minterOverview: AlmWorldDukiMinterOverview[];
 
   /**
-   * @generated from field: repeated dukiregistry.DukigenAgentAgg featured_agents = 6;
+   * @generated from field: repeated dukiregistry.DukigenAgent featured_agents = 6;
    */
-  featuredAgents: DukigenAgentAgg[];
+  featuredAgents: DukigenAgent[];
 
   /**
-   * @generated from field: repeated dukiregistry.DukigenAgentAgg trending_agents = 7;
+   * @generated from field: repeated dukiregistry.DukigenAgent trending_agents = 7;
    */
-  trendingAgents: DukigenAgentAgg[];
+  trendingAgents: DukigenAgent[];
 
   /**
    * @generated from field: repeated dukiregistry.DealDukiMintedEvent recent_duki_events = 8;
@@ -156,7 +115,7 @@ export type PbQuickOverviewResp = Message<"dukiregistry.PbQuickOverviewResp"> & 
  * Use `create(PbQuickOverviewRespSchema)` to create a new message.
  */
 export const PbQuickOverviewRespSchema: GenMessage<PbQuickOverviewResp> = /*@__PURE__*/
-  messageDesc(file_duki_agg_service, 3);
+  messageDesc(file_duki_agg_service, 2);
 
 /**
  * @generated from service dukiregistry.DukiAggService

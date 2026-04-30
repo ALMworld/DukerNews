@@ -35,6 +35,9 @@ message DealDukiMintedEvent {
   string alm_yin_amount  = 11;  // ALM minted to yin  (d18 as string; "0" for taiji)
   string minter          = 12;  // msg.sender that paid stablecoin
   uint64 agent_id        = 13;  // dApp agent that originated the payment (0 = direct)
+  uint64 duki_d6_amount     = 14;
+  uint64 alm_yang_d6_amount = 15;
+  uint64 alm_yin_d6_amount  = 16;
 }
 
 // ── Webhook: external service tells the worker about a tx that contains
