@@ -55,7 +55,7 @@ export async function materializeAgent(db: D1Database, evt: DukigenRegistryEvent
 
             await db.prepare(`
                 INSERT OR REPLACE INTO dukigen_agents
-                (agent_id, name, agent_uri, agent_uri_hash, owner, origin_chain_eid,
+                (agent_id, name, agent_uri, agent_uri_hash, owner, chain_eid,
                  approx_bps, product_type, duki_type, pledge_url, website, credibility_wallet,
                  op_contracts, created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)

@@ -63,8 +63,9 @@ worker: ## Start wrangler dev server (port 8788)
 
 # ── Schema ───────────────────────────────────────────────
 
-schema: ## Apply D1 schema (local)
+schema: ## Apply D1 schema migrations (local)
 	npx wrangler d1 execute duki_registry --local --file=./schemas/001_initial.sql
+	npx wrangler d1 execute duki_registry --local --file=./schemas/002_dukigen_agents_chain_eid.sql
 
 # ── E2E Test ─────────────────────────────────────────────
 

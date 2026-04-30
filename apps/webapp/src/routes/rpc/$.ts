@@ -56,6 +56,13 @@ export const Route = createFileRoute('/rpc/$')({
 
                     // Auth check for protected (mutation) endpoints
                     if (PROTECTED_PATHS.has(rpcPath)) {
+                        // In dev, NotifyTx is open so seed scripts can call it without a session
+                        if (import.meta.env.DEV && rpcPath === '/duker.TxService/NotifyTx') {
+                            const uReq = universalServerRequestFromFetch(request, {})
+                            const uRes = await handler(uReq)
+                            return universalServerResponseToFetch(uRes)
+                        }
+
                         const cookieHeader = request.headers.get('cookie') || ''
                         const cookies = parseCookies(cookieHeader)
                         const token = cookies[COOKIE_NAME]
