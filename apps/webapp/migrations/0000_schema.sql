@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS posts (
   text_en TEXT DEFAULT '',
   kind TEXT NOT NULL,
   locale TEXT NOT NULL DEFAULT 'en',
+  keyword TEXT NOT NULL DEFAULT '',
   post_data BLOB,
   boost_amount INTEGER DEFAULT 0,
   total_boost INTEGER DEFAULT 0,

@@ -35,15 +35,15 @@ message PbUser {
 
 // ─── Post Data (oneof payload per post type) ────────────
 
-// All non-tag fields here are inherited verbatim from the post's DukigenAgent
+// All non-keyword fields here are inherited verbatim from the post's DukigenAgent
 // — same names and same shapes as DukigenAgent so callers can read either
-// without having to remember which side they're on. Only `product_tags` is
-// post-specific (the agent record carries no tags).
+// without having to remember which side they're on. Only `keyword` is
+// post-specific (the agent record carries no keyword).
 message WorksPostData {
   dukiregistry.DukiType                duki_type        = 1;
   uint32                               approx_bps       = 2;
   string                               pledge_url       = 3;
-  repeated string                      product_tags     = 4;
+  string                               keyword          = 4;
   repeated dukiregistry.ChainContractEntry chain_contracts = 5;
   dukiregistry.ProductType             product_type     = 6;
 }

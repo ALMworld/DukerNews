@@ -164,7 +164,7 @@ async function buildPostHex(title: string, url: string, text: string): Promise<`
                             approxBps: 0,
                             pledgeUrl: '',
                             productType: ProductType.PRODUCT_TYPE_UNSPECIFIED,
-                            productTags: ['seed'],
+                            keyword: 'seed',
                         }),
                     },
                 }),

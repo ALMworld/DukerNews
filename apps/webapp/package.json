@@ -17,7 +17,7 @@
     "gen:icons": "tsx scripts/gen-icons.ts",
     "cf-typegen": "wrangler types",
     "d1:truncate": "wrangler d1 execute duker-news-db --local --command \"DELETE FROM translations; DELETE FROM x402_triggered_cmds; DELETE FROM user_interactions; DELETE FROM events; DELETE FROM comments; DELETE FROM posts; DELETE FROM users; DELETE FROM sqlite_sequence;\"",
-    "d1:migrate": "wrangler d1 execute duker-news-db --local --file=migrations/0000_schema.sql",
+    "d1:migrate": "wrangler d1 execute duker-news-db --local --file=migrations/0000_schema.sql && wrangler d1 execute duker-news-db --local --file=migrations/0001_add_keyword.sql",
     "deploy": "VITE_DUKER_NEWS_CHAIN=xlayer pnpm run build && wrangler deploy",
     "fresh-deploy": "bash scripts/fresh-deploy.sh"
   },

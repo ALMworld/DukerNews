@@ -146,16 +146,7 @@ export function algoliaToEvents(item: AlgoliaItem, maxComments: number = 200): P
                                         })]
                                         : [],
                                     productType: [ProductType.DIGITAL, ProductType.PHYSICAL, ProductType.SERVICE][Math.floor(seededRandom(item.id + 3) * 3)],
-                                    productTags: (() => {
-                                        const r3 = seededRandom(item.id + 2)
-                                        const tagCount = 1 + Math.floor(r3 * 3)
-                                        const t: string[] = []
-                                        for (let i = 0; i < tagCount; i++) {
-                                            const idx = Math.floor(seededRandom(item.id + 10 + i) * TAG_POOL.length)
-                                            if (!t.includes(TAG_POOL[idx])) t.push(TAG_POOL[idx])
-                                        }
-                                        return t
-                                    })(),
+                                    keyword: TAG_POOL[Math.floor(seededRandom(item.id + 10) * TAG_POOL.length)],
                                 }),
                             },
                         })

@@ -83,10 +83,10 @@ export const PbUserSchema: GenMessage<PbUser> = /*@__PURE__*/
   messageDesc(file_dukernews, 0);
 
 /**
- * All non-tag fields here are inherited verbatim from the post's DukigenAgent
+ * All non-keyword fields here are inherited verbatim from the post's DukigenAgent
  * — same names and same shapes as DukigenAgent so callers can read either
- * without having to remember which side they're on. Only `product_tags` is
- * post-specific (the agent record carries no tags).
+ * without having to remember which side they're on. Only `keyword` is
+ * post-specific (the agent record carries no keyword).
  *
  * @generated from message duker.WorksPostData
  */
@@ -107,9 +107,9 @@ export type WorksPostData = Message<"duker.WorksPostData"> & {
   pledgeUrl: string;
 
   /**
-   * @generated from field: repeated string product_tags = 4;
+   * @generated from field: string keyword = 4;
    */
-  productTags: string[];
+  keyword: string;
 
   /**
    * @generated from field: repeated dukiregistry.ChainContractEntry chain_contracts = 5;

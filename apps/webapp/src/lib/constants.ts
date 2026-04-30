@@ -10,9 +10,6 @@ import {
 } from 'lucide-react'
 import { DukiType, ProductType, PostKind } from '@repo/dukernews-apidefs'
 
-/** Max tags displayed per post item */
-export const MAX_DISPLAY_TAGS = 3
-
 /** Icon size used in meta rows / badges */
 export const META_ICON_SIZE = 10
 

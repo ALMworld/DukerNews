@@ -207,6 +207,7 @@ export async function createPost(input: CreatePostInput): Promise<PbPost> {
 
         // Serialize postData to binary blob if provided
         let postDataBlob: Uint8Array | null = null
+        const keyword = input.postData?.case === 'works' ? (input.postData.value.keyword ?? '') : ''
         if (input.postData) {
             const pd = create(PbPostDataSchema, {
                 payload: input.postData,
@@ -224,6 +225,7 @@ export async function createPost(input: CreatePostInput): Promise<PbPost> {
                 title: input.title,
                 url: input.url || '',
                 domain,
+                keyword,
                 text: input.text || '',
                 title_en: input.titleEn || '',
                 url_en: input.urlEn || '',

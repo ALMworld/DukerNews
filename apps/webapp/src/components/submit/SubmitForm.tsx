@@ -10,7 +10,6 @@ import { useQueryClient } from '@tanstack/react-query'
 import { create } from '@bufbuild/protobuf'
 import { PostKind, DukiType, ProductType, type PbPostData, PbPostDataSchema, WorksPostDataSchema, ChainContractEntrySchema } from '@repo/dukernews-apidefs'
 import {
-    MAX_DISPLAY_TAGS,
     DUKI_ICONS,
     PRODUCT_ICONS,
     PRODUCT_LABELS,
@@ -52,7 +51,7 @@ interface SubmitFormValues {
     url: string
     text: string
     locale: SupportedLocale
-    tags: string
+    keyword: string
 
     // voice
 }
@@ -126,7 +125,7 @@ export default function SubmitForm() {
             url: '',
             text: '',
             locale: userLocale,
-            tags: '',
+            keyword: '',
         } satisfies SubmitFormValues,
         onSubmit: async ({ value }) => {
             if (!value.title.trim()) return
@@ -141,11 +140,7 @@ export default function SubmitForm() {
             let postData: PbPostData | undefined = undefined
 
             if (isWorks && agentInfo) {
-                const productTags = value.tags
-                    .split(',')
-                    .map((t) => t.trim().toLowerCase())
-                    .filter(Boolean)
-                    .slice(0, MAX_DISPLAY_TAGS)
+                const keyword = value.keyword.trim().toLowerCase().split(/\s+/)[0] ?? ''
                 postData = create(PbPostDataSchema, {
                     payload: {
                         case: 'works',
@@ -157,7 +152,7 @@ export default function SubmitForm() {
                                 chainEid: c.chainEid,
                                 contractAddr: c.contractAddr,
                             })),
-                            productTags,
+                            keyword,
                             productType: Number(agentInfo.productType) as ProductType,
                         }),
                     },
@@ -394,9 +389,9 @@ export default function SubmitForm() {
                                     {agentInfo && (
                                         <AgentPreviewCard agent={agentInfo}>
                                             <form.AppField
-                                                name="tags"
+                                                name="keyword"
                                                 children={(field) => (
-                                                    <field.TextField label="Tags" hint={`(max ${MAX_DISPLAY_TAGS})`} tooltip="Comma-separated tags to help categorize this post" placeholder="ai, web3, oss" />
+                                                    <field.TextField label="Keyword" tooltip="One word to categorize this post" placeholder="ai" />
                                                 )}
                                             />
                                         </AgentPreviewCard>

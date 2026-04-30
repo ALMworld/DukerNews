@@ -2,7 +2,7 @@
  * WorksBadge — Display component for Works post metadata.
  *
  * Uses proto-generated types directly (no toJson conversion).
- * Renders inline: duki icon + values · product-type icon + tags
+ * Renders inline: duki icon + values · product-type icon + keyword
  *
  * Icons match the Submit form (Lucide).
  */
@@ -14,7 +14,6 @@ import {
     type PbPostData,
 } from '@repo/dukernews-apidefs'
 import {
-    MAX_DISPLAY_TAGS,
     META_ICON_SIZE,
     DUKI_ICONS,
     PRODUCT_ICONS,
@@ -31,7 +30,7 @@ export function WorksBadge({ data }: WorksBadgeProps) {
     const {
         dukiType,
         approxBps,
-        productTags,
+        keyword,
         productType,
         pledgeUrl,
         chainContracts,
@@ -44,7 +43,6 @@ export function WorksBadge({ data }: WorksBadgeProps) {
     // Prefer the off-chain pledge URL; otherwise link to the first deployed
     // contract entry. Both are agent-inherited.
     const link = pledgeUrl || chainContracts[0]?.contractAddr || null
-    const tags = productTags.slice(0, MAX_DISPLAY_TAGS)
     const TypeIcon = PRODUCT_ICONS[productType] ?? null
     const typeLabel = PRODUCT_LABELS[productType] ?? ''
 
@@ -76,23 +74,18 @@ export function WorksBadge({ data }: WorksBadgeProps) {
                 </>
             )}
 
-            {/* Product tags with type icon */}
-            {tags.length > 0 && (
+            {/* Keyword with product type icon */}
+            {keyword && (
                 <span className="inline-flex items-center gap-0.5">
                     {TypeIcon && <span title={typeLabel} className="inline-flex items-center" style={{ transform: 'translateY(1px)' }}><TypeIcon size={META_ICON_SIZE} /></span>}
-                    {tags.map((tag, i) => (
-                        <span key={tag} className="inline-flex items-center gap-0.5">
-                            <Link
-                                to="/show"
-                                search={{ tag } as any}
-                                className="meta-link no-underline"
-                                style={{ color: 'inherit' }}
-                            >
-                                {tag}
-                            </Link>
-                            {i < tags.length - 1 && <span>·</span>}
-                        </span>
-                    ))}
+                    <Link
+                        to="/show"
+                        search={{ tag: keyword } as any}
+                        className="meta-link no-underline"
+                        style={{ color: 'inherit' }}
+                    >
+                        {keyword}
+                    </Link>
                 </span>
             )}
         </>
