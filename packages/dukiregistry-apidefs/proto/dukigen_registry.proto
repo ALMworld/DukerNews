@@ -119,14 +119,8 @@ message DukigenAgent {
 
   // these below fields are lazy view, 
   uint64    credibility_d6 = 14; // the amount of ALM token amount in the credibility wallet, on chain
-  SnapshotValue    credibility_snapshot = 15;
+  uint64    credibility_snapshot_ms = 15;
   uint64    mint_credibility_d6 = 16; // 
-  SnapshotValue    mint_credibility_snapshot = 17;
+  string    mint_credibility_snapshot_id = 17;
 }
 
-message SnapshotValue {
-  uint32    chain_eid = 1;
-  uint64    evt_seq = 2;
-  uint64    d6_value = 3;
-  uint64  snapshot_time =4 ;
-}
