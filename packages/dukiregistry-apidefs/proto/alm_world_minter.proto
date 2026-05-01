@@ -22,7 +22,7 @@ package dukiregistry;
 // once at the edge.
 message DealDukiMintedEvent {
   uint32 chain_eid       = 1;   // Chain (LayerZero EID) where the event was emitted
-  string sequence        = 2;   // Per-minter monotonic counter (uint256 as string)
+  uint64 evt_seq         = 2;   // Per-minter monotonic counter (per-chain)
   string tx_hash         = 3;
   uint64 block_number    = 4;
   uint64 evt_time        = 5;   // Unix seconds (block timestamp)

@@ -45,9 +45,10 @@ export async function permitSettle(params: {
     userAddress: string
     amountMicro: bigint
     settleTarget: 'contract' | 'user'
+    chainEid?: number
 }): Promise<SettleResult> {
-    const { paymentData, userAddress, amountMicro, settleTarget } = params
-    const { addrs, publicClient, walletClient, viemChain, chainId } = getDukerChainClients()
+    const { paymentData, userAddress, amountMicro, settleTarget, chainEid } = params
+    const { addrs, publicClient, walletClient, viemChain, chainId } = getDukerChainClients(chainEid)
     const { getDefaultStablecoin } = await import('../contracts')
     const stablecoin = getDefaultStablecoin(chainId)
 

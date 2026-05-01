@@ -118,7 +118,7 @@ CREATE INDEX IF NOT EXISTS idx_dukigen_agent_metrics_rank
 
 CREATE TABLE IF NOT EXISTS deal_duki_minted_events (
     chain_eid       INTEGER NOT NULL,
-    evt_seq         TEXT    NOT NULL,   -- uint256 as text (per-chain monotonic)
+    evt_seq         INTEGER NOT NULL,   -- uint64, per-chain monotonic
     tx_hash         TEXT    NOT NULL,
     block_number    INTEGER NOT NULL,
     evt_time        INTEGER NOT NULL,   -- block timestamp (unix seconds)
@@ -155,4 +155,32 @@ CREATE TABLE IF NOT EXISTS sync_state (
     last_evt_seq       INTEGER NOT NULL DEFAULT 0,
     updated_at         INTEGER NOT NULL,
     PRIMARY KEY (chain_eid, contract_address)
+);
+
+-- ═══════════════════════════════════════════════════════════
+--  DUKI METRICS — periodic snapshot per agent per chain
+-- ═══════════════════════════════════════════════════════════
+-- Materialised sum of duki_d6_amount from deal_duki_minted_events,
+-- partitioned by (chain_eid, contract_addr, agent_id, metric_name).
+-- last_evt_seq is the highest evt_seq processed so far (TEXT = uint256).
+CREATE TABLE IF NOT EXISTS duki_metrics (
+    chain_eid       INTEGER NOT NULL,
+    contract_addr   TEXT    NOT NULL COLLATE NOCASE,
+    agent_id        TEXT    NOT NULL,
+    metric_name     TEXT    NOT NULL,   -- 'duki_d6_value'
+    metric_value    INTEGER NOT NULL DEFAULT 0,
+    last_evt_seq    INTEGER NOT NULL DEFAULT 0,   -- highest evt_seq included
+    snapshot_ms      INTEGER NOT NULL,              -- unix milliseconds
+    PRIMARY KEY (chain_eid, contract_addr, agent_id, metric_name)
+);
+
+CREATE INDEX IF NOT EXISTS idx_duki_metrics_agent
+    ON duki_metrics (agent_id, chain_eid);
+
+-- ═══════════════════════════════════════════════════════════
+--  CRON STATE — interval gate (avoids KV namespace dependency)
+-- ═══════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS cron_state (
+    job_name    TEXT    NOT NULL PRIMARY KEY,
+    last_run_at INTEGER NOT NULL DEFAULT 0
 );

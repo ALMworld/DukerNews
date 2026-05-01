@@ -1,0 +1,47 @@
+@startuml agent_metrics
+
+title Agent Metrics Aggregation Flow
+
+actor "Cron / Devtools" as Caller
+participant "runAgentMetricsTask" as Task
+database "D1: deal_duki_minted_events" as EventsDB
+database "D1: duki_metrics" as MetricsDB
+database "D1: dukigen_agents" as AgentsDB
+
+Caller -> Task: POST /devtools (case: "run_agent_metrics")\nor Cron Trigger
+
+note over Task
+  Iterate over all supported chains
+end note
+
+loop For each Chain EID
+    Task -> MetricsDB: SELECT MIN(last_evt_seq) \nWHERE metric_name = 'duki_d6_value'
+    MetricsDB --> Task: Return last processed sequence (fromSeq)
+    
+    Task -> EventsDB: SELECT agent_id, SUM(duki_d6_amount), MAX(evt_seq) \nWHERE evt_seq > fromSeq GROUP BY agent_id
+    EventsDB --> Task: Return aggregated new DUKI minted amounts
+    
+    opt If new events found
+        Task -> MetricsDB: UPSERT INTO duki_metrics \n(Add new sums to existing metric_value)
+        Task -> Task: Add changed agent_ids to Set
+    end
+end
+
+opt If any agents changed
+    Task -> MetricsDB: SELECT SUM(metric_value) \nWHERE agent_id IN (changed_agents)
+    MetricsDB --> Task: Return cross-chain total DUKI value per agent
+    
+    Task -> Task: Serialize SnapshotValue proto\n(total_d6, max_evt_seq, snapshotTime)
+    
+    Task -> AgentsDB: UPDATE dukigen_agents \nSET mint_credibility_d6, mint_credibility_snapshot
+end
+
+Task --> Caller: Return { chainsProcessed, agentsUpdated }
+
+note right of Caller
+  IMPORTANT: This task DOES NOT sync events from the blockchain.
+  It only aggregates events that have ALREADY been synced 
+  by the BlockchainSyncService/Webhook.
+end note
+
+@enduml

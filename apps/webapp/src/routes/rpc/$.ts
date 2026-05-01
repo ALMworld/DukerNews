@@ -16,6 +16,7 @@ import {
 import { createConnectRouter } from '@connectrpc/connect'
 import { registerDukerService } from '../../services/connect-service'
 import { verifyJwt, parseCookies, COOKIE_NAME } from '../../server/auth-utils'
+import { IS_DEV } from '../../lib/env'
 
 // Build the ConnectRPC router once at module level
 const router = createConnectRouter({
@@ -57,7 +58,7 @@ export const Route = createFileRoute('/rpc/$')({
                     // Auth check for protected (mutation) endpoints
                     if (PROTECTED_PATHS.has(rpcPath)) {
                         // In dev, NotifyTx is open so seed scripts can call it without a session
-                        if (import.meta.env.DEV && rpcPath === '/duker.TxService/NotifyTx') {
+                        if (IS_DEV && rpcPath === '/duker.TxService/NotifyTx') {
                             const uReq = universalServerRequestFromFetch(request, {})
                             const uRes = await handler(uReq)
                             return universalServerResponseToFetch(uRes)

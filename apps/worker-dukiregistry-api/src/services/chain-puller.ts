@@ -110,7 +110,7 @@ function parseDukerLog(log: Log, chainEid: number, txHash: string, blockNumber: 
         return create(DukerRegistryEventSchema, {
             chainEid,
             evtSeq: args.evtSeq,
-            tokenId: args.tokenId,
+            tokenId: args.tokenId.toString(),
             eventType,
             ego: args.ego.toLowerCase(),
             username: args.username,

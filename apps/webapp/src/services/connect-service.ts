@@ -80,8 +80,8 @@ export function registerServices(router: ConnectRouter) {
                 console.log('[notifyTx] DB miss — no cached events')
 
                 // 2. DB miss — pull + parse events from chain via RPC
-                console.log('[notifyTx] Step 2: pulling events from chain via RPC...')
-                const events = await getEventsFromTx(txHash)
+                console.log(`[notifyTx] Step 2: pulling events from chain via RPC... (chainEid=${req.chainEid || 'default'})`)
+                const events = await getEventsFromTx(txHash, req.chainEid)
                 console.log(`[notifyTx] ✓ Got ${events.length} events from chain`)
                 if (events.length === 0) {
                     return create(PbDeltaEventsRespSchema, { events: [] })

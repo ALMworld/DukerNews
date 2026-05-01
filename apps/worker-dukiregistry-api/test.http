@@ -135,3 +135,54 @@ Connect-Protocol-Version: 1
 }
 
 ###
+
+### SyncEvents — catch up AlmWorldMinter (DealDukiMinted events)
+POST {{host}}/dukiregistry.BlockchainSyncService/SyncEvents
+Content-Type: application/json
+Connect-Protocol-Version: 1
+
+{
+    "contract": "ALM_WORLD_MINTER",
+    "chainEid": 31337
+}
+
+###
+
+## ============================================
+## Devtools (internal ops endpoint)
+## ============================================
+## Token (production only):
+##   node -e "console.log(btoa('YOUR_SECRET:' + Math.floor(Date.now()/1000)))"
+## Then set:  @devtools_token = <output>
+@devtools_token = REPLACE_WITH_GENERATED_TOKEN
+
+### run_agent_metrics — Dev (no auth required)
+POST {{host}}/devtools
+Content-Type: application/json
+
+{
+    "case": "run_agent_metrics"
+}
+
+###
+
+### debug_state — inspect chain configs + DB counters (diagnose zero results)
+POST {{host}}/devtools
+Content-Type: application/json
+
+{
+    "case": "debug_state"
+}
+
+###
+
+### run_agent_metrics — Production (requires x-devtools-token)
+# POST https://api.dukernews.com/devtools
+# Content-Type: application/json
+# x-devtools-token: {{devtools_token}}
+#
+# {
+#     "case": "run_agent_metrics"
+# }
+
+###

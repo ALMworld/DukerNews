@@ -7,7 +7,7 @@
 
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
-import type { App } from './context'
+import type { App, Env } from './context'
 import {
     UniversalHandler,
     universalServerRequestFromFetch,
@@ -15,6 +15,8 @@ import {
 } from '@connectrpc/connect/protocol'
 import { createConnectRouter, createContextValues } from '@connectrpc/connect'
 import { registerGrpcRoutes, setDb } from './routes/grpc'
+import { devtools } from './routes/devtools'
+import { maybeRunAgentMetricsTask } from './services/agent-metrics-task'
 
 const app = new Hono<App>()
 
@@ -33,7 +35,7 @@ app.use('*', async (c, next) => {
             }
             return ''
         },
-        allowHeaders: ['Content-Type', 'Connect-Protocol-Version', 'Connect-Timeout-Ms'],
+        allowHeaders: ['Content-Type', 'Connect-Protocol-Version', 'Connect-Timeout-Ms', 'x-devtools-token'],
         allowMethods: ['POST', 'GET', 'OPTIONS'],
         maxAge: 86400,
     })(c, next)
@@ -41,6 +43,9 @@ app.use('*', async (c, next) => {
 
 // ── Health check ────────────────────────────────────────────
 app.get('/', (c) => c.json({ ok: true, service: 'duker-registry-worker' }))
+
+// ── Devtools endpoint ───────────────────────────────────────
+app.route('/devtools', devtools)
 
 // ── ConnectRPC router ───────────────────────────────────────
 const grpcRouter = createConnectRouter({
@@ -76,6 +81,11 @@ for (const [path, handler] of handlers) {
             }, 500)
         }
     })
+}
+
+// ── Scheduled (Cron Trigger) handler ───────────────────────────────────────
+export const scheduled: ExportedHandlerScheduledHandler<Env> = async (_event, env, ctx) => {
+    ctx.waitUntil(maybeRunAgentMetricsTask(env.DB))
 }
 
 export default app

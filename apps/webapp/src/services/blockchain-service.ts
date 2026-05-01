@@ -24,8 +24,8 @@ import {
     inflateRaw,
 } from '@repo/dukernews-apidefs'
 
-function getPublicClient() {
-    const { viemChain, rpcUrl } = getDukerChain()
+function getPublicClient(chainEid?: number) {
+    const { viemChain, rpcUrl } = getDukerChain(chainEid)
     return createPublicClient({ chain: viemChain as any, transport: http(rpcUrl) })
 }
 
@@ -98,7 +98,7 @@ async function convertLogToEvent(args: DukerEventArgs, blockNumber?: bigint, txH
                             address: args.ego,
                             username: d.username,
                             mintAmount: BigInt(d.amount),
-                            dukiBps: Number(dukiBps),
+                            dealDukiBps: Number(dukiBps),
                             tokenId: BigInt(d.tokenId),
                         }),
                     },
@@ -151,8 +151,8 @@ async function convertLogToEvent(args: DukerEventArgs, blockNumber?: bigint, txH
  * Pull DukerEvent logs from a transaction receipt and convert to PbEvent[].
  * Waits for the tx to be confirmed if not yet mined.
  */
-export async function getEventsFromTx(txHash: string): Promise<PbEvent[]> {
-    const publicClient = getPublicClient()
+export async function getEventsFromTx(txHash: string, chainEid?: number): Promise<PbEvent[]> {
+    const publicClient = getPublicClient(chainEid)
 
     const receipt = await publicClient.waitForTransactionReceipt({
         hash: txHash as `0x${string}`,

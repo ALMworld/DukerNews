@@ -107,7 +107,7 @@ const EVT_TYPE_POST_CREATED = 1
 export async function handleTx(req: DukerTxReq) {
     console.log(`[handleTx] evtType=${req.evtType} address=${req.address}`)
     try {
-        const { addrs, viemChain, publicClient, walletClient, chainId } = getDukerChainClients()
+        const { addrs, viemChain, publicClient, walletClient, chainId } = getDukerChainClients(req.chainEid)
         const chainParam = { chain: viemChain as any }
         const userAddress = req.address as `0x${string}`
         if (!userAddress) throw new Error('address is required')
@@ -135,7 +135,7 @@ export async function handleTx(req: DukerTxReq) {
             case EventType.USER_MINTED: {
                 const payload = req.data?.payload
                 if (payload?.case !== 'userMinted') throw new Error('USER_MINTED: missing userMinted payload')
-                const { username, mintAmount, dukiBps } = payload.value
+                const { username, mintAmount, dealDukiBps } = payload.value
 
                 if (!username || username.length < 1) throw new Error('Invalid username')
                 const amountMicro = BigInt(mintAmount)
@@ -174,7 +174,7 @@ export async function handleTx(req: DukerTxReq) {
                         token_address: tokenAddr,
                         chain_id: chainId,
                         evt_type: req.evtType,
-                        action_params: JSON.stringify({ username, dukiBps }),
+                        action_params: JSON.stringify({ username, dealDukiBps }),
                         payment_scheme: PaymentScheme[paymentData?.scheme ?? 0] || 'mock',
                         payment_data: pdBytes,
                     })
@@ -211,7 +211,7 @@ export async function handleTx(req: DukerTxReq) {
                         address: addrs.DukerNews,
                         abi: dukerNewsAbi,
                         functionName: 'mintUsernameViaX402',
-                        args: [userAddress, username, amountMicro, BigInt(dukiBps), paymentNonce as `0x${string}`],
+                        args: [userAddress, username, amountMicro, BigInt(dealDukiBps), paymentNonce as `0x${string}`],
                     })
                     receipt = await publicClient.waitForTransactionReceipt({ hash: txHash })
                     await updatePaymentStatus(paymentId, 'executed', { exec_tx_hash: txHash })

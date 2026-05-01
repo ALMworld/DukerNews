@@ -7,6 +7,7 @@ export interface Env {
     ENVIRONMENT: string
     NAME: string
     ALLOWED_ORIGINS: string
+    DEVTOOLS_SECRET?: string
 }
 
 export type App = { Bindings: Env }

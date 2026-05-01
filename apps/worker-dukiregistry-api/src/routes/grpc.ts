@@ -6,7 +6,7 @@
  * The per-contract services expose query-only RPCs.
  */
 
-import type { ConnectRouter } from '@connectrpc/connect'
+import { ConnectError, Code, type ConnectRouter } from '@connectrpc/connect'
 import { create, fromBinary } from '@bufbuild/protobuf'
 import {
     DukerRegistryService,
@@ -44,7 +44,6 @@ import {
     processMinterEvents,
     getLastBlockNumber,
     setLastBlockNumber,
-    type PulledDealDukiMintedEvent,
 } from '../services/minter-event-service'
 import { createPublicClient, http } from 'viem'
 import { getChainConfig, getSupportedChainEids } from '../config'
@@ -172,7 +171,7 @@ async function queryMarketQuickTotals(db: D1Database) {
 async function queryChainMinterOverviews(db: D1Database) {
     const rows = (await db.prepare(
         `SELECT chain_eid,
-                COALESCE(MAX(CAST(evt_seq AS INTEGER)), 0) AS evt_seq,
+                COALESCE(MAX(evt_seq), 0) AS evt_seq,
                 COALESCE(SUM(CAST(duki_amount AS REAL)), 0) / 1000000000000.0 AS total_d6_amount
          FROM deal_duki_minted_events
          GROUP BY chain_eid`
@@ -230,30 +229,35 @@ export function registerGrpcRoutes(router: ConnectRouter) {
 
     router.service(DukiAggService, {
         async getQuickOverview() {
-            const featuredLimit = 3
-            const trendingLimit = 5
-            const activityLimit = 20
+            try {
+                const featuredLimit = 3
+                const trendingLimit = 5
+                const activityLimit = 20
 
-            const rankedRows = await queryRankedAgentRows(_db, 'all', Math.max(featuredLimit, trendingLimit))
-            const activity = await queryDeals(_db, {
-                agentId: null,
-                chainEid: 0,
-                cursor: '',
-                limit: activityLimit,
-            })
-            const totals = await queryMarketQuickTotals(_db)
-            const minterOverview = await queryChainMinterOverviews(_db)
+                const rankedRows = await queryRankedAgentRows(_db, 'all', Math.max(featuredLimit, trendingLimit))
+                const activity = await queryDeals(_db, {
+                    agentId: null,
+                    chainEid: 0,
+                    cursor: '',
+                    limit: activityLimit,
+                })
+                const totals = await queryMarketQuickTotals(_db)
+                const minterOverview = await queryChainMinterOverviews(_db)
 
-            return create(PbQuickOverviewRespSchema, {
-                totalAgents: totals.totalAgents,
-                totalD6Amount: totals.totalD6Amount,
-                activeChainCount: totals.activeChainCount,
-                transactionsCount: totals.transactionsCount,
-                minterOverview,
-                featuredAgents: rankedRows.slice(0, featuredLimit).map(rowToAgent),
-                trendingAgents: rankedRows.slice(0, trendingLimit).map(rowToAgent),
-                recentDukiEvents: activity.events,
-            })
+                return create(PbQuickOverviewRespSchema, {
+                    totalAgents: totals.totalAgents,
+                    totalD6Amount: totals.totalD6Amount,
+                    activeChainCount: totals.activeChainCount,
+                    transactionsCount: totals.transactionsCount,
+                    minterOverview,
+                    featuredAgents: rankedRows.slice(0, featuredLimit).map(rowToAgent),
+                    trendingAgents: rankedRows.slice(0, trendingLimit).map(rowToAgent),
+                    recentDukiEvents: activity.events,
+                })
+            } catch (err: any) {
+                console.error("GetQuickOverview ERROR:", err)
+                throw new ConnectError(err.message || String(err), Code.Internal)
+            }
         },
     })
 
@@ -482,7 +486,7 @@ export function registerGrpcRoutes(router: ConnectRouter) {
                 case ContractType.ALM_WORLD_MINTER: {
                     const events = await pullMinterEventsFromTx(req.chainEid, req.txHash)
                     await processMinterEvents(_db, events)
-                    resp.minterEvents = events.map(toDealDukiMintedProto)
+                    resp.minterEvents = events
                     break
                 }
                 default:
@@ -623,7 +627,6 @@ async function syncMinterContract(chainEid: number) {
 
     let totalIndexed = 0
     let lastProcessedBlock = fromBlock - 1n
-
     let lastEvtSeqProcessed = BigInt(syncState?.last_evt_seq ?? 0)
     for (let i = 0; i < MAX_CHUNKS_PER_REQUEST; i++) {
         if (fromBlock > headBlock) break
@@ -634,7 +637,7 @@ async function syncMinterContract(chainEid: number) {
         if (events.length > 0) {
             await processMinterEvents(_db, events)
             totalIndexed += events.length
-            lastEvtSeqProcessed = events[events.length - 1].evt_seq
+            lastEvtSeqProcessed = events[events.length - 1].evtSeq
         }
         lastProcessedBlock = toBlock
         fromBlock = toBlock + 1n
@@ -650,28 +653,12 @@ async function syncMinterContract(chainEid: number) {
 
 // ── Minter helpers ──────────────────────────────────────────────────────
 
-function toDealDukiMintedProto(evt: PulledDealDukiMintedEvent) {
-    return create(DealDukiMintedEventSchema, {
-        chainEid: evt.chainEid,
-        sequence: evt.evt_seq.toString(),
-        txHash: evt.txHash,
-        blockNumber: evt.blockNumber,
-        evtTime: evt.evtTime,
-        yangReceiver: evt.yangReceiver,
-        yinReceiver: evt.yinReceiver,
-        stablecoin: evt.stablecoin,
-        dukiAmount: evt.dukiAmount.toString(),
-        almYangAmount: evt.almYangAmount.toString(),
-        almYinAmount: evt.almYinAmount.toString(),
-        minter: evt.minter,
-        agentId: evt.agentId,
-    })
-}
+// toDealDukiMintedProto removed — pullMinterEventsFromTx now returns DealDukiMintedEvent directly.
 
-type DealCursor = { blockNumber: number; sequence: string }
+type DealCursor = { blockNumber: number; evtSeq: number }
 
 function encodeDealCursor(c: DealCursor): string {
-    return btoa(JSON.stringify({ b: c.blockNumber, s: c.sequence }))
+    return btoa(JSON.stringify({ b: c.blockNumber, s: c.evtSeq }))
         .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 }
 
@@ -680,8 +667,8 @@ function decodeDealCursor(raw: string | undefined | null): DealCursor | null {
     try {
         const padded = raw.replace(/-/g, '+').replace(/_/g, '/')
         const obj = JSON.parse(atob(padded))
-        if (typeof obj?.b !== 'number' || typeof obj?.s !== 'string') return null
-        return { blockNumber: obj.b, sequence: obj.s }
+        if (typeof obj?.b !== 'number' || typeof obj?.s !== 'number') return null
+        return { blockNumber: obj.b, evtSeq: obj.s }
     } catch {
         return null
     }
@@ -700,9 +687,7 @@ async function queryDeals(db: D1Database, args: QueryDealsArgs) {
     const cursor = decodeDealCursor(args.cursor)
 
     // Compound-key keyset pagination: rows strictly before (block_number, evt_seq)
-    // come next. block_number breaks ties between agents on the same chain;
-    // evt_seq as TEXT compares lexicographically — fine for the recent-window
-    // case where all sequences are roughly the same width.
+    // come next. block_number breaks ties between agents on the same chain.
     const where: string[] = []
     const params: unknown[] = []
     if (args.agentId !== null) {
@@ -719,7 +704,7 @@ async function queryDeals(db: D1Database, args: QueryDealsArgs) {
     }
     if (cursor) {
         where.push('(block_number < ? OR (block_number = ? AND evt_seq < ?))')
-        params.push(cursor.blockNumber, cursor.blockNumber, cursor.sequence)
+        params.push(cursor.blockNumber, cursor.blockNumber, cursor.evtSeq)
     }
 
     const sql = `
@@ -739,7 +724,7 @@ async function queryDeals(db: D1Database, args: QueryDealsArgs) {
     const events = pageRows.map((r: any) =>
         create(DealDukiMintedEventSchema, {
             chainEid: r.chain_eid,
-            sequence: String(r.evt_seq),
+            evtSeq: BigInt(r.evt_seq),
             txHash: r.tx_hash,
             blockNumber: BigInt(r.block_number),
             evtTime: BigInt(r.evt_time),
@@ -756,7 +741,7 @@ async function queryDeals(db: D1Database, args: QueryDealsArgs) {
 
     const last = pageRows[pageRows.length - 1]
     const nextCursor = hasMore && last
-        ? encodeDealCursor({ blockNumber: Number(last.block_number), sequence: String(last.evt_seq) })
+        ? encodeDealCursor({ blockNumber: Number(last.block_number), evtSeq: Number(last.evt_seq) })
         : ''
 
     return { events, nextCursor, hasMore }

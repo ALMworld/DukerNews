@@ -34,10 +34,16 @@ export function getOperatorAccount() {
  * Get the DukerNews chain config — where the contract is deployed.
  * This is always env-driven (one deployment per server instance).
  */
-export function getDukerChain() {
+export function getDukerChain(requestedChainId?: number) {
     // Cloudflare Workers (production) → xlayer; local dev → local
     // Explicit DUKER_NEWS_CHAIN env var always wins if set
-    const chainEnv = process.env.DUKER_NEWS_CHAIN || (process.env.NODE_ENV === 'production' ? 'xlayer' : 'local')
+    let chainEnv = process.env.DUKER_NEWS_CHAIN || (process.env.NODE_ENV === 'production' ? 'xlayer' : 'local')
+
+    if (requestedChainId) {
+        if (requestedChainId === SEPOLIA_CHAIN_ID) chainEnv = 'sepolia'
+        else if (requestedChainId === XLAYER_CHAIN_ID) chainEnv = 'xlayer'
+        else if (requestedChainId === LOCAL_CHAIN_ID) chainEnv = 'local'
+    }
 
     switch (chainEnv) {
         case 'sepolia':
@@ -102,8 +108,8 @@ export function getPaymentChainConfig(chainId: number) {
  * Get ready-to-use viem clients for the DukerNews chain.
  * Returns publicClient, walletClient (operator signer), and chain config.
  */
-export function getDukerChainClients() {
-    const duker = getDukerChain()
+export function getDukerChainClients(chainId?: number) {
+    const duker = getDukerChain(chainId)
     const { viemChain, rpcUrl } = duker
     const operatorAccount = getOperatorAccount()
 

@@ -1,39 +1,31 @@
 /**
  * minter-event-service.ts — Index AlmWorldDukiMinter `DealDukiMinted` events.
  *
- * Two ingest paths share the same INSERT (idempotent on `(chain_eid, sequence)`):
+ * Two ingest paths share the same INSERT (idempotent on `(chain_eid, evt_seq)`):
  *   1. BlockchainSyncService.NotifyTx — webhook after a successful mint tx.
  *   2. BlockchainSyncService.SyncEvents — eth_getLogs over a block range.
  *
- * Both paths produce `PulledDealDukiMintedEvent`s, which are the worker-internal
- * shape (bigint amounts) before being written to D1 as text.
+ * Both paths return proto-typed `DealDukiMintedEvent` objects directly.
+ * The d6 amount fields on the proto (dukiD6Amount, almYangD6Amount, almYinD6Amount)
+ * are computed here once (d18 / 1e12) and stored as INTEGER in D1 for fast queries.
  */
 
+import { create } from '@bufbuild/protobuf'
+import { DealDukiMintedEventSchema, type DealDukiMintedEvent } from '@repo/dukiregistry-apidefs'
 import { createPublicClient, http, decodeEventLog, type Log } from 'viem'
 import { getChainConfig, DEAL_DUKI_MINTED_ABI } from '../config'
 
-export interface PulledDealDukiMintedEvent {
-    chainEid: number
-    evt_seq: bigint         // contract's monotonic counter (uint256)
-    txHash: string
-    blockNumber: bigint
-    evtTime: bigint         // block timestamp (unix seconds)
+// 1e12 — converts d18 → d6 (drops last 12 decimal places)
+const D18_TO_D6 = 1_000_000_000_000n
 
-    yangReceiver: string
-    yinReceiver: string
-    stablecoin: string
-    dukiAmount: bigint
-    almYangAmount: bigint
-    almYinAmount: bigint
-    minter: string
-    agentId: bigint
-}
+// Re-export for callers that need the type (e.g. grpc.ts)
+export type { DealDukiMintedEvent }
 
 /** Pull DealDukiMinted logs from a single tx receipt. */
 export async function pullMinterEventsFromTx(
     chainEid: number,
     txHash: string,
-): Promise<PulledDealDukiMintedEvent[]> {
+): Promise<DealDukiMintedEvent[]> {
     const cfg = getChainConfig(chainEid)
     if (!cfg.almWorldDukiMinterAddress || cfg.almWorldDukiMinterAddress === '0x0000000000000000000000000000000000000000') {
         return []
@@ -47,7 +39,7 @@ export async function pullMinterEventsFromTx(
     const evtTime = block.timestamp
 
     const minterAddr = cfg.almWorldDukiMinterAddress.toLowerCase()
-    const events: PulledDealDukiMintedEvent[] = []
+    const events: DealDukiMintedEvent[] = []
 
     for (const log of receipt.logs) {
         if (log.address.toLowerCase() !== minterAddr) continue
@@ -62,7 +54,7 @@ export async function pullDealDukiMintedByBlockRange(
     chainEid: number,
     fromBlock: bigint,
     toBlock: bigint,
-): Promise<PulledDealDukiMintedEvent[]> {
+): Promise<DealDukiMintedEvent[]> {
     const cfg = getChainConfig(chainEid)
     if (!cfg.almWorldDukiMinterAddress || cfg.almWorldDukiMinterAddress === '0x0000000000000000000000000000000000000000') {
         return []
@@ -85,7 +77,7 @@ export async function pullDealDukiMintedByBlockRange(
         timestamps.set(bn, block.timestamp)
     }))
 
-    const events: PulledDealDukiMintedEvent[] = []
+    const events: DealDukiMintedEvent[] = []
     for (const log of logs) {
         const blockNumber = log.blockNumber ?? 0n
         const evtTime = timestamps.get(blockNumber) ?? 0n
@@ -107,7 +99,7 @@ function parseDealDukiMintedLog(
     txHash: string,
     blockNumber: bigint,
     evtTime: bigint,
-): PulledDealDukiMintedEvent | null {
+): DealDukiMintedEvent | null {
     try {
         const decoded = decodeEventLog({
             abi: DEAL_DUKI_MINTED_ABI,
@@ -115,71 +107,75 @@ function parseDealDukiMintedLog(
             topics: log.topics as any,
         })
         const args = decoded.args as any
-        return {
+        const dukiAmount    = args.dukiAmount    as bigint
+        const almYangAmount = args.almYangAmount  as bigint
+        const almYinAmount  = args.almYinAmount   as bigint
+
+        return create(DealDukiMintedEventSchema, {
             chainEid,
-            evt_seq: args.sequence as bigint,
+            evtSeq:           args.sequence as bigint,
             txHash,
             blockNumber,
             evtTime,
-            yangReceiver: (args.yangReceiver as string).toLowerCase(),
-            yinReceiver: (args.yinReceiver as string).toLowerCase(),
-            stablecoin: (args.stablecoin as string).toLowerCase(),
-            dukiAmount: args.dukiAmount as bigint,
-            almYangAmount: args.almYangAmount as bigint,
-            almYinAmount: args.almYinAmount as bigint,
-            minter: (args.minter as string).toLowerCase(),
-            agentId: args.agentId as bigint,
-        }
+            yangReceiver:     (args.yangReceiver as string).toLowerCase(),
+            yinReceiver:      (args.yinReceiver  as string).toLowerCase(),
+            stablecoin:       (args.stablecoin   as string).toLowerCase(),
+            dukiAmount:       dukiAmount.toString(),    // uint256 stays as string
+            almYangAmount:    almYangAmount.toString(),
+            almYinAmount:     almYinAmount.toString(),
+            dukiD6Amount:     dukiAmount    / D18_TO_D6,
+            almYangD6Amount:  almYangAmount / D18_TO_D6,
+            almYinD6Amount:   almYinAmount  / D18_TO_D6,
+            minter:           (args.minter as string).toLowerCase(),
+            agentId:          args.agentId as bigint,
+        })
     } catch {
         return null
     }
 }
 
-/** Persist a pulled event row. Idempotent on (chain_eid, evt_seq). */
+/** Persist a proto event row. Idempotent on (chain_eid, evt_seq). */
 export async function persistMinterEvent(
     db: D1Database,
-    evt: PulledDealDukiMintedEvent,
+    evt: DealDukiMintedEvent,
 ): Promise<void> {
     await db.prepare(`
         INSERT OR IGNORE INTO deal_duki_minted_events
         (chain_eid, evt_seq, tx_hash, block_number, evt_time,
          yang_receiver, yin_receiver, stablecoin,
          duki_amount, alm_yang_amount, alm_yin_amount,
+         duki_d6_amount, alm_yang_d6_amount, alm_yin_d6_amount,
          minter, agent_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
         evt.chainEid,
-        evt.evt_seq.toString(),
+        Number(evt.evtSeq),         // evt_seq INTEGER
         evt.txHash,
         Number(evt.blockNumber),
-        Number(evtTime(evt.evtTime)),
+        Number(evt.evtTime),
         evt.yangReceiver,
         evt.yinReceiver,
         evt.stablecoin,
-        evt.dukiAmount.toString(),
-        evt.almYangAmount.toString(),
-        evt.almYinAmount.toString(),
+        evt.dukiAmount,              // already string (uint256)
+        evt.almYangAmount,
+        evt.almYinAmount,
+        Number(evt.dukiD6Amount),    // d6 INTEGER
+        Number(evt.almYangD6Amount),
+        Number(evt.almYinD6Amount),
         evt.minter,
-        evt.agentId.toString(),
+        String(evt.agentId),         // agent_id TEXT
     ).run()
-}
-
-// SQLite INTEGER fits 53 bits cleanly; block timestamps live there comfortably
-// for centuries. Keep the conversion explicit so a stray `bigint` doesn't sneak
-// through into D1's binder.
-function evtTime(t: bigint): number {
-    return Number(t)
 }
 
 /** Persist many events in order. */
 export async function processMinterEvents(
     db: D1Database,
-    events: PulledDealDukiMintedEvent[],
+    events: DealDukiMintedEvent[],
 ): Promise<void> {
     for (const evt of events) await persistMinterEvent(db, evt)
 }
 
-// ── Sync state (last block per chain) ──
+// ── Sync state (last block per chain) ──────────────────────────────────────
 
 export async function getLastBlockNumber(
     db: D1Database,
@@ -212,7 +208,7 @@ export async function setLastBlockNumber(
         chainEid,
         contractAddress,
         Number(block),
-        Number(lastEvtSeq), // It's uint64
+        Number(lastEvtSeq),
         now
     ).run()
 }

@@ -111,10 +111,10 @@ async function wait(ms: number) {
 }
 
 /** Notify the dukernews webapp TxService — retries up to 4×. */
-async function notifyDukerNews(txHash: `0x${string}`, dukiBps = 0) {
+async function notifyDukerNews(txHash: `0x${string}`) {
     for (let i = 0; i < 4; i++) {
         try {
-            await txClient.notifyTx({ txHash, dukiBps })
+            await txClient.notifyTx({ txHash, chainEid: CHAIN_EID })
             return
         } catch (err) {
             if (i < 3) await wait(1000 * (i + 1))

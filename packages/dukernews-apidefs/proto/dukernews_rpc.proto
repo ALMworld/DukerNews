@@ -99,7 +99,7 @@ message PbGetCommentDeltaResp {
 
 message NotifyTxReq {
   string tx_hash    = 1;  // Transaction hash to fetch events from
-  int32  duki_bps   = 2;  // Optional: for JWT re-issue on USER_MINTED
+  uint32 chain_eid  = 2;  // Target chain EID to fetch events from
 }
 
 // ─── QueryService — read-only queries ────────────────────────
