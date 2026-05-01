@@ -30,6 +30,6 @@ message PbQuickOverviewResp {
 
 
 service DukiAggService {
-  // List agents ranked by credibility for a given timescale (default /market view).
+  // List agents ranked by reputation for a given timescale (default /market view).
   rpc GetQuickOverview(GetQuickOverviewReq) returns (PbQuickOverviewResp);
 }

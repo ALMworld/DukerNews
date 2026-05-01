@@ -32,7 +32,7 @@ function getAgentDescription(agent: { productType: number; name: string }): stri
 }
 
 export function FeaturedAgentCard({ entry }: FeaturedAgentCardProps) {
-    const { agent, credibility } = entry
+    const { agent, reputation } = entry
     const status = getAgentStatus(agent.agentId)
     const statusStyle = STATUS_STYLES[status]
     const snLabel = `SN: GEN-${String(agent.agentId).padStart(3, '0')}`
@@ -67,7 +67,7 @@ export function FeaturedAgentCard({ entry }: FeaturedAgentCardProps) {
                 </p>
                 <div className="mt-3 flex items-center justify-between">
                     <span className="text-xs font-bold tabular-nums text-primary">
-                        ↗ {credibility.toLocaleString()} <span className="text-[10px] font-normal text-muted-foreground">DUKI/W</span>
+                        ↗ {reputation.toLocaleString()} <span className="text-[10px] font-normal text-muted-foreground">DUKI/W</span>
                     </span>
                     <Link
                         to="/market_search"

@@ -12,7 +12,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file dukigen_registry.proto.
  */
 export const file_dukigen_registry: GenFile = /*@__PURE__*/
-  fileDesc("ChZkdWtpZ2VuX3JlZ2lzdHJ5LnByb3RvEgxkdWtpcmVnaXN0cnkitwIKE0FnZW50Q3JlYXRlZFBheWxvYWQSDAoEbmFtZRgBIAEoCRIRCglhZ2VudF91cmkYAiABKAkSFgoOYWdlbnRfdXJpX2hhc2gYAyABKAkSDwoHd2Vic2l0ZRgEIAEoCRISCgphcHByb3hfYnBzGAUgASgNEhoKEmNyZWRpYmlsaXR5X3dhbGxldBgGIAEoCRIvCgxwcm9kdWN0X3R5cGUYByABKA4yGS5kdWtpcmVnaXN0cnkuUHJvZHVjdFR5cGUSKQoJZHVraV90eXBlGAggASgOMhYuZHVraXJlZ2lzdHJ5LkR1a2lUeXBlEhIKCnBsZWRnZV91cmwYCSABKAkSNgoMb3BfY29udHJhY3RzGAogAygLMiAuZHVraXJlZ2lzdHJ5LkNoYWluQ29udHJhY3RFbnRyeSJDChZBZ2VudFVSSVVwZGF0ZWRQYXlsb2FkEhEKCWFnZW50X3VyaRgBIAEoCRIWCg5hZ2VudF91cmlfaGFzaBgCIAEoCSIuChhBZ2VudEFwcHJveEJwc1NldFBheWxvYWQSEgoKYXBwcm94X2JwcxgBIAEoDSKbAQoYQWdlbnRXb3Jrc0RhdGFTZXRQYXlsb2FkEi8KDHByb2R1Y3RfdHlwZRgBIAEoDjIZLmR1a2lyZWdpc3RyeS5Qcm9kdWN0VHlwZRIpCglkdWtpX3R5cGUYAiABKA4yFi5kdWtpcmVnaXN0cnkuRHVraVR5cGUSEgoKcGxlZGdlX3VybBgDIAEoCRIPCgd3ZWJzaXRlGAQgASgJIjUKF0FnZW50TWV0YWRhdGFTZXRQYXlsb2FkEgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoDCI+CiBBZ2VudENyZWRpYmlsaXR5V2FsbGV0U2V0UGF5bG9hZBIaChJjcmVkaWJpbGl0eV93YWxsZXQYASABKAkiRQoZQWdlbnRPcENvbnRyYWN0U2V0UGF5bG9hZBIRCgljaGFpbl9laWQYASABKA0SFQoNY29udHJhY3RfYWRkchgCIAEoCSKTBAoQRHVraWdlbkV2ZW50RGF0YRI6Cg1hZ2VudF9jcmVhdGVkGAEgASgLMiEuZHVraXJlZ2lzdHJ5LkFnZW50Q3JlYXRlZFBheWxvYWRIABJBChFhZ2VudF91cmlfdXBkYXRlZBgCIAEoCzIkLmR1a2lyZWdpc3RyeS5BZ2VudFVSSVVwZGF0ZWRQYXlsb2FkSAASRgoUYWdlbnRfYXBwcm94X2Jwc19zZXQYAyABKAsyJi5kdWtpcmVnaXN0cnkuQWdlbnRBcHByb3hCcHNTZXRQYXlsb2FkSAASRgoUYWdlbnRfd29ya3NfZGF0YV9zZXQYBCABKAsyJi5kdWtpcmVnaXN0cnkuQWdlbnRXb3Jrc0RhdGFTZXRQYXlsb2FkSAASQwoSYWdlbnRfbWV0YWRhdGFfc2V0GAUgASgLMiUuZHVraXJlZ2lzdHJ5LkFnZW50TWV0YWRhdGFTZXRQYXlsb2FkSAASVgocYWdlbnRfY3JlZGliaWxpdHlfd2FsbGV0X3NldBgGIAEoCzIuLmR1a2lyZWdpc3RyeS5BZ2VudENyZWRpYmlsaXR5V2FsbGV0U2V0UGF5bG9hZEgAEkgKFWFnZW50X29wX2NvbnRyYWN0X3NldBgHIAEoCzInLmR1a2lyZWdpc3RyeS5BZ2VudE9wQ29udHJhY3RTZXRQYXlsb2FkSABCCQoHcGF5bG9hZCL6AQoURHVraWdlblJlZ2lzdHJ5RXZlbnQSEQoJY2hhaW5fZWlkGAEgASgNEg8KB2V2dF9zZXEYAiABKAQSEAoIYWdlbnRfaWQYAyABKAQSMgoKZXZlbnRfdHlwZRgEIAEoDjIeLmR1a2lyZWdpc3RyeS5EdWtpZ2VuRXZlbnRUeXBlEgsKA2VnbxgFIAEoCRIQCghldnRfdGltZRgGIAEoBBIPCgd0eF9oYXNoGAcgASgJEhQKDGJsb2NrX251bWJlchgIIAEoBBIyCgpldmVudF9kYXRhGAkgASgLMh4uZHVraXJlZ2lzdHJ5LkR1a2lnZW5FdmVudERhdGEimwQKDER1a2lnZW5BZ2VudBIQCghhZ2VudF9pZBgBIAEoBBIMCgRuYW1lGAIgASgJEhEKCWFnZW50X3VyaRgDIAEoCRIWCg5hZ2VudF91cmlfaGFzaBgEIAEoCRINCgVvd25lchgFIAEoCRIYChBvcmlnaW5fY2hhaW5fZWlkGAYgASgNEhIKCmFwcHJveF9icHMYByABKA0SLwoMcHJvZHVjdF90eXBlGAggASgOMhkuZHVraXJlZ2lzdHJ5LlByb2R1Y3RUeXBlEikKCWR1a2lfdHlwZRgJIAEoDjIWLmR1a2lyZWdpc3RyeS5EdWtpVHlwZRISCgpwbGVkZ2VfdXJsGAogASgJEg8KB3dlYnNpdGUYCyABKAkSGgoSY3JlZGliaWxpdHlfd2FsbGV0GAwgASgJEjYKDG9wX2NvbnRyYWN0cxgNIAMoCzIgLmR1a2lyZWdpc3RyeS5DaGFpbkNvbnRyYWN0RW50cnkSFgoOY3JlZGliaWxpdHlfZDYYDiABKAQSOQoUY3JlZGliaWxpdHlfc25hcHNob3QYDyABKAsyGy5kdWtpcmVnaXN0cnkuU25hcHNob3RWYWx1ZRIbChNtaW50X2NyZWRpYmlsaXR5X2Q2GBAgASgEEj4KGW1pbnRfY3JlZGliaWxpdHlfc25hcHNob3QYESABKAsyGy5kdWtpcmVnaXN0cnkuU25hcHNob3RWYWx1ZSJcCg1TbmFwc2hvdFZhbHVlEhEKCWNoYWluX2VpZBgBIAEoDRIPCgdldnRfc2VxGAIgASgEEhAKCGQ2X3ZhbHVlGAMgASgEEhUKDXNuYXBzaG90X3RpbWUYBCABKAQq6QEKEER1a2lnZW5FdmVudFR5cGUSIgoeRFVLSUdFTl9FVkVOVF9UWVBFX1VOU1BFQ0lGSUVEEAASEQoNQUdFTlRfQ1JFQVRFRBABEhUKEUFHRU5UX1VSSV9VUERBVEVEEAISGAoUQUdFTlRfQVBQUk9YX0JQU19TRVQQAxIYChRBR0VOVF9XT1JLU19EQVRBX1NFVBAEEhYKEkFHRU5UX01FVEFEQVRBX1NFVBAFEiAKHEFHRU5UX0NSRURJQklMSVRZX1dBTExFVF9TRVQQBhIZChVBR0VOVF9PUF9DT05UUkFDVF9TRVQQB2IGcHJvdG8z", [file_dukigen_types]);
+  fileDesc("ChZkdWtpZ2VuX3JlZ2lzdHJ5LnByb3RvEgxkdWtpcmVnaXN0cnkitgIKE0FnZW50Q3JlYXRlZFBheWxvYWQSDAoEbmFtZRgBIAEoCRIRCglhZ2VudF91cmkYAiABKAkSFgoOYWdlbnRfdXJpX2hhc2gYAyABKAkSDwoHd2Vic2l0ZRgEIAEoCRISCgphcHByb3hfYnBzGAUgASgNEhkKEXJlcHV0YXRpb25fd2FsbGV0GAYgASgJEi8KDHByb2R1Y3RfdHlwZRgHIAEoDjIZLmR1a2lyZWdpc3RyeS5Qcm9kdWN0VHlwZRIpCglkdWtpX3R5cGUYCCABKA4yFi5kdWtpcmVnaXN0cnkuRHVraVR5cGUSEgoKcGxlZGdlX3VybBgJIAEoCRI2CgxvcF9jb250cmFjdHMYCiADKAsyIC5kdWtpcmVnaXN0cnkuQ2hhaW5Db250cmFjdEVudHJ5IkMKFkFnZW50VVJJVXBkYXRlZFBheWxvYWQSEQoJYWdlbnRfdXJpGAEgASgJEhYKDmFnZW50X3VyaV9oYXNoGAIgASgJIi4KGEFnZW50QXBwcm94QnBzU2V0UGF5bG9hZBISCgphcHByb3hfYnBzGAEgASgNIpsBChhBZ2VudFdvcmtzRGF0YVNldFBheWxvYWQSLwoMcHJvZHVjdF90eXBlGAEgASgOMhkuZHVraXJlZ2lzdHJ5LlByb2R1Y3RUeXBlEikKCWR1a2lfdHlwZRgCIAEoDjIWLmR1a2lyZWdpc3RyeS5EdWtpVHlwZRISCgpwbGVkZ2VfdXJsGAMgASgJEg8KB3dlYnNpdGUYBCABKAkiNQoXQWdlbnRNZXRhZGF0YVNldFBheWxvYWQSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgMIjwKH0FnZW50UmVwdXRhdGlvbldhbGxldFNldFBheWxvYWQSGQoRcmVwdXRhdGlvbl93YWxsZXQYASABKAkiRQoZQWdlbnRPcENvbnRyYWN0U2V0UGF5bG9hZBIRCgljaGFpbl9laWQYASABKA0SFQoNY29udHJhY3RfYWRkchgCIAEoCSKRBAoQRHVraWdlbkV2ZW50RGF0YRI6Cg1hZ2VudF9jcmVhdGVkGAEgASgLMiEuZHVraXJlZ2lzdHJ5LkFnZW50Q3JlYXRlZFBheWxvYWRIABJBChFhZ2VudF91cmlfdXBkYXRlZBgCIAEoCzIkLmR1a2lyZWdpc3RyeS5BZ2VudFVSSVVwZGF0ZWRQYXlsb2FkSAASRgoUYWdlbnRfYXBwcm94X2Jwc19zZXQYAyABKAsyJi5kdWtpcmVnaXN0cnkuQWdlbnRBcHByb3hCcHNTZXRQYXlsb2FkSAASRgoUYWdlbnRfd29ya3NfZGF0YV9zZXQYBCABKAsyJi5kdWtpcmVnaXN0cnkuQWdlbnRXb3Jrc0RhdGFTZXRQYXlsb2FkSAASQwoSYWdlbnRfbWV0YWRhdGFfc2V0GAUgASgLMiUuZHVraXJlZ2lzdHJ5LkFnZW50TWV0YWRhdGFTZXRQYXlsb2FkSAASVAobYWdlbnRfcmVwdXRhdGlvbl93YWxsZXRfc2V0GAYgASgLMi0uZHVraXJlZ2lzdHJ5LkFnZW50UmVwdXRhdGlvbldhbGxldFNldFBheWxvYWRIABJIChVhZ2VudF9vcF9jb250cmFjdF9zZXQYByABKAsyJy5kdWtpcmVnaXN0cnkuQWdlbnRPcENvbnRyYWN0U2V0UGF5bG9hZEgAQgkKB3BheWxvYWQi+gEKFER1a2lnZW5SZWdpc3RyeUV2ZW50EhEKCWNoYWluX2VpZBgBIAEoDRIPCgdldnRfc2VxGAIgASgEEhAKCGFnZW50X2lkGAMgASgEEjIKCmV2ZW50X3R5cGUYBCABKA4yHi5kdWtpcmVnaXN0cnkuRHVraWdlbkV2ZW50VHlwZRILCgNlZ28YBSABKAkSEAoIZXZ0X3RpbWUYBiABKAQSDwoHdHhfaGFzaBgHIAEoCRIUCgxibG9ja19udW1iZXIYCCABKAQSMgoKZXZlbnRfZGF0YRgJIAEoCzIeLmR1a2lyZWdpc3RyeS5EdWtpZ2VuRXZlbnREYXRhIuIDCgxEdWtpZ2VuQWdlbnQSEAoIYWdlbnRfaWQYASABKAQSDAoEbmFtZRgCIAEoCRIRCglhZ2VudF91cmkYAyABKAkSFgoOYWdlbnRfdXJpX2hhc2gYBCABKAkSDQoFb3duZXIYBSABKAkSGAoQb3JpZ2luX2NoYWluX2VpZBgGIAEoDRISCgphcHByb3hfYnBzGAcgASgNEi8KDHByb2R1Y3RfdHlwZRgIIAEoDjIZLmR1a2lyZWdpc3RyeS5Qcm9kdWN0VHlwZRIpCglkdWtpX3R5cGUYCSABKA4yFi5kdWtpcmVnaXN0cnkuRHVraVR5cGUSEgoKcGxlZGdlX3VybBgKIAEoCRIPCgd3ZWJzaXRlGAsgASgJEhkKEXJlcHV0YXRpb25fd2FsbGV0GAwgASgJEjYKDG9wX2NvbnRyYWN0cxgNIAMoCzIgLmR1a2lyZWdpc3RyeS5DaGFpbkNvbnRyYWN0RW50cnkSFQoNcmVwdXRhdGlvbl9kNhgOIAEoBBIeChZyZXB1dGF0aW9uX3NuYXBzaG90X21zGA8gASgEEhoKEm1pbnRfcmVwdXRhdGlvbl9kNhgQIAEoBBIjChttaW50X3JlcHV0YXRpb25fc25hcHNob3RfaWQYESABKAkq6AEKEER1a2lnZW5FdmVudFR5cGUSIgoeRFVLSUdFTl9FVkVOVF9UWVBFX1VOU1BFQ0lGSUVEEAASEQoNQUdFTlRfQ1JFQVRFRBABEhUKEUFHRU5UX1VSSV9VUERBVEVEEAISGAoUQUdFTlRfQVBQUk9YX0JQU19TRVQQAxIYChRBR0VOVF9XT1JLU19EQVRBX1NFVBAEEhYKEkFHRU5UX01FVEFEQVRBX1NFVBAFEh8KG0FHRU5UX1JFUFVUQVRJT05fV0FMTEVUX1NFVBAGEhkKFUFHRU5UX09QX0NPTlRSQUNUX1NFVBAHYgZwcm90bzM", [file_dukigen_types]);
 
 /**
  * Data for AGENT_CREATED (eventType=1)
@@ -46,9 +46,9 @@ export type AgentCreatedPayload = Message<"dukiregistry.AgentCreatedPayload"> & 
   approxBps: number;
 
   /**
-   * @generated from field: string credibility_wallet = 6;
+   * @generated from field: string reputation_wallet = 6;
    */
-  credibilityWallet: string;
+  reputationWallet: string;
 
   /**
    * @generated from field: dukiregistry.ProductType product_type = 7;
@@ -180,22 +180,22 @@ export const AgentMetadataSetPayloadSchema: GenMessage<AgentMetadataSetPayload> 
   messageDesc(file_dukigen_registry, 4);
 
 /**
- * Data for AGENT_CREDIBILITY_WALLET_SET (eventType=6)
+ * Data for AGENT_REPUTATION_WALLET_SET (eventType=6)
  *
- * @generated from message dukiregistry.AgentCredibilityWalletSetPayload
+ * @generated from message dukiregistry.AgentReputationWalletSetPayload
  */
-export type AgentCredibilityWalletSetPayload = Message<"dukiregistry.AgentCredibilityWalletSetPayload"> & {
+export type AgentReputationWalletSetPayload = Message<"dukiregistry.AgentReputationWalletSetPayload"> & {
   /**
-   * @generated from field: string credibility_wallet = 1;
+   * @generated from field: string reputation_wallet = 1;
    */
-  credibilityWallet: string;
+  reputationWallet: string;
 };
 
 /**
- * Describes the message dukiregistry.AgentCredibilityWalletSetPayload.
- * Use `create(AgentCredibilityWalletSetPayloadSchema)` to create a new message.
+ * Describes the message dukiregistry.AgentReputationWalletSetPayload.
+ * Use `create(AgentReputationWalletSetPayloadSchema)` to create a new message.
  */
-export const AgentCredibilityWalletSetPayloadSchema: GenMessage<AgentCredibilityWalletSetPayload> = /*@__PURE__*/
+export const AgentReputationWalletSetPayloadSchema: GenMessage<AgentReputationWalletSetPayload> = /*@__PURE__*/
   messageDesc(file_dukigen_registry, 5);
 
 /**
@@ -263,10 +263,10 @@ export type DukigenEventData = Message<"dukiregistry.DukigenEventData"> & {
     case: "agentMetadataSet";
   } | {
     /**
-     * @generated from field: dukiregistry.AgentCredibilityWalletSetPayload agent_credibility_wallet_set = 6;
+     * @generated from field: dukiregistry.AgentReputationWalletSetPayload agent_reputation_wallet_set = 6;
      */
-    value: AgentCredibilityWalletSetPayload;
-    case: "agentCredibilityWalletSet";
+    value: AgentReputationWalletSetPayload;
+    case: "agentReputationWalletSet";
   } | {
     /**
      * @generated from field: dukiregistry.AgentOpContractSetPayload agent_op_contract_set = 7;
@@ -409,9 +409,9 @@ export type DukigenAgent = Message<"dukiregistry.DukigenAgent"> & {
   website: string;
 
   /**
-   * @generated from field: string credibility_wallet = 12;
+   * @generated from field: string reputation_wallet = 12;
    */
-  credibilityWallet: string;
+  reputationWallet: string;
 
   /**
    * @generated from field: repeated dukiregistry.ChainContractEntry op_contracts = 13;
@@ -421,28 +421,28 @@ export type DukigenAgent = Message<"dukiregistry.DukigenAgent"> & {
   /**
    * these below fields are lazy view, 
    *
-   * the amount of ALM token amount in the credibility wallet, on chain
+   * the amount of ALM token amount in the reputation wallet, on chain
    *
-   * @generated from field: uint64 credibility_d6 = 14;
+   * @generated from field: uint64 reputation_d6 = 14;
    */
-  credibilityD6: bigint;
+  reputationD6: bigint;
 
   /**
-   * @generated from field: dukiregistry.SnapshotValue credibility_snapshot = 15;
+   * @generated from field: uint64 reputation_snapshot_ms = 15;
    */
-  credibilitySnapshot?: SnapshotValue;
+  reputationSnapshotMs: bigint;
 
   /**
    *
    *
-   * @generated from field: uint64 mint_credibility_d6 = 16;
+   * @generated from field: uint64 mint_reputation_d6 = 16;
    */
-  mintCredibilityD6: bigint;
+  mintReputationD6: bigint;
 
   /**
-   * @generated from field: dukiregistry.SnapshotValue mint_credibility_snapshot = 17;
+   * @generated from field: string mint_reputation_snapshot_id = 17;
    */
-  mintCredibilitySnapshot?: SnapshotValue;
+  mintReputationSnapshotId: string;
 };
 
 /**
@@ -451,38 +451,6 @@ export type DukigenAgent = Message<"dukiregistry.DukigenAgent"> & {
  */
 export const DukigenAgentSchema: GenMessage<DukigenAgent> = /*@__PURE__*/
   messageDesc(file_dukigen_registry, 9);
-
-/**
- * @generated from message dukiregistry.SnapshotValue
- */
-export type SnapshotValue = Message<"dukiregistry.SnapshotValue"> & {
-  /**
-   * @generated from field: uint32 chain_eid = 1;
-   */
-  chainEid: number;
-
-  /**
-   * @generated from field: uint64 evt_seq = 2;
-   */
-  evtSeq: bigint;
-
-  /**
-   * @generated from field: uint64 d6_value = 3;
-   */
-  d6Value: bigint;
-
-  /**
-   * @generated from field: uint64 snapshot_time = 4;
-   */
-  snapshotTime: bigint;
-};
-
-/**
- * Describes the message dukiregistry.SnapshotValue.
- * Use `create(SnapshotValueSchema)` to create a new message.
- */
-export const SnapshotValueSchema: GenMessage<SnapshotValue> = /*@__PURE__*/
-  messageDesc(file_dukigen_registry, 10);
 
 /**
  * ── DukigenRegistry Event Types ─────────────────────────────────────────
@@ -522,9 +490,9 @@ export enum DukigenEventType {
   AGENT_METADATA_SET = 5,
 
   /**
-   * @generated from enum value: AGENT_CREDIBILITY_WALLET_SET = 6;
+   * @generated from enum value: AGENT_REPUTATION_WALLET_SET = 6;
    */
-  AGENT_CREDIBILITY_WALLET_SET = 6,
+  AGENT_REPUTATION_WALLET_SET = 6,
 
   /**
    * @generated from enum value: AGENT_OP_CONTRACT_SET = 7;

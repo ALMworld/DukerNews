@@ -38,6 +38,11 @@ message DealDukiMintedEvent {
   uint64 duki_d6_amount     = 14;
   uint64 alm_yang_d6_amount = 15;
   uint64 alm_yin_d6_amount  = 16;
+
+  // Compact sortable id: hex-packed (evt_time:08x)(chain_eid:04x)(evt_seq:016x).
+  // Lexicographic order = (evt_time, chain_eid, evt_seq) so events near the
+  // same time across chains cluster naturally. 28 chars total, no separators.
+  string id              = 17;
 }
 
 // ── Webhook: external service tells the worker about a tx that contains

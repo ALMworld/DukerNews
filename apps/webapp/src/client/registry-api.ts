@@ -186,7 +186,7 @@ export type Timescale = 'all' | 'year' | 'month' | 'week'
 
 export type RankedAgentEntry = {
     agent: DukigenAgent
-    credibility: number
+    reputation: number
 }
 
 export type MarketOverview = {
@@ -209,8 +209,8 @@ export type RankedAgentsPage = {
 }
 
 /**
- * Fetch one page of agents ranked by credibility for the given timescale.
- * The server returns rows already ordered (credibility DESC, agentId DESC) and
+ * Fetch one page of agents ranked by reputation for the given timescale.
+ * The server returns rows already ordered (reputation DESC, agentId DESC) and
  * supplies an opaque cursor for the next page — pass the cursor back verbatim.
  */
 export async function listAgentsRanked(
@@ -223,7 +223,7 @@ export async function listAgentsRanked(
         return {
             items: resp.items.map((it) => ({
                 agent: it.agent!,
-                credibility: Number(it.credibility),
+                reputation: Number(it.reputation),
             })),
             nextCursor: resp.nextCursor,
             hasMore: Boolean(resp.hasMore),
@@ -245,10 +245,10 @@ export async function getQuickOverview(opts: {
         return {
             featuredAgents: resp.featuredAgents
                 .slice(0, featuredLimit)
-                .map((it) => ({ agent: it, credibility: Number(it.credibilityD6) })),
+                .map((it) => ({ agent: it, reputation: Number(it.reputationD6) })),
             trendingAgents: resp.trendingAgents
                 .slice(0, trendingLimit)
-                .map((it) => ({ agent: it, credibility: Number(it.credibilityD6) })),
+                .map((it) => ({ agent: it, reputation: Number(it.reputationD6) })),
             marketActivity: resp.recentDukiEvents.slice(0, opts.activityLimit ?? resp.recentDukiEvents.length),
             summary: {
                 totalAgents: resp.totalAgents,
@@ -303,13 +303,13 @@ async function loadMarketEntriesFallback(): Promise<Array<RankedAgentEntry>> {
         page += 1
     }
 
-    const credibility = new Map<string, number>()
+    const reputation = new Map<string, number>()
     let cursor = ''
     let rankedLoaded = 0
     do {
         const resp = await listAgentsRanked('all', cursor, pageSize)
         for (const item of resp.items) {
-            credibility.set(String(item.agent.agentId), item.credibility)
+            reputation.set(String(item.agent.agentId), item.reputation)
         }
         rankedLoaded += resp.items.length
         cursor = resp.hasMore ? resp.nextCursor : ''
@@ -319,9 +319,9 @@ async function loadMarketEntriesFallback(): Promise<Array<RankedAgentEntry>> {
         .slice(0, maxItems)
         .map((agent) => ({
             agent,
-            credibility: credibility.get(String(agent.agentId)) ?? 0,
+            reputation: reputation.get(String(agent.agentId)) ?? 0,
         }))
-        .sort((a, b) => (b.credibility - a.credibility) || (Number(b.agent.agentId) - Number(a.agent.agentId)))
+        .sort((a, b) => (b.reputation - a.reputation) || (Number(b.agent.agentId) - Number(a.agent.agentId)))
 }
 
 // ── AlmWorldMinterService (DealDukiMinted feed) ─────────────────────────

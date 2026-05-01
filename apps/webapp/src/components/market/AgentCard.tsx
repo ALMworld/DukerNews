@@ -18,15 +18,15 @@ interface AgentCardProps {
 }
 
 export function AgentCard({ entry }: AgentCardProps) {
-    const { agent, credibility } = entry
+    const { agent, reputation } = entry
     const productLabel = PRODUCT_LABELS[agent.productType] ?? 'Agent'
     const snId = `SN-${String(agent.agentId).padStart(5, '0')}`
     const chainName = getChainNameForEid(agent.originChainEid)
     const keyword = productLabel.replace(/\s+Product$/i, '')
 
-    // Price-style metric: credibility score
-    const score = credibility > 0
-        ? (credibility / 100).toFixed(2)
+    // Price-style metric: reputation score
+    const score = reputation > 0
+        ? (reputation / 100).toFixed(2)
         : (Number(agent.agentId) % 500 / 10).toFixed(2)
     const bps = agent.approxBps
 

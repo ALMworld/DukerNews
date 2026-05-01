@@ -2,8 +2,8 @@
  * dukigen-event-service.ts — Persist DukigenRegistry events and materialize agents.
  */
 
-import type { DukigenRegistryEvent, SnapshotValue } from '@repo/dukiregistry-apidefs'
-import { DukigenEventType, DukigenEventDataSchema, SnapshotValueSchema } from '@repo/dukiregistry-apidefs'
+import type { DukigenRegistryEvent } from '@repo/dukiregistry-apidefs'
+import { DukigenEventType, DukigenEventDataSchema } from '@repo/dukiregistry-apidefs'
 import { toBinary } from '@bufbuild/protobuf'
 
 /**
@@ -44,7 +44,7 @@ export async function materializeAgent(db: D1Database, evt: DukigenRegistryEvent
             const agentUriHash = d.agentUriHash ?? ''
             const website = d.website ?? ''
             const approxBps = Number(d.approxBps ?? 0)
-            const credibilityWallet = d.credibilityWallet ?? evt.ego
+            const reputationWallet = d.reputationWallet ?? evt.ego
             const productType = Number(d.productType ?? 0)
             const dukiType = Number(d.dukiType ?? 0)
             const pledgeUrl = d.pledgeUrl ?? ''
@@ -56,8 +56,9 @@ export async function materializeAgent(db: D1Database, evt: DukigenRegistryEvent
             await db.prepare(`
                 INSERT OR REPLACE INTO dukigen_agents
                 (agent_id, name, agent_uri, agent_uri_hash, owner, chain_eid,
-                 approx_bps, product_type, duki_type, pledge_url, website, credibility_wallet,
-                 op_contracts, credibility_d6, credibility_snapshot, mint_credibility_d6, mint_credibility_snapshot,
+                 approx_bps, product_type, duki_type, pledge_url, website, reputation_wallet,
+                 op_contracts, reputation_d6, reputation_snapshot_ms,
+                 mint_reputation_d6, mint_reputation_snapshot_id,
                  created_at, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             `).bind(
@@ -72,12 +73,12 @@ export async function materializeAgent(db: D1Database, evt: DukigenRegistryEvent
                 dukiType,
                 pledgeUrl,
                 website,
-                credibilityWallet,
+                reputationWallet,
                 JSON.stringify(opContracts),
                 0,
-                null,
                 0,
-                null,
+                0,
+                '',
                 Number(evt.evtTime),
                 now,
             ).run()
@@ -123,14 +124,14 @@ export async function materializeAgent(db: D1Database, evt: DukigenRegistryEvent
             break
         }
 
-        case DukigenEventType.AGENT_CREDIBILITY_WALLET_SET: {
-            if (evt.eventData?.payload.case !== 'agentCredibilityWalletSet') break
-            const credibilityWallet = evt.eventData.payload.value.credibilityWallet ?? ''
+        case DukigenEventType.AGENT_REPUTATION_WALLET_SET: {
+            if (evt.eventData?.payload.case !== 'agentReputationWalletSet') break
+            const reputationWallet = evt.eventData.payload.value.reputationWallet ?? ''
 
             await db.prepare(`
-                UPDATE dukigen_agents SET credibility_wallet = ?, updated_at = ?
+                UPDATE dukigen_agents SET reputation_wallet = ?, updated_at = ?
                 WHERE agent_id = ?
-            `).bind(credibilityWallet, now, evt.agentId.toString()).run()
+            `).bind(reputationWallet, now, evt.agentId.toString()).run()
             break
         }
 
@@ -173,28 +174,4 @@ export async function processDukigenEvents(db: D1Database, events: DukigenRegist
         await persistDukigenEvent(db, evt)
         await materializeAgent(db, evt)
     }
-}
-
-export async function updateAgentCredibility(
-    db: D1Database,
-    agentId: string,
-    credibilityD6: bigint,
-    credibilitySnapshot: SnapshotValue | null,
-    mintCredibilityD6: bigint,
-    mintCredibilitySnapshot: SnapshotValue | null,
-): Promise<void> {
-    await db.prepare(`
-        UPDATE dukigen_agents
-        SET credibility_d6 = ?, credibility_snapshot = ?,
-            mint_credibility_d6 = ?, mint_credibility_snapshot = ?,
-            updated_at = ?
-        WHERE agent_id = ?
-    `).bind(
-        Number(credibilityD6),
-        credibilitySnapshot ? toBinary(SnapshotValueSchema, credibilitySnapshot) : null,
-        Number(mintCredibilityD6),
-        mintCredibilitySnapshot ? toBinary(SnapshotValueSchema, mintCredibilitySnapshot) : null,
-        Math.floor(Date.now() / 1000),
-        agentId,
-    ).run()
 }

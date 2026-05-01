@@ -37,7 +37,7 @@ export function registerDukigenRegistryService(router: ConnectRouter) {
                 dukiType: row.duki_type,
                 pledgeUrl: row.pledge_url,
                 website: row.website ?? '',
-                credibilityWallet: row.credibility_wallet ?? '',
+                reputationWallet: row.reputation_wallet ?? '',
                 opContracts: parseOpContractsRow(row.op_contracts),
             })
         },
@@ -70,7 +70,7 @@ export function registerDukigenRegistryService(router: ConnectRouter) {
                         opContracts: parseOpContractsRow(row.op_contracts),
                         pledgeUrl: row.pledge_url,
                         website: row.website ?? '',
-                        credibilityWallet: row.credibility_wallet ?? '',
+                        reputationWallet: row.reputation_wallet ?? '',
                     })
                 ),
             })
@@ -81,30 +81,30 @@ export function registerDukigenRegistryService(router: ConnectRouter) {
             const limit = Math.min(100, Math.max(1, req.limit || 50))
             const cursor = decodeRankCursor(req.cursor)
 
-            // Compound-key keyset pagination: rows with (credibility, agent_id)
+            // Compound-key keyset pagination: rows with (reputation, agent_id)
             // strictly less than the cursor's pair come next. agent_id breaks
-            // credibility ties so duplicates and skips are impossible across
+            // reputation ties so duplicates and skips are impossible across
             // pages, even when many agents share the same score.
             const sql = cursor
-                ? `SELECT a.*, m.credibility AS metric_credibility
+                ? `SELECT a.*, m.reputation AS metric_reputation
                FROM   dukigen_agent_metrics m
                JOIN   dukigen_agents a ON a.agent_id = m.agent_id
                WHERE  m.timescale = ?
-                 AND  (m.credibility < ?
-                       OR (m.credibility = ? AND m.agent_id < ?))
-               ORDER BY m.credibility DESC, m.agent_id DESC
+                 AND  (m.reputation < ?
+                       OR (m.reputation = ? AND m.agent_id < ?))
+               ORDER BY m.reputation DESC, m.agent_id DESC
                LIMIT ?`
-                : `SELECT a.*, m.credibility AS metric_credibility
+                : `SELECT a.*, m.reputation AS metric_reputation
                FROM   dukigen_agent_metrics m
                JOIN   dukigen_agents a ON a.agent_id = m.agent_id
                WHERE  m.timescale = ?
-               ORDER BY m.credibility DESC, m.agent_id DESC
+               ORDER BY m.reputation DESC, m.agent_id DESC
                LIMIT ?`
 
             const stmt = cursor
                 ? _db.prepare(sql).bind(
                     timescale,
-                    cursor.credibility, cursor.credibility, cursor.agentId,
+                    cursor.reputation, cursor.reputation, cursor.agentId,
                     limit + 1,
                 )
                 : _db.prepare(sql).bind(timescale, limit + 1)
@@ -119,7 +119,7 @@ export function registerDukigenRegistryService(router: ConnectRouter) {
             const last = pageRows[pageRows.length - 1]
             const nextCursor = hasMore && last
                 ? encodeRankCursor({
-                    credibility: Number(last.metric_credibility ?? 0),
+                    reputation: Number(last.metric_reputation ?? 0),
                     agentId: String(last.agent_id),
                 })
                 : ''

@@ -22,7 +22,7 @@ import { MARKET_PAGE_SIZE, MAX_MARKET_PAGES, FETCH_PAGE_SIZE, MAX_MARKET_ITEMS }
 import type { DukigenAgent, RankedAgentEntry } from '../client/registry-api'
 import { getDukigenAgents, listAgentsRanked } from '../client/registry-api'
 
-export type MarketSort = 'cred_desc' | 'cred_asc' | 'created_desc' | 'created_asc'
+export type MarketSort = 'rep_desc' | 'rep_asc' | 'created_desc' | 'created_asc'
 type ProductFilter = 'all' | '1' | '2' | '3'
 type DukiFilter = 'all' | '1' | '2'
 
@@ -46,8 +46,8 @@ export const Route = createFileRoute('/market_search')({
 })
 
 const SORT_OPTIONS: Array<{ value: MarketSort; label: string }> = [
-    { value: 'cred_desc', label: 'Credibility Score' },
-    { value: 'cred_asc', label: 'Credibility (Low→High)' },
+    { value: 'rep_desc', label: 'Reputation Score' },
+    { value: 'rep_asc', label: 'Reputation (Low→High)' },
     { value: 'created_desc', label: 'Newest First' },
     { value: 'created_asc', label: 'Oldest First' },
 ]
@@ -67,7 +67,7 @@ const DUKI_OPTIONS: Array<{ value: DukiFilter; label: string }> = [
 
 function MarketSearchPage() {
     const params = Route.useSearch()
-    const [sort, setSort] = useState<MarketSort>(params.sort ?? 'cred_desc')
+    const [sort, setSort] = useState<MarketSort>(params.sort ?? 'rep_desc')
     const [search, setSearch] = useState(params.q ?? '')
     const [product, setProduct] = useState<ProductFilter>(params.product ?? 'all')
     const [duki, setDuki] = useState<DukiFilter>(params.duki ?? 'all')
@@ -314,25 +314,25 @@ async function loadMarketEntries(): Promise<Array<RankedAgentEntry>> {
         page += 1
     }
 
-    const credibility = new Map<string, number>()
+    const reputation = new Map<string, number>()
     try {
         let cursor = ''
         let rankedLoaded = 0
         do {
             const resp = await listAgentsRanked('all', cursor, FETCH_PAGE_SIZE)
             for (const item of resp.items) {
-                credibility.set(String(item.agent.agentId), item.credibility)
+                reputation.set(String(item.agent.agentId), item.reputation)
             }
             rankedLoaded += resp.items.length
             cursor = resp.hasMore ? resp.nextCursor : ''
         } while (cursor && rankedLoaded < MAX_MARKET_ITEMS)
     } catch {
-        // ListAgentsRanked may 500 — degrade gracefully with zero credibility
+        // ListAgentsRanked may 500 — degrade gracefully with zero reputation
     }
 
     return agents.slice(0, MAX_MARKET_ITEMS).map((agent) => ({
         agent,
-        credibility: credibility.get(String(agent.agentId)) ?? 0,
+        reputation: reputation.get(String(agent.agentId)) ?? 0,
     }))
 }
 
@@ -343,8 +343,8 @@ function compareEntries(a: RankedAgentEntry, b: RankedAgentEntry, sort: MarketSo
     const bId = Number(b.agent.agentId)
     if (sort === 'created_asc') return aId - bId
     if (sort === 'created_desc') return bId - aId
-    if (sort === 'cred_asc') return (a.credibility - b.credibility) || (aId - bId)
-    return (b.credibility - a.credibility) || (bId - aId)
+    if (sort === 'rep_asc') return (a.reputation - b.reputation) || (aId - bId)
+    return (b.reputation - a.reputation) || (bId - aId)
 }
 
 function searchableText(agent: DukigenAgent): string {

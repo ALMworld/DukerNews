@@ -14,6 +14,7 @@ import { create } from '@bufbuild/protobuf'
 import { DealDukiMintedEventSchema, type DealDukiMintedEvent } from '@repo/dukiregistry-apidefs'
 import { createPublicClient, http, decodeEventLog, type Log } from 'viem'
 import { getChainConfig, DEAL_DUKI_MINTED_ABI } from '../config'
+import { buildDealId } from '../routes/shared'
 
 // 1e12 — converts d18 → d6 (drops last 12 decimal places)
 const D18_TO_D6 = 1_000_000_000_000n
@@ -111,9 +112,11 @@ function parseDealDukiMintedLog(
         const almYangAmount = args.almYangAmount  as bigint
         const almYinAmount  = args.almYinAmount   as bigint
 
+        const evtSeq = args.sequence as bigint
         return create(DealDukiMintedEventSchema, {
+            id:               buildDealId(evtTime, chainEid, evtSeq),
             chainEid,
-            evtSeq:           args.sequence as bigint,
+            evtSeq,
             txHash,
             blockNumber,
             evtTime,
@@ -141,15 +144,16 @@ export async function persistMinterEvent(
 ): Promise<void> {
     await db.prepare(`
         INSERT OR IGNORE INTO deal_duki_minted_events
-        (chain_eid, evt_seq, tx_hash, block_number, evt_time,
+        (chain_eid, evt_seq, id, tx_hash, block_number, evt_time,
          yang_receiver, yin_receiver, stablecoin,
          duki_amount, alm_yang_amount, alm_yin_amount,
          duki_d6_amount, alm_yang_d6_amount, alm_yin_d6_amount,
          minter, agent_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
         evt.chainEid,
         Number(evt.evtSeq),         // evt_seq INTEGER
+        evt.id,
         evt.txHash,
         Number(evt.blockNumber),
         Number(evt.evtTime),

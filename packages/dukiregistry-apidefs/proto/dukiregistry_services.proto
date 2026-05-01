@@ -52,8 +52,8 @@ message GetAgentsResp {
 // ── Ranked listing (default /market view) ──
 //
 // Server joins dukigen_agent_metrics ⨝ dukigen_agents internally and returns
-// the page already ordered by credibility desc for the requested timescale.
-// Cursor is opaque (server-encoded compound key over credibility + agent_id)
+// the page already ordered by reputation desc for the requested timescale.
+// Cursor is opaque (server-encoded compound key over reputation + agent_id)
 // so callers don't need to know the schema to paginate.
 message ListAgentsRankedReq {
   string timescale = 1;   // 'all' | 'year' | 'month' | 'week' — empty defaults to 'all'
@@ -63,7 +63,7 @@ message ListAgentsRankedReq {
 
 message RankedAgent {
   DukigenAgent agent       = 1;
-  uint64       credibility = 2;
+  uint64       reputation = 2;
 }
 
 message ListAgentsRankedResp {
@@ -94,6 +94,6 @@ service DukigenRegistryService {
   // List agents (paginated, sorted by created_at DESC).
   rpc GetAgents(GetAgentsReq) returns (GetAgentsResp);
 
-  // List agents ranked by credibility for a given timescale (default /market view).
+  // List agents ranked by reputation for a given timescale (default /market view).
   rpc ListAgentsRanked(ListAgentsRankedReq) returns (ListAgentsRankedResp);
 }

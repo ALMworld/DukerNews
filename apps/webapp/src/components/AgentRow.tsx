@@ -17,13 +17,13 @@ const FAV = '#e11d48'
 
 export type AgentRowProps = {
     agent: DukigenAgent
-    /** When undefined, the credibility column renders empty — used by the
+    /** When undefined, the reputation column renders empty — used by the
      *  favorites view where ranking is not available. */
-    credibility?: number
+    reputation?: number
     rank?: number
 }
 
-export function AgentRow({ agent, credibility, rank }: AgentRowProps) {
+export function AgentRow({ agent, reputation, rank }: AgentRowProps) {
     const [favorited, setFavorited] = useState<boolean>(() => isFavoritedFn(agent.agentId))
     const ProductIcon = PRODUCT_ICONS[agent.productType as ProductType]
     const DukiIcon = DUKI_ICONS[agent.dukiType as DukiType]
@@ -141,7 +141,7 @@ export function AgentRow({ agent, credibility, rank }: AgentRowProps) {
                 </div>
             </div>
 
-            {/* Credibility — right column, fixed slot keeps rows aligned */}
+            {/* Reputation — right column, fixed slot keeps rows aligned */}
             <div style={{
                 textAlign: 'right',
                 color: 'var(--duki-400)',
@@ -150,7 +150,7 @@ export function AgentRow({ agent, credibility, rank }: AgentRowProps) {
                 fontSize: 13,
                 minWidth: 64,
             }}>
-                {credibility !== undefined ? credibility.toLocaleString() : ''}
+                {reputation !== undefined ? reputation.toLocaleString() : ''}
             </div>
         </article>
     )

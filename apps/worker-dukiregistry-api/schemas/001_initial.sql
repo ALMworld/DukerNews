@@ -66,12 +66,12 @@ CREATE TABLE IF NOT EXISTS dukigen_agents (
     duki_type INTEGER NOT NULL DEFAULT 0,
     pledge_url TEXT NOT NULL DEFAULT '',
     website TEXT NOT NULL DEFAULT '',
-    credibility_wallet TEXT NOT NULL DEFAULT '',
+    reputation_wallet TEXT NOT NULL DEFAULT '',
     op_contracts TEXT NOT NULL DEFAULT '[]', -- JSON array of {chainEid, contractAddr}
-    credibility_d6 INTEGER NOT NULL DEFAULT 0,
-    credibility_snapshot BLOB,
-    mint_credibility_d6 INTEGER NOT NULL DEFAULT 0,
-    mint_credibility_snapshot BLOB,
+    reputation_d6 INTEGER NOT NULL DEFAULT 0,
+    reputation_snapshot_ms INTEGER NOT NULL DEFAULT 0,
+    mint_reputation_d6 INTEGER NOT NULL DEFAULT 0,
+    mint_reputation_snapshot_id TEXT NOT NULL DEFAULT '',
     created_at INTEGER NOT NULL,
     updated_at INTEGER NOT NULL
 );
@@ -94,23 +94,23 @@ CREATE INDEX IF NOT EXISTS idx_dukigen_events_tx ON dukigen_registry_events (tx_
 
 CREATE INDEX IF NOT EXISTS idx_dukigen_events_agent ON dukigen_registry_events (agent_id);
 
--- DukigenAgent credibility metrics, windowed by timescale.
+-- DukigenAgent reputation metrics, windowed by timescale.
 -- One row per (agent_id, timescale). Sorted reads are cheap because the
--- composite index covers (timescale, credibility DESC, agent_id DESC) which
+-- composite index covers (timescale, reputation DESC, agent_id DESC) which
 -- is exactly the cursor key used by ListAgentsRanked.
 --
--- Credibility is treated as an opaque integer score; the producer (whether
+-- Reputation is treated as an opaque integer score; the producer (whether
 -- an indexer, a periodic job, or a manual admin script) is responsible for
 -- choosing the units. The /market UI just sorts by it.
 CREATE TABLE IF NOT EXISTS dukigen_agent_metrics (
     agent_id TEXT NOT NULL, -- matches dukigen_agents.agent_id (uint256 as text)
     timescale TEXT NOT NULL, -- 'all' | 'year' | 'month' | 'week'
-    credibility INTEGER NOT NULL DEFAULT 0,
+    reputation INTEGER NOT NULL DEFAULT 0,
     updated_at INTEGER NOT NULL,
     PRIMARY KEY (agent_id, timescale)
 );
 
-CREATE INDEX IF NOT EXISTS idx_dukigen_agent_metrics_rank ON dukigen_agent_metrics (timescale, credibility DESC, agent_id DESC);
+CREATE INDEX IF NOT EXISTS idx_dukigen_agent_metrics_rank ON dukigen_agent_metrics (timescale, reputation DESC, agent_id DESC);
 
 -- AlmWorldDukiMinter event indexer.
 -- One row per DealDukiMinted log. Composite PK (chain_eid, evt_seq) — `evt_seq`
@@ -119,6 +119,10 @@ CREATE INDEX IF NOT EXISTS idx_dukigen_agent_metrics_rank ON dukigen_agent_metri
 CREATE TABLE IF NOT EXISTS deal_duki_minted_events (
     chain_eid INTEGER NOT NULL,
     evt_seq INTEGER NOT NULL, -- uint64, per-chain monotonic
+    -- Compact sortable id: hex (evt_time:08x)(chain_eid:04x)(evt_seq:016x).
+    -- Lexicographic order = (evt_time, chain_eid, evt_seq) — events near the
+    -- same time across chains cluster naturally.
+    id TEXT NOT NULL,
     tx_hash TEXT NOT NULL,
     block_number INTEGER NOT NULL,
     evt_time INTEGER NOT NULL, -- block timestamp (unix seconds)
@@ -135,6 +139,9 @@ CREATE TABLE IF NOT EXISTS deal_duki_minted_events (
     agent_id TEXT NOT NULL, -- 0 for direct (non-agent) mints
     PRIMARY KEY (chain_eid, evt_seq)
 );
+
+-- Cross-chain time-ordered scans + watermarks for dukigen_metrics task.
+CREATE UNIQUE INDEX IF NOT EXISTS idx_deal_duki_minted_id ON deal_duki_minted_events (id);
 
 -- Agent detail page filter (newest first).
 CREATE INDEX IF NOT EXISTS idx_deal_duki_minted_agent ON deal_duki_minted_events (agent_id, block_number DESC, evt_seq DESC);
@@ -155,23 +162,37 @@ CREATE TABLE IF NOT EXISTS sync_state (
 );
 
 -- ═══════════════════════════════════════════════════════════
---  DUKI METRICS — periodic snapshot per agent per chain
+--  DUKIGEN METRICS — periodic mint snapshot per agent per chain
 -- ═══════════════════════════════════════════════════════════
--- Materialised sum of duki_d6_amount from deal_duki_minted_events,
--- partitioned by (chain_eid, contract_addr, agent_id, metric_name).
--- last_evt_seq is the highest evt_seq processed so far (TEXT = uint256).
+-- Materialised sum of duki_d6_amount from deal_duki_minted_events.
+-- One row per (chain_eid, agent_id). Per-chain rollup → minter_overview;
+-- distinct agent_id count → total_agents in /market quick overview.
+-- mint_reputation_snapshot_id is the highest deal id (sortable text id from
+-- deal_duki_minted_events.id) included so far — acts as the watermark for
+-- incremental updates.
 CREATE TABLE IF NOT EXISTS dukigen_metrics (
-    agent_id TEXT NOT NULL,
     chain_eid INTEGER NOT NULL,
+    agent_id TEXT NOT NULL,
     contract_addr TEXT NOT NULL COLLATE NOCASE,
-    mint_credibility_d6 INTEGER NOT NULL DEFAULT 0,
-    mint_credibility_snapshot_id text NOT NULL,
-    last_evt_seq INTEGER NOT NULL DEFAULT 0, -- highest evt_seq included
+    total_d6_amount INTEGER NOT NULL DEFAULT 0, -- accumulated duki_d6_amount
+    transactions_count INTEGER NOT NULL DEFAULT 0, -- accumulated count of deals
+    mint_reputation_snapshot_id TEXT NOT NULL DEFAULT '', -- watermark: max deal id included
     snapshot_ms INTEGER NOT NULL, -- unix milliseconds
-    PRIMARY KEY (chain_eid, contract_addr, agent_id, metric_name)
+    PRIMARY KEY (chain_eid, agent_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_duki_metrics_agent ON duki_metrics (agent_id, chain_eid);
+-- Cross-chain agent rollup (sum total_d6_amount across chains for one agent).
+CREATE INDEX IF NOT EXISTS idx_dukigen_metrics_agent ON dukigen_metrics (agent_id);
+
+-- ═══════════════════════════════════════════════════════════
+--  KV CONFIG — generic JSON config (featured_agents, trending_agents, …)
+-- ═══════════════════════════════════════════════════════════
+CREATE TABLE IF NOT EXISTS kv_config (
+    cfg_key TEXT NOT NULL PRIMARY KEY,
+    cfg_json_value TEXT NOT NULL,
+    create_ms INTEGER NOT NULL,
+    update_ms INTEGER NOT NULL
+);
 
 -- ═══════════════════════════════════════════════════════════
 --  CRON STATE — interval gate (avoids KV namespace dependency)

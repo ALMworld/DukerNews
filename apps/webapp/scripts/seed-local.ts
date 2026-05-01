@@ -69,7 +69,7 @@ const SEED_ACCOUNTS = [
         post: {
             title: 'Bob\'s DeFi analytics dashboard — now live on DUKI',
             url: 'https://bob.example.com',
-            text: 'Track on-chain metrics, credibility scores, and deal flows in real time.',
+            text: 'Track on-chain metrics, reputation scores, and deal flows in real time.',
         },
     },
 ] as const

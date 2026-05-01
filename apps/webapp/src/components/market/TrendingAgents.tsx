@@ -10,7 +10,7 @@ interface TrendingAgentsProps {
 export function TrendingAgents({ entries }: TrendingAgentsProps) {
     const top = entries
         .slice()
-        .sort((a, b) => b.credibility - a.credibility || Number(b.agent.agentId) - Number(a.agent.agentId))
+        .sort((a, b) => b.reputation - a.reputation || Number(b.agent.agentId) - Number(a.agent.agentId))
         .slice(0, 5)
 
     if (top.length === 0) return null
@@ -28,10 +28,10 @@ export function TrendingAgents({ entries }: TrendingAgentsProps) {
             {/* List */}
             <div className="px-3 py-2">
                 {top.map((entry) => {
-                    const { agent, credibility } = entry
+                    const { agent, reputation } = entry
                     const name = agent.name || `Agent-${agent.agentId}`
                     const label = agent.productType === 1 ? 'DIGITAL' : agent.productType === 2 ? 'PHYSICAL' : 'SERVICE'
-                    const dailyRev = ((Number(agent.agentId) * 17 + credibility) % 5000 + 500).toLocaleString()
+                    const dailyRev = ((Number(agent.agentId) * 17 + reputation) % 5000 + 500).toLocaleString()
 
                     return (
                         <div

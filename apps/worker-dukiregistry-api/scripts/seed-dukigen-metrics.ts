@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 /**
  * seed-dukigen-metrics.ts — Seed dukigen_agent_metrics with placeholder
- * credibility values for every known agent, across all four timescales.
+ * reputation values for every known agent, across all four timescales.
  *
  * Idempotent: uses INSERT OR REPLACE on (agent_id, timescale). Re-running
  * regenerates the same numbers because the score is derived from a stable
@@ -36,7 +36,7 @@ function seeded(agentId: bigint, salt: number): number {
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296
 }
 
-function credibilityFor(agentId: bigint): Record<Timescale, number> {
+function reputationFor(agentId: bigint): Record<Timescale, number> {
     const all = Math.floor(seeded(agentId, 1) * 90_000) + 10_000
     const year = Math.floor(all * (0.4 + seeded(agentId, 2) * 0.4))
     const month = Math.floor(year * (0.2 + seeded(agentId, 3) * 0.4))
@@ -80,10 +80,10 @@ async function seed() {
     const sqlLines: string[] = []
     const now = Math.floor(Date.now() / 1000)
     for (const id of ids) {
-        const cred = credibilityFor(id)
+        const cred = reputationFor(id)
         for (const t of TIMESCALES) {
             sqlLines.push(
-                `INSERT OR REPLACE INTO dukigen_agent_metrics (agent_id, timescale, credibility, updated_at) VALUES ('${id.toString()}', '${t}', ${cred[t]}, ${now});`
+                `INSERT OR REPLACE INTO dukigen_agent_metrics (agent_id, timescale, reputation, updated_at) VALUES ('${id.toString()}', '${t}', ${cred[t]}, ${now});`
             )
         }
     }

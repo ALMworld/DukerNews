@@ -19,7 +19,7 @@ import {
     AgentApproxBpsSetPayloadSchema,
     AgentWorksDataSetPayloadSchema,
     AgentMetadataSetPayloadSchema,
-    AgentCredibilityWalletSetPayloadSchema,
+    AgentReputationWalletSetPayloadSchema,
     AgentOpContractSetPayloadSchema,
     ChainContractEntrySchema
 } from '@repo/dukiregistry-apidefs'
@@ -150,7 +150,7 @@ function parseDukigenLog(log: Log, chainEid: number, txHash: string, blockNumber
                             agentUriHash: d.agentURIHash ?? '',
                             website: d.website ?? '',
                             approxBps: Number(d.approxBps ?? 0),
-                            credibilityWallet: d.credibilityWallet ?? '',
+                            reputationWallet: d.reputationWallet ?? '',
                             productType: Number(d.productType ?? 0),
                             dukiType: Number(d.dukiType ?? 0),
                             pledgeUrl: d.pledgeUrl ?? '',
@@ -193,10 +193,10 @@ function parseDukigenLog(log: Log, chainEid: number, txHash: string, blockNumber
                 })
                 break
             }
-            case DukigenEventType.AGENT_CREDIBILITY_WALLET_SET: {
-                const d = decodeEventPayload(dukigenRegistryAbi, 'AgentCredibilityWalletSetData', eventDataHex)
+            case DukigenEventType.AGENT_REPUTATION_WALLET_SET: {
+                const d = decodeEventPayload(dukigenRegistryAbi, 'AgentReputationWalletSetData', eventDataHex)
                 if (d) eventData = create(DukigenEventDataSchema, {
-                    payload: { case: 'agentCredibilityWalletSet', value: create(AgentCredibilityWalletSetPayloadSchema, { credibilityWallet: d.credibilityWallet ?? '' }) }
+                    payload: { case: 'agentReputationWalletSet', value: create(AgentReputationWalletSetPayloadSchema, { reputationWallet: d.reputationWallet ?? '' }) }
                 })
                 break
             }

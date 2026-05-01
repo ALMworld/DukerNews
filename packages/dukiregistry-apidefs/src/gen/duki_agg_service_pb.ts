@@ -122,7 +122,7 @@ export const PbQuickOverviewRespSchema: GenMessage<PbQuickOverviewResp> = /*@__P
  */
 export const DukiAggService: GenService<{
   /**
-   * List agents ranked by credibility for a given timescale (default /market view).
+   * List agents ranked by reputation for a given timescale (default /market view).
    *
    * @generated from rpc dukiregistry.DukiAggService.GetQuickOverview
    */

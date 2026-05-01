@@ -5,7 +5,7 @@ title Agent Metrics Aggregation Flow
 actor "Cron / Devtools" as Caller
 participant "runAgentMetricsTask" as Task
 database "D1: deal_duki_minted_events" as EventsDB
-database "D1: duki_metrics" as MetricsDB
+database "D1: dukigen_metrics" as MetricsDB
 database "D1: dukigen_agents" as AgentsDB
 
 Caller -> Task: POST /devtools (case: "run_agent_metrics")\nor Cron Trigger
@@ -15,32 +15,32 @@ note over Task
 end note
 
 loop For each Chain EID
-    Task -> MetricsDB: SELECT MIN(last_evt_seq) \nWHERE metric_name = 'duki_d6_value'
-    MetricsDB --> Task: Return last processed sequence (fromSeq)
-    
-    Task -> EventsDB: SELECT agent_id, SUM(duki_d6_amount), MAX(evt_seq) \nWHERE evt_seq > fromSeq GROUP BY agent_id
-    EventsDB --> Task: Return aggregated new DUKI minted amounts
-    
+    Task -> MetricsDB: SELECT MIN(mint_reputation_snapshot_id) \nWHERE chain_eid = ?
+    MetricsDB --> Task: Return chain-wide watermark id (fromId)
+
+    Task -> EventsDB: SELECT id, agent_id, duki_d6_amount \nWHERE chain_eid = ? AND id > fromId
+    EventsDB --> Task: Return candidate deal rows
+
+    Task -> Task: Filter per-agent (id > per-agent watermark),\nsum duki_d6_amount, count, MAX(id)
+
     opt If new events found
-        Task -> MetricsDB: UPSERT INTO duki_metrics \n(Add new sums to existing metric_value)
+        Task -> MetricsDB: UPSERT INTO dukigen_metrics \n(add total_d6_amount, transactions_count;\n advance mint_reputation_snapshot_id)
         Task -> Task: Add changed agent_ids to Set
     end
 end
 
 opt If any agents changed
-    Task -> MetricsDB: SELECT SUM(metric_value) \nWHERE agent_id IN (changed_agents)
-    MetricsDB --> Task: Return cross-chain total DUKI value per agent
-    
-    Task -> Task: Serialize SnapshotValue proto\n(total_d6, max_evt_seq, snapshotTime)
-    
-    Task -> AgentsDB: UPDATE dukigen_agents \nSET mint_credibility_d6, mint_credibility_snapshot
+    Task -> MetricsDB: SELECT SUM(total_d6_amount), MAX(mint_reputation_snapshot_id) \nWHERE agent_id IN (changed_agents) GROUP BY agent_id
+    MetricsDB --> Task: Return cross-chain totals per agent
+
+    Task -> AgentsDB: UPDATE dukigen_agents \nSET mint_reputation_d6, mint_reputation_snapshot_id
 end
 
 Task --> Caller: Return { chainsProcessed, agentsUpdated }
 
 note right of Caller
   IMPORTANT: This task DOES NOT sync events from the blockchain.
-  It only aggregates events that have ALREADY been synced 
+  It only aggregates events that have ALREADY been synced
   by the BlockchainSyncService/Webhook.
 end note
 

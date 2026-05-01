@@ -204,7 +204,7 @@ function MetadataProperties({
                     action={pledgeHref ? <InlineOpenLink href={pledgeHref}>Open pledge</InlineOpenLink> : null}
                 />
                 <PropertyRow icon={<WalletCards size={15} />} label="Owner wallet" value={agent.owner || 'Not provided'} mono />
-                <PropertyRow icon={<WalletCards size={15} />} label="Credibility wallet" value={agent.credibilityWallet || 'Not provided'} mono />
+                <PropertyRow icon={<WalletCards size={15} />} label="Reputation wallet" value={agent.reputationWallet || 'Not provided'} mono />
                 <PropertyRow
                     icon={<FileText size={15} />}
                     label="Agent URI"

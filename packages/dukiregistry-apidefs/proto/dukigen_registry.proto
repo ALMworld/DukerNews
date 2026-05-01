@@ -13,7 +13,7 @@ enum DukigenEventType {
   AGENT_APPROX_BPS_SET    = 3;
   AGENT_WORKS_DATA_SET    = 4;
   AGENT_METADATA_SET      = 5;
-  AGENT_CREDIBILITY_WALLET_SET = 6;
+  AGENT_REPUTATION_WALLET_SET = 6;
   AGENT_OP_CONTRACT_SET    = 7;
 }
 
@@ -31,7 +31,7 @@ message AgentCreatedPayload {
   string                      agent_uri_hash = 3;
   string                      website        = 4;
   uint32                      approx_bps     = 5;
-  string                      credibility_wallet = 6;
+  string                      reputation_wallet = 6;
   ProductType                 product_type   = 7;
   DukiType                    duki_type      = 8;
   string                      pledge_url     = 9;
@@ -63,9 +63,9 @@ message AgentMetadataSetPayload {
   bytes  value = 2;
 }
 
-// Data for AGENT_CREDIBILITY_WALLET_SET (eventType=6)
-message AgentCredibilityWalletSetPayload {
-  string credibility_wallet = 1;
+// Data for AGENT_REPUTATION_WALLET_SET (eventType=6)
+message AgentReputationWalletSetPayload {
+  string reputation_wallet = 1;
 }
 
 // Data for AGENT_OP_CONTRACT_SET (eventType=7)
@@ -82,7 +82,7 @@ message DukigenEventData {
     AgentApproxBpsSetPayload      agent_approx_bps_set    = 3;
     AgentWorksDataSetPayload      agent_works_data_set    = 4;
     AgentMetadataSetPayload       agent_metadata_set      = 5;
-    AgentCredibilityWalletSetPayload agent_credibility_wallet_set = 6;
+    AgentReputationWalletSetPayload agent_reputation_wallet_set = 6;
     AgentOpContractSetPayload     agent_op_contract_set    = 7;
   }
 }
@@ -114,13 +114,13 @@ message DukigenAgent {
   DukiType                    duki_type         = 9;
   string                      pledge_url        = 10;
   string                      website           = 11;
-  string                      credibility_wallet = 12;
+  string                      reputation_wallet = 12;
   repeated ChainContractEntry op_contracts      = 13;
 
   // these below fields are lazy view, 
-  uint64    credibility_d6 = 14; // the amount of ALM token amount in the credibility wallet, on chain
-  uint64    credibility_snapshot_ms = 15;
-  uint64    mint_credibility_d6 = 16; // 
-  string    mint_credibility_snapshot_id = 17;
+  uint64    reputation_d6 = 14; // the amount of ALM token amount in the reputation wallet, on chain
+  uint64    reputation_snapshot_ms = 15;
+  uint64    mint_reputation_d6 = 16; // 
+  string    mint_reputation_snapshot_id = 17;
 }
 

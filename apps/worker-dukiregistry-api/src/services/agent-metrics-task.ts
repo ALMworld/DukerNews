@@ -1,23 +1,24 @@
 /**
- * agent-metrics-task.ts — Periodic agent DUKI value snapshot.
+ * agent-metrics-task.ts — Periodic dukigen_metrics snapshot.
  *
- * 1. Sums `duki_d6_amount` from `deal_duki_minted_events` per (chain_eid, agent_id)
- *    and upserts the cumulative total into `duki_metrics` (metric_name = 'duki_d6_value').
+ * 1. For every chain, scans `deal_duki_minted_events` rows whose `id` is
+ *    strictly greater than the per-(chain, agent) watermark stored in
+ *    `dukigen_metrics.mint_reputation_snapshot_id`. Groups by `agent_id`,
+ *    accumulates `total_d6_amount` (sum of `duki_d6_amount`) and
+ *    `transactions_count` (count of deals), and advances the watermark to
+ *    `MAX(deal.id)` for that group.
  *
- * 2. For every agent that had new data, re-aggregates the cross-chain total from
- *    `duki_metrics` and writes `mint_credibility_d6` + `mint_credibility_snapshot`
- *    (a serialized SnapshotValue proto BLOB) back to `dukigen_agents`.
+ * 2. For every agent that had new data, re-aggregates the cross-chain total
+ *    from `dukigen_metrics` and writes `mint_reputation_d6` +
+ *    `mint_reputation_snapshot_id` (the highest watermark across chains)
+ *    back to `dukigen_agents`.
  *
- * Execution is gated to every 64 minutes via a `cron_state` row in D1
- * (no KV namespace needed). The caller (scheduled handler in index.ts)
- * should invoke `maybeRunAgentMetricsTask` on every cron tick.
+ * Execution is gated to every 64 minutes via a `cron_state` row in D1.
  */
 
-import { create, toBinary } from '@bufbuild/protobuf'
-import { SnapshotValueSchema } from '@repo/dukiregistry-apidefs'
 import { getChainConfig, getSupportedChainEids } from '../config'
 
-const JOB_NAME = 'duki_metrics'
+const JOB_NAME = 'dukigen_metrics'
 const INTERVAL_MS = 64 * 60 * 1000   // 64 minutes
 
 // ── Interval gate ─────────────────────────────────────────────────────────────
@@ -33,7 +34,6 @@ async function acquireRun(db: D1Database): Promise<boolean> {
     const lastRun = row?.last_run_at ?? 0
     if ((now - lastRun) * 1000 < INTERVAL_MS) return false
 
-    // Claim the slot atomically: only update if no one else raced us.
     await db
         .prepare(`
             INSERT INTO cron_state (job_name, last_run_at) VALUES (?, ?)
@@ -46,73 +46,92 @@ async function acquireRun(db: D1Database): Promise<boolean> {
     return true
 }
 
-// ── Core task ─────────────────────────────────────────────────────────────────
+// ── Per-chain incremental snapshot ─────────────────────────────────────────────
 
-interface AgentMetricRow {
+interface AgentDeltaRow {
     agent_id: string
-    total_duki_d6: number
-    max_evt_seq: number
+    delta_d6: number
+    delta_count: number
+    max_id: string
 }
 
 /**
- * For a single chain, read all deal_duki_minted_events rows that are newer than
- * the last snapshot, sum duki_d6_amount per agent, then upsert into duki_metrics.
+ * For one chain, read deals whose id > per-agent watermark, group by agent,
+ * upsert the new totals into dukigen_metrics. Returns the agent_ids touched.
  *
- * Returns the set of agent_ids that had new data written.
+ * Watermark semantics: each (chain_eid, agent_id) row tracks its own
+ * mint_reputation_snapshot_id. To avoid scanning the entire deal table per
+ * agent, we use the chain-wide MIN watermark as a cutoff and rely on the
+ * per-agent comparison in the GROUP BY's filter to ignore already-counted
+ * deals.
  */
 async function snapshotChain(
     db: D1Database,
     chainEid: number,
     contractAddr: string,
 ): Promise<Set<string>> {
-    const now = Date.now()   // milliseconds
+    const now = Date.now()
 
-    // Find the highest evt_seq we already processed for every agent on this chain.
-    // Use a single cursor — the minimum last_evt_seq across all agents on this chain.
     const cursorRow = await db
-        .prepare(`
-            SELECT MIN(last_evt_seq) AS min_seq
-            FROM duki_metrics
-            WHERE chain_eid = ? AND contract_addr = ? AND metric_name = 'duki_d6_value'
-        `)
-        .bind(chainEid, contractAddr)
-        .first<{ min_seq: number | null }>()
+        .prepare(`SELECT MIN(mint_reputation_snapshot_id) AS min_id FROM dukigen_metrics WHERE chain_eid = ?`)
+        .bind(chainEid)
+        .first<{ min_id: string | null }>()
 
-    const fromSeq = cursorRow?.min_seq ?? 0
+    const fromId = cursorRow?.min_id ?? ''
 
-    // Aggregate new events since fromSeq.
-    const { results } = await db
+    // Per-agent existing watermarks for this chain.
+    const existing = (await db
+        .prepare(`SELECT agent_id, mint_reputation_snapshot_id AS wm FROM dukigen_metrics WHERE chain_eid = ?`)
+        .bind(chainEid)
+        .all<{ agent_id: string; wm: string }>()).results ?? []
+    const wmByAgent = new Map(existing.map((r) => [r.agent_id, r.wm ?? '']))
+
+    // Pull all candidate deals past the chain-wide cutoff. With an indexed scan
+    // on (chain_eid, id) this is one range read; we then filter per-agent in
+    // app code (deals/agent are small in any sane window).
+    const rows = (await db
         .prepare(`
-            SELECT
-                agent_id,
-                SUM(duki_d6_amount) AS total_duki_d6,
-                MAX(evt_seq)        AS max_evt_seq
+            SELECT id, agent_id, duki_d6_amount
             FROM deal_duki_minted_events
-            WHERE chain_eid = ?
-              AND evt_seq > ?
-            GROUP BY agent_id
+            WHERE chain_eid = ? AND id > ?
         `)
-        .bind(chainEid, fromSeq)
-        .all<AgentMetricRow>()
+        .bind(chainEid, fromId)
+        .all<{ id: string; agent_id: string; duki_d6_amount: number }>()).results ?? []
 
-    if (!results || results.length === 0) return new Set()
+    const byAgent = new Map<string, AgentDeltaRow>()
+    for (const r of rows) {
+        const wm = wmByAgent.get(r.agent_id) ?? ''
+        if (r.id <= wm) continue
+        const cur = byAgent.get(r.agent_id) ?? {
+            agent_id: r.agent_id, delta_d6: 0, delta_count: 0, max_id: '',
+        }
+        cur.delta_d6 += Number(r.duki_d6_amount ?? 0)
+        cur.delta_count += 1
+        if (r.id > cur.max_id) cur.max_id = r.id
+        byAgent.set(r.agent_id, cur)
+    }
 
-    // Upsert each agent row — add the new sum on top of any existing value.
-    const stmts = results.map((r) =>
+    if (byAgent.size === 0) return new Set()
+
+    const stmts = [...byAgent.values()].map((r) =>
         db.prepare(`
-            INSERT INTO duki_metrics
-                (chain_eid, contract_addr, agent_id, metric_name, metric_value, last_evt_seq, snapshot_ms)
-            VALUES (?, ?, ?, 'duki_d6_value', ?, ?, ?)
-            ON CONFLICT(chain_eid, contract_addr, agent_id, metric_name) DO UPDATE SET
-                metric_value = metric_value + excluded.metric_value,
-                last_evt_seq = excluded.last_evt_seq,
-                snapshot_ms  = excluded.snapshot_ms
+            INSERT INTO dukigen_metrics
+                (chain_eid, agent_id, contract_addr, total_d6_amount,
+                 transactions_count, mint_reputation_snapshot_id, snapshot_ms)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(chain_eid, agent_id) DO UPDATE SET
+                total_d6_amount             = total_d6_amount + excluded.total_d6_amount,
+                transactions_count          = transactions_count + excluded.transactions_count,
+                mint_reputation_snapshot_id = excluded.mint_reputation_snapshot_id,
+                snapshot_ms                 = excluded.snapshot_ms,
+                contract_addr               = excluded.contract_addr
         `).bind(
             chainEid,
-            contractAddr,
             r.agent_id,
-            r.total_duki_d6,
-            r.max_evt_seq,
+            contractAddr,
+            r.delta_d6,
+            r.delta_count,
+            r.max_id,
             now,
         )
     )
@@ -120,28 +139,25 @@ async function snapshotChain(
     await db.batch(stmts)
 
     console.log(
-        `[agent-metrics] chain=${chainEid} upserted ${results.length} agent rows` +
-        ` (fromSeq=${fromSeq})`,
+        `[dukigen-metrics] chain=${chainEid} upserted ${byAgent.size} agent rows (fromId=${fromId})`
     )
 
-    return new Set(results.map((r) => r.agent_id))
+    return new Set(byAgent.keys())
 }
 
-// ── Cross-chain agent update ───────────────────────────────────────────────────
+// ── Cross-chain agent rollup ───────────────────────────────────────────────────
 
 interface AgentTotalRow {
     agent_id: string
     total_d6: number
-    max_evt_seq: number
-    chain_eid: number   // chain with highest last_evt_seq (used for snapshot)
+    max_snapshot_id: string
 }
 
 /**
- * For each changed agent, sum metric_value across ALL chains from duki_metrics,
- * build a SnapshotValue proto, then write mint_credibility_d6 and
- * mint_credibility_snapshot to dukigen_agents.
+ * For each changed agent, sum total_d6_amount across all chains and write
+ * mint_reputation_d6 + mint_reputation_snapshot_id back to dukigen_agents.
  */
-async function updateAgentCredibility(
+async function rollupAgentReputation(
     db: D1Database,
     agentIds: Set<string>,
 ): Promise<void> {
@@ -149,22 +165,15 @@ async function updateAgentCredibility(
 
     const now = Math.floor(Date.now() / 1000)
     const ids = [...agentIds]
-
-    // Build placeholders: ?,?,?
     const placeholders = ids.map(() => '?').join(',')
 
-    // Sum across all chains; pick the chain_eid of the row with the highest last_evt_seq
-    // for the SnapshotValue.chain_eid field.
     const { results } = await db
         .prepare(`
-            SELECT
-                agent_id,
-                SUM(metric_value)  AS total_d6,
-                MAX(last_evt_seq)  AS max_evt_seq,
-                chain_eid
-            FROM duki_metrics
-            WHERE metric_name = 'duki_d6_value'
-              AND agent_id IN (${placeholders})
+            SELECT agent_id,
+                   SUM(total_d6_amount)                AS total_d6,
+                   MAX(mint_reputation_snapshot_id)    AS max_snapshot_id
+            FROM dukigen_metrics
+            WHERE agent_id IN (${placeholders})
             GROUP BY agent_id
         `)
         .bind(...ids)
@@ -172,48 +181,34 @@ async function updateAgentCredibility(
 
     if (!results || results.length === 0) return
 
-    const updateStmts = results.map((r) => {
-        // Serialize SnapshotValue proto to BLOB.
-        const snap = create(SnapshotValueSchema, {
-            chainEid: r.chain_eid,
-            evtSeq: BigInt(r.max_evt_seq),
-            d6Value: BigInt(r.total_d6),
-            snapshotTime: BigInt(now),
-        })
-        const snapBlob = toBinary(SnapshotValueSchema, snap)
-
-        return db
-            .prepare(`
-                UPDATE dukigen_agents
-                SET
-                    mint_credibility_d6       = ?,
-                    mint_credibility_snapshot = ?,
-                    updated_at                = ?
-                WHERE agent_id = ?
-            `)
-            .bind(r.total_d6, snapBlob, now, r.agent_id)
-    })
+    const updateStmts = results.map((r) =>
+        db.prepare(`
+            UPDATE dukigen_agents
+            SET mint_reputation_d6          = ?,
+                mint_reputation_snapshot_id = ?,
+                updated_at                  = ?
+            WHERE agent_id = ?
+        `).bind(
+            Number(r.total_d6 ?? 0),
+            r.max_snapshot_id ?? '',
+            now,
+            r.agent_id,
+        )
+    )
 
     await db.batch(updateStmts)
 
-    console.log(`[agent-metrics] updated mint_credibility for ${results.length} agents`)
+    console.log(`[dukigen-metrics] rolled up mint_reputation for ${results.length} agents`)
 }
 
 // ── Public entry points ───────────────────────────────────────────────────────
 
-/**
- * Core task logic: snapshot all supported chains, then propagate cross-chain
- * totals back to dukigen_agents. No interval gating — always executes.
- *
- * Shared between the cron handler (`maybeRunAgentMetricsTask`) and devtools.
- */
 export async function runAgentMetricsTask(db: D1Database): Promise<{
     chainsProcessed: number
     agentsUpdated: number
 }> {
-    console.log('[agent-metrics] starting snapshot run')
+    console.log('[dukigen-metrics] starting snapshot run')
 
-    // Step 1: snapshot each chain, collect all agent_ids that changed.
     const changedAgents = new Set<string>()
     const chainEids = getSupportedChainEids()
     let chainsProcessed = 0
@@ -229,31 +224,25 @@ export async function runAgentMetricsTask(db: D1Database): Promise<{
             for (const id of updated) changedAgents.add(id)
             chainsProcessed++
         } catch (err) {
-            console.error(`[agent-metrics] chain=${chainEid} error:`, err)
+            console.error(`[dukigen-metrics] chain=${chainEid} error:`, err)
         }
     }
 
-    // Step 2: propagate cross-chain totals to dukigen_agents.
     try {
-        await updateAgentCredibility(db, changedAgents)
+        await rollupAgentReputation(db, changedAgents)
     } catch (err) {
-        console.error('[agent-metrics] updateAgentCredibility error:', err)
+        console.error('[dukigen-metrics] rollupAgentReputation error:', err)
     }
 
-    console.log('[agent-metrics] snapshot run complete')
+    console.log('[dukigen-metrics] snapshot run complete')
     return { chainsProcessed, agentsUpdated: changedAgents.size }
 }
 
-/**
- * Called on every cron tick.  Exits immediately if 64 minutes haven't elapsed
- * since the last successful run.  Otherwise delegates to `runAgentMetricsTask`.
- */
 export async function maybeRunAgentMetricsTask(db: D1Database): Promise<void> {
     const shouldRun = await acquireRun(db)
     if (!shouldRun) {
-        console.log('[agent-metrics] skipped — interval not elapsed')
+        console.log('[dukigen-metrics] skipped — interval not elapsed')
         return
     }
-
     await runAgentMetricsTask(db)
 }

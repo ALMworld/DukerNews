@@ -1,7 +1,7 @@
 /**
  * /market — World DukiGen Market Landing Page.
  *
- * Hero discovery page with stats overview, featured agents (top credibility),
+ * Hero discovery page with stats overview, featured agents (top reputation),
  * a live activity table, and CTAs. The heavy search/filter interface lives at
  * /market_search.
  */

@@ -7,7 +7,7 @@
  * The per-contract services expose query-only RPCs.
  */
 
-import { create, fromBinary } from '@bufbuild/protobuf'
+import { create } from '@bufbuild/protobuf'
 import {
     BlockchainSyncRespSchema,
     DealDukiMintedEventSchema,
@@ -18,7 +18,6 @@ import {
 import {
     DukerIdentitySchema,
     DukigenAgentSchema,
-    SnapshotValueSchema,
 } from '@repo/dukiregistry-apidefs'
 import { pullDukigenEventsByBlockRange } from '../services/chain-puller'
 import { processDukigenEvents } from '../services/dukigen-event-service'
@@ -45,15 +44,6 @@ export function setDb(db: D1Database) {
 
 
 
-export function parseSnapshotBlob(raw: ArrayBuffer | null | undefined) {
-    if (!raw) return undefined
-    try {
-        return fromBinary(SnapshotValueSchema, new Uint8Array(raw))
-    } catch {
-        return undefined
-    }
-}
-
 export function parseOpContractsRow(raw: string | null | undefined) {
     if (!raw) return []
     try {
@@ -70,6 +60,43 @@ export function parseOpContractsRow(raw: string | null | undefined) {
     }
 }
 
+// ── Deal id (sortable) ──────────────────────────────────────────────────
+
+/**
+ * Build the compact sortable deal id: hex-packed (evt_time:08x)(chain_eid:04x)(evt_seq:016x).
+ * Lex order = (evt_time, chain_eid, evt_seq) so events near the same time across chains cluster.
+ */
+export function buildDealId(evtTime: bigint | number, chainEid: number, evtSeq: bigint | number): string {
+    const t = BigInt(evtTime).toString(16).padStart(8, '0')
+    const c = BigInt(chainEid).toString(16).padStart(4, '0')
+    const s = BigInt(evtSeq).toString(16).padStart(16, '0')
+    return t + c + s
+}
+
+// ── kv_config helpers ───────────────────────────────────────────────────
+
+/**
+ * Read multiple kv_config rows in one query and parse each value as JSON.
+ * Missing keys map to `undefined`.
+ */
+export async function readKvConfigJson(
+    db: D1Database,
+    keys: string[],
+): Promise<Map<string, unknown>> {
+    if (keys.length === 0) return new Map()
+    const placeholders = keys.map(() => '?').join(',')
+    const rows = (await db
+        .prepare(`SELECT cfg_key, cfg_json_value FROM kv_config WHERE cfg_key IN (${placeholders})`)
+        .bind(...keys)
+        .all<{ cfg_key: string; cfg_json_value: string }>()).results ?? []
+    const out = new Map<string, unknown>()
+    for (const r of rows) {
+        try { out.set(r.cfg_key, JSON.parse(r.cfg_json_value)) }
+        catch { /* ignore malformed JSON */ }
+    }
+    return out
+}
+
 // ── ListAgentsRanked helpers ────────────────────────────────────────────
 
 export const VALID_TIMESCALES = new Set(['all', 'year', 'month', 'week'])
@@ -79,12 +106,12 @@ export function normalizeTimescale(t: string): string {
     return VALID_TIMESCALES.has(v) ? v : 'all'
 }
 
-type RankCursor = { credibility: number; agentId: string }
+type RankCursor = { reputation: number; agentId: string }
 
 // base64url-encoded JSON. agent_id stays a string because dukigen_agents
 // stores it as TEXT (uint256 doesn't survive Number).
 export function encodeRankCursor(c: RankCursor): string {
-    const json = JSON.stringify({ c: c.credibility, a: c.agentId })
+    const json = JSON.stringify({ c: c.reputation, a: c.agentId })
     const b64 = btoa(json)
     return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
 }
@@ -96,7 +123,7 @@ export function decodeRankCursor(raw: string | undefined | null): RankCursor | n
         const json = atob(padded)
         const obj = JSON.parse(json)
         if (typeof obj?.a !== 'string' || typeof obj?.c !== 'number') return null
-        return { credibility: obj.c, agentId: obj.a }
+        return { reputation: obj.c, agentId: obj.a }
     } catch {
         return null
     }
@@ -105,19 +132,18 @@ export function decodeRankCursor(raw: string | undefined | null): RankCursor | n
 export async function queryRankedAgentRows(db: D1Database, timescale: string, limit: number) {
     const rows = (await db.prepare(
         `SELECT a.*,
-                COALESCE(m.credibility, 0) AS metric_credibility,
+                COALESCE(m.reputation, 0) AS metric_reputation,
                 COALESCE(m.updated_at, 0) AS metric_updated_at,
-                COALESCE(dm.mint_credibility_d6, 0) AS mint_credibility_d6
+                COALESCE(dm.mint_reputation_d6, 0) AS mint_reputation_d6
          FROM   dukigen_agents a
          LEFT JOIN dukigen_agent_metrics m
                 ON m.agent_id = a.agent_id AND m.timescale = ?
          LEFT JOIN (
-             SELECT agent_id,
-                    COALESCE(SUM(CAST(duki_amount AS REAL)), 0) / 1000000000000.0 AS mint_credibility_d6
-             FROM deal_duki_minted_events
+             SELECT agent_id, SUM(total_d6_amount) AS mint_reputation_d6
+             FROM dukigen_metrics
              GROUP BY agent_id
          ) dm ON dm.agent_id = a.agent_id
-         ORDER BY COALESCE(m.credibility, 0) DESC, a.agent_id DESC
+         ORDER BY COALESCE(m.reputation, 0) DESC, a.agent_id DESC
          LIMIT ?`
     ).bind(timescale, limit).all<any>()).results ?? []
 
@@ -125,41 +151,44 @@ export async function queryRankedAgentRows(db: D1Database, timescale: string, li
 }
 
 export async function queryMarketQuickTotals(db: D1Database) {
-    const [totalAgentsRow, totals, activeChainsRow] = await Promise.all([
-        db.prepare('SELECT COUNT(*) AS total_agents FROM dukigen_agents').first<{ total_agents?: number }>(),
-        db.prepare(
-            `SELECT COUNT(*) AS transaction_count,
-                COALESCE(SUM(CAST(duki_amount AS REAL)), 0) / 1000000000000.0 AS total_d6_amount
-         FROM deal_duki_minted_events`
-        ).first<{ transaction_count?: number; total_d6_amount?: number }>(),
-        db.prepare(
-            `SELECT COUNT(*) AS active_chains
-         FROM (
-           SELECT DISTINCT chain_eid FROM dukigen_agents
-           UNION
-           SELECT DISTINCT chain_eid FROM deal_duki_minted_events
-         )`
-        ).first<{ active_chains?: number }>(),
-    ])
+    // Reads everything from dukigen_metrics — one row per (chain_eid, agent_id).
+    // total_agents = distinct agent count across chains, total_d6_amount /
+    // transactions_count = sum of per-row totals across chains.
+    const totals = await db.prepare(
+        `SELECT COUNT(DISTINCT agent_id)        AS total_agents,
+                COUNT(DISTINCT chain_eid)       AS active_chains,
+                COALESCE(SUM(total_d6_amount), 0)    AS total_d6_amount,
+                COALESCE(SUM(transactions_count), 0) AS transactions_count
+         FROM dukigen_metrics`
+    ).first<{
+        total_agents?: number
+        active_chains?: number
+        total_d6_amount?: number
+        transactions_count?: number
+    }>()
 
     return {
-        totalAgents: Number(totalAgentsRow?.total_agents ?? 0),
+        totalAgents: Number(totals?.total_agents ?? 0),
         totalD6Amount: BigInt(Math.floor(Number(totals?.total_d6_amount ?? 0))),
-        activeChainCount: Number(activeChainsRow?.active_chains ?? 0),
-        transactionsCount: BigInt(Number(totals?.transaction_count ?? 0)),
+        activeChainCount: Number(totals?.active_chains ?? 0),
+        transactionsCount: BigInt(Number(totals?.transactions_count ?? 0)),
     }
 }
 
 export async function queryChainMinterOverviews(db: D1Database) {
+    // Per-chain rollup of the materialised metrics. evt_seq is derived from
+    // the largest watermark id (which suffix-encodes evt_seq) — see migration
+    // for the format. We expose the raw watermark id alongside it so the
+    // frontend can use either.
     const rows = (await db.prepare(
         `SELECT chain_eid,
-                COALESCE(MAX(evt_seq), 0) AS evt_seq,
-                COALESCE(SUM(CAST(duki_amount AS REAL)), 0) / 1000000000000.0 AS total_d6_amount
-         FROM deal_duki_minted_events
+                COALESCE(SUM(total_d6_amount), 0)        AS total_d6_amount,
+                COALESCE(MAX(mint_reputation_snapshot_id), '') AS max_snapshot_id
+         FROM dukigen_metrics
          GROUP BY chain_eid`
-    ).all<any>()).results ?? []
+    ).all<{ chain_eid: number; total_d6_amount?: number; max_snapshot_id?: string }>()).results ?? []
 
-    const byChain = new Map(rows.map((row: any) => [Number(row.chain_eid), row]))
+    const byChain = new Map(rows.map((row) => [Number(row.chain_eid), row]))
     const zeroAddress = '0x0000000000000000000000000000000000000000'
 
     return getSupportedChainEids()
@@ -167,10 +196,15 @@ export async function queryChainMinterOverviews(db: D1Database) {
             const cfg = getChainConfig(chainEid)
             if (!cfg.almWorldDukiMinterAddress || cfg.almWorldDukiMinterAddress === zeroAddress) return null
             const row = byChain.get(chainEid)
+            // Last 16 hex chars of the deal id encode evt_seq.
+            const snapshotId = row?.max_snapshot_id ?? ''
+            const evtSeq = snapshotId.length >= 16
+                ? BigInt('0x' + snapshotId.slice(-16))
+                : 0n
             return create(AlmWorldDukiMinterOverviewSchema, {
                 chainEid,
                 contractAddr: cfg.almWorldDukiMinterAddress,
-                evtSeq: BigInt(Number(row?.evt_seq ?? 0)),
+                evtSeq,
                 totalD6Amount: BigInt(Math.floor(Number(row?.total_d6_amount ?? 0))),
             })
         })
@@ -191,18 +225,18 @@ export function rowToAgent(row: any) {
         opContracts: parseOpContractsRow(row.op_contracts),
         pledgeUrl: row.pledge_url,
         website: row.website ?? '',
-        credibilityWallet: row.credibility_wallet ?? '',
-        credibilityD6: BigInt(row.credibility_d6 ?? 0),
-        credibilitySnapshot: parseSnapshotBlob(row.credibility_snapshot),
-        mintCredibilityD6: BigInt(row.mint_credibility_d6 ?? 0),
-        mintCredibilitySnapshot: parseSnapshotBlob(row.mint_credibility_snapshot),
+        reputationWallet: row.reputation_wallet ?? '',
+        reputationD6: BigInt(row.reputation_d6 ?? 0),
+        reputationSnapshotMs: BigInt(row.reputation_snapshot_ms ?? 0),
+        mintReputationD6: BigInt(row.mint_reputation_d6 ?? 0),
+        mintReputationSnapshotId: row.mint_reputation_snapshot_id ?? '',
     })
 }
 
 export function rowToRankedAgent(row: any) {
     return create(RankedAgentSchema, {
         agent: rowToAgent(row),
-        credibility: BigInt(row.metric_credibility ?? 0),
+        reputation: BigInt(row.metric_reputation ?? 0),
     })
 }
 
@@ -361,7 +395,7 @@ export async function queryDeals(db: D1Database, args: QueryDealsArgs) {
     }
 
     const sql = `
-        SELECT chain_eid, evt_seq, tx_hash, block_number, evt_time,
+        SELECT id, chain_eid, evt_seq, tx_hash, block_number, evt_time,
                yang_receiver, yin_receiver, stablecoin,
                duki_amount, alm_yang_amount, alm_yin_amount,
                minter, agent_id
@@ -376,6 +410,7 @@ export async function queryDeals(db: D1Database, args: QueryDealsArgs) {
     const pageRows = hasMore ? rows.slice(0, limit) : rows
     const events = pageRows.map((r: any) =>
         create(DealDukiMintedEventSchema, {
+            id: r.id ?? '',
             chainEid: r.chain_eid,
             evtSeq: BigInt(r.evt_seq),
             txHash: r.tx_hash,
